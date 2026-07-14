@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "283555409969",
+    "firebase_url": "https://batizenci-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "batizenci",
+    "storage_bucket": "batizenci.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:283555409969:android:34cbc07cef4e46d29c6510",
+        "android_client_info": {
+          "package_name": "com.batizen.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "283555409969-lg1ivi47d6t00cbqfn7tqg9ba1iu2j7i.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBvOQDpmS9DfHv4cfQUgfRFiqOYResVoQA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "283555409969-lg1ivi47d6t00cbqfn7tqg9ba1iu2j7i.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

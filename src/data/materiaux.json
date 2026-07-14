@@ -1,0 +1,6 @@
+[
+  { "name": "Ciment CPJ 42.5", "category": "Gros œuvre", "unit": "sac", "averagePriceFcfa": 5200, "city": "Abidjan" },
+  { "name": "Fer à béton HA12", "category": "Structure", "unit": "barre", "averagePriceFcfa": 4200, "city": "Abidjan" },
+  { "name": "Carrelage premium", "category": "Finition", "unit": "m²", "averagePriceFcfa": 12500, "city": "Abidjan" },
+  { "name": "Peinture extérieure", "category": "Finition", "unit": "seau", "averagePriceFcfa": 28000, "city": "Yamoussoukro" }
+]

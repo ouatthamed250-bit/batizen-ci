@@ -1,0 +1,5 @@
+[
+  { "id": "villa-signature", "name": "Villa Signature", "surfaceM2": 180, "rooms": 5, "startingPriceFcfa": 58000000 },
+  { "id": "duplex-familial", "name": "Duplex Familial", "surfaceM2": 240, "rooms": 6, "startingPriceFcfa": 87500000 },
+  { "id": "maison-compacte", "name": "Maison Compacte", "surfaceM2": 120, "rooms": 4, "startingPriceFcfa": 36500000 }
+]
