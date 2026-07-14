@@ -69,10 +69,6 @@ export async function resetPassword(email: string) {
   return sendPasswordResetEmail(auth, email);
 }
 
-export async function logout() {
-  const { auth } = getFirebaseServices();
-  return signOut(auth);
-}
 
 export function checkPasswordStrength(password: string): { strength: 'weak' | 'medium' | 'strong'; score: number; feedback: string[] } {
   const feedback: string[] = [];

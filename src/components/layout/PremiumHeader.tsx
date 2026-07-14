@@ -5,11 +5,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Bell, UserRound } from "lucide-react";
 import { imagePaths } from "@/lib/helpers";
-import { useAuth, logout } from "@/hooks/useAuth";
+import { useAuthContext } from "@/contexts/AuthContext";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 export function PremiumHeader() {
-  const { user } = useAuth();
+  const { user, logout } = useAuthContext();
   const router = useRouter();
 
   async function handleLogout() {

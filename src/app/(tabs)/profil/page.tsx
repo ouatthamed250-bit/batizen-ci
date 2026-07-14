@@ -8,7 +8,7 @@ import { PremiumHeader } from "@/components/layout/PremiumHeader";
 import { Badge } from "@/components/ui/Badge";
 import { PremiumButton } from "@/components/ui/PremiumButton";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { useAuth, logout } from "@/hooks/useAuth";
+import { useAuthContext } from "@/contexts/AuthContext";
 import { cn } from "@/lib/helpers";
 
 const menuItems = [
@@ -20,7 +20,7 @@ const menuItems = [
 ];
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, logout } = useAuthContext();
   const router = useRouter();
 
   const initials = user?.displayName

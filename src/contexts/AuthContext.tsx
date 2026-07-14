@@ -8,9 +8,9 @@ import {
   signInWithPopup,
   signOut,
   updateProfile,
-  type User as FirebaseUser,
 } from "firebase/auth";
 import { getFirebaseServices, hasFirebaseConfig } from "@/lib/firebase";
+import { ref, set } from "firebase/database";
 
 export type AuthUser = {
   uid: string;
@@ -119,9 +119,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const { auth } = getFirebaseServices();
+    const { auth, database } = getFirebaseServices();
     const cred = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(cred.user, { displayName: name });
+    
+    // Écrire les données utilisateur dans Realtime Database
+    await set(ref(database, `users/${cred.user.uid}`), {
+      uid: cred.user.uid,
+      email: cred.user.email,
+      displayName: name,
+      role: "client",
+      createdAt: Date.now(),
+    });
   }, []);
 
   const loginWithGoogle = useCallback(async () => {
@@ -140,8 +149,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const { auth, googleProvider } = getFirebaseServices();
-    await signInWithPopup(auth, googleProvider);
+    const { auth, googleProvider, database } = getFirebaseServices();
+    const result = await signInWithPopup(auth, googleProvider);
+    
+    // Écrire les données utilisateur dans Realtime Database (merge pour ne pas écraser)
+    await set(ref(database, `users/${result.user.uid}`), {
+      uid: result.user.uid,
+      email: result.user.email,
+      displayName: result.user.displayName || "Utilisateur Google",
+      photoURL: result.user.photoURL || null,
+      role: "client",
+      createdAt: Date.now(),
+    });
   }, []);
 
   const logout = useCallback(async () => {

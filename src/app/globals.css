@@ -711,10 +711,10 @@ select {
    ============================================================ */
 .ticker-banner {
   position: fixed;
-  top: 0;
+  top: 60px;
   left: 0;
   right: 0;
-  z-index: 1100;
+  z-index: 45;
   height: 40px;
   display: flex;
   align-items: center;
@@ -752,6 +752,7 @@ select {
   0%, 100% { transform: scale(1); box-shadow: 0 10px 30px rgba(255,107,0,0.5); }
   50% { transform: scale(1.08); box-shadow: 0 14px 40px rgba(255,107,0,0.65); }
 }
+
 .chat-fab:hover {
   animation-play-state: paused;
   transform: scale(1.12);
@@ -770,4 +771,13 @@ select {
 }
 .chat-messages {
   min-height: 0;
+}
+
+/* Animation marquee lente pour BreakingNewsTicker */
+@keyframes marquee-slow {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+.animate-marquee-slow {
+  animation: marquee-slow 30s linear infinite;
 }

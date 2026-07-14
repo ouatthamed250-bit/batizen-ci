@@ -14,11 +14,14 @@ interface MenuItem {
 
 const menuItems: MenuItem[] = [
   { label: "Accueil", icon: "🏠", href: "/dashboard", useRouter: true },
-  { label: "Mes chantiers", icon: "🏗️", href: "/(chantier-en-cours)/chantier-en-cours" },
-  { label: "Matériaux", icon: "🧱", href: "/renovation" },
+  { label: "Mes chantiers", icon: "🏗️", href: "/chantier-en-cours" },
+  { label: "Simulation", icon: "📐", href: "/simulation" },
   { label: "Rénovation", icon: "🔨", href: "/renovation" },
-  { label: "Rendez-vous", icon: "📅", href: "/(tabs)/messages" },
-  { label: "Paiements", icon: "💰", href: "/(recu)/recu" },
+  { label: "Nouveau chantier", icon: "➕", href: "/nouveau-chantier" },
+  { label: "Matériaux", icon: "🧱", href: "/catalogue-materiaux" },
+  { label: "Messages", icon: "💬", href: "/messages" },
+  { label: "Devis", icon: "📋", href: "/devis" },
+  { label: "Paiements", icon: "💰", href: "/historique" },
   { label: "Contact", icon: "📞", href: "/support" },
   { label: "Documents", icon: "📄", href: "/scanner" },
   { label: "Paramètres", icon: "⚙️", href: "/parametres" },

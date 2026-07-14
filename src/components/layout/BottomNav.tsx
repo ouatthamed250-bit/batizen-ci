@@ -62,13 +62,13 @@ export function BottomNav() {
                 active ? "text-[#FF6B00]" : "text-[#6B7280] hover:text-[#111827]"
               )}
             >
-              <span className={cn(
-                "grid size-10 place-items-center rounded-full transition-all",
-                active 
-                  ? "bg-gradient-to-br from-[#FF6B00] to-[#FF8C00] text-white shadow-lg" 
-                  : "bg-white/50 text-[#FF6B00]"
-              )}>
-                <Icon size={20} aria-hidden />
+<span className={cn(
+               "grid size-12 place-items-center rounded-full transition-all",
+               active 
+                 ? "bg-gradient-to-br from-[#FF6B00] to-[#FF8C00] text-white shadow-lg" 
+                 : "bg-white/50 text-[#FF6B00]"
+             )}>
+               <Icon size={22} aria-hidden />
               </span>
               <span className="leading-none">Accueil</span>
               {active && <span className="absolute -bottom-1 size-1 rounded-full bg-[#FF6B00]" />}
@@ -87,11 +87,11 @@ export function BottomNav() {
               active ? "text-[#0B5FFF]" : "text-[#6B7280] hover:text-[#111827]"
             )}
           >
-            <span className={cn(
-              "grid size-10 place-items-center rounded-full transition-all",
+<span className={cn(
+              "grid size-12 place-items-center rounded-full transition-all",
               active && "bg-[#EAF2FF]"
             )}>
-              <Icon size={20} aria-hidden />
+              <Icon size={22} aria-hidden />
             </span>
             <span className="leading-none">{item.label}</span>
             {active && <span className="absolute -bottom-1 size-1 rounded-full bg-[#0B5FFF]" />}

@@ -1,3 +1,5 @@
+"use client";
+
 type BreakingNewsTickerProps = {
   compact?: boolean;
 };

@@ -5,8 +5,10 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Sidebar from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
+import { BottomNav } from "@/components/layout/BottomNav";
 import { AndroidBackHandler } from "@/components/layout/AndroidBackHandler";
 import { InfoTicker } from "@/components/ui/InfoTicker";
+import { BreakingNewsTicker } from "@/components/ui/BreakingNewsTicker";
 import ChatBot from "@/components/ChatBot";
 
 export const metadata: Metadata = {
@@ -28,6 +30,8 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
@@ -37,10 +41,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <AuthProvider>
           <ThemeProvider>
             <Header />
+            <BreakingNewsTicker />
             <AndroidBackHandler />
             <InfoTicker />
             <Sidebar />
             {children}
+            <BottomNav />
             <ChatBot />
           </ThemeProvider>
         </AuthProvider>
