@@ -10,6 +10,8 @@ import { BackButton } from "@/components/ui/BackButton";
 import { verifyAdminCode } from "@/lib/admin";
 import { X, ShieldAlert } from "lucide-react";
 
+export const dynamic = "force-static";
+
 export default function LoginPage() {
   const router = useRouter();
   const { login, loginWithGoogle, isAuthenticated, loading: authLoading } = useAuthContext();
@@ -106,10 +108,18 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="relative flex min-h-screen flex-col items-center overflow-hidden bg-white px-6 pb-8 pt-14">
-      <div className="absolute -top-40 right-0 size-80 rounded-full bg-[#0B5FFF] opacity-[0.04] blur-[80px]" />
+    <div className="min-h-screen w-full relative">
+      <img 
+        src="/images/hero-bg.jpg" 
+        alt="Background" 
+        className="absolute inset-0 w-full h-full object-cover z-0"
+      />
+      <div className="absolute inset-0 bg-black/60 z-10"></div>
+      <div className="relative z-20 min-h-screen flex items-center justify-center p-4">
+        <main className="w-full max-w-sm flex flex-col items-center px-6 pb-8 pt-14">
+      <div className="relative -top-40 right-0 size-80 rounded-full bg-[#0B5FFF] opacity-[0.04] blur-[80px]" />
 
-      <div className="absolute left-6 top-6">
+      <div className="relative z-30 left-6 top-6">
         <BackButton href="/welcome" />
       </div>
 
@@ -299,6 +309,8 @@ export default function LoginPage() {
           </div>
         ))}
       </div>
-    </main>
+        </main>
+      </div>
+    </div>
   );
 }

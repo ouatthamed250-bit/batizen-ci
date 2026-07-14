@@ -106,8 +106,8 @@ export function Header() {
                 { href: "/chantier", label: "Mes chantiers", icon: "🏗️" },
                 { href: "/renovation", label: "Rénovation", icon: "🔨" },
                 { href: "/catalogue-materiaux", label: "Matériaux", icon: "🧱" },
-                { href: "/(tabs)/messages", label: "Messages", icon: "💬" },
-                { href: "/(tabs)/devis", label: "Devis", icon: "📋" },
+{ href: "/messages", label: "Messages", icon: "💬" },
+{ href: "/devis", label: "Devis", icon: "📋" },
               ].map((item, i) => (
                 <Link
                   key={item.href}

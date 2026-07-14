@@ -16,6 +16,7 @@ import {
   FileText,
   Bot,
   ChevronRight,
+  Calculator,
 } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { WeatherWidget } from "@/components/btp/WeatherWidget";
@@ -263,12 +264,9 @@ export default function DashboardClientPage() {
   }, [user?.uid]);
 
   const actionsRapides = [
-    { icon: BrickWall, label: "Commander matériaux", href: "/catalogue-materiaux", color: "#FF7A00" },
-    { icon: CalendarPlus, label: "Nouveau rendez-vous", href: "/nouveau-chantier", color: "#0B5FFF" },
-    { icon: Hammer, label: "Demander rénovation", href: "/renovation", color: "#22C55E" },
-    { icon: Receipt, label: "Mes paiements", href: "/historique", color: "#0D2B6B" },
-    { icon: FileText, label: "Mes documents", href: "/documents", color: "#8B5CF6" },
-    { icon: Bot, label: "Assistant IA", href: "/assistant-chat", color: "#EC4899" },
+    { icon: Calculator, label: "Simulation", href: "/simulation", color: "#FF7A00" },
+    { icon: BrickWall, label: "Nouveau chantier", href: "/nouveau-chantier", color: "#0B5FFF" },
+    { icon: Hammer, label: "Rénovation", href: "/renovation", color: "#22C55E" },
   ];
 
 return (
