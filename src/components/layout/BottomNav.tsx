@@ -13,6 +13,12 @@ export function BottomNav() {
   const router = useRouter();
   const { isAuthenticated } = useAuthContext();
 
+  // Pages où la BottomNav doit être masquée
+  const hideNavPaths = ["/", "/login", "/register", "/splash", "/welcome", "/forgot-password"];
+  if (hideNavPaths.includes(pathname)) {
+    return null;
+  }
+
   const navItems = [
     { label: "Accueil", href: "/", icon: HomeIcon, isHome: true },
     { label: "Projets", href: "/projets", icon: FolderKanban },
