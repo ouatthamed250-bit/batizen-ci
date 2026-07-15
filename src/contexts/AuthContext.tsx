@@ -60,15 +60,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const { auth } = getFirebaseServices();
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    const { auth, database } = getFirebaseServices();
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
+        // Récupérer les données complémentaires depuis la base
+        let userData = null;
+        try {
+          const { get } = await import("firebase/database");
+          const snapshot = await get(ref(database, `users/${firebaseUser.uid}`));
+          userData = snapshot.val();
+        } catch {
+          // ignore
+        }
+        
         const authUser: AuthUser = {
           uid: firebaseUser.uid,
           email: firebaseUser.email,
-          displayName: firebaseUser.displayName,
-          photoURL: firebaseUser.photoURL,
-          phoneNumber: firebaseUser.phoneNumber,
+          displayName: firebaseUser.displayName || userData?.displayName || null,
+          photoURL: firebaseUser.photoURL || userData?.photoURL || null,
+          phoneNumber: userData?.phoneNumber || firebaseUser.phoneNumber || null,
+          role: userData?.role,
         };
         setUser(authUser);
         setIsAuthenticated(true);
@@ -112,7 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: email,
         displayName: name,
         photoURL: null,
-        phoneNumber: null,
+        phoneNumber: email?.split('@')[0] || null, // Stocke le numéro depuis l'email temporaire
       };
       setUser(demoUser);
       setIsAuthenticated(true);
@@ -124,10 +135,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const cred = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(cred.user, { displayName: name });
     
-    // Écrire les données utilisateur dans Realtime Database
+    // Extraction du numéro de téléphone depuis l'email temporaire
+    const phoneNumber = email?.split('@')[0] || null;
+    
+    // Écrire les données utilisateur dans Realtime Database avec le numéro de téléphone
     await set(ref(database, `users/${cred.user.uid}`), {
       uid: cred.user.uid,
       email: cred.user.email,
+      phoneNumber: phoneNumber,
       displayName: name,
       role: "client",
       createdAt: Date.now(),
