@@ -14,7 +14,7 @@ export function BottomNav() {
   const { isAuthenticated } = useAuthContext();
 
   // Pages où la BottomNav doit être masquée
-  const hideNavPaths = ["/", "/login", "/register", "/splash", "/welcome", "/forgot-password"];
+  const hideNavPaths = ["/", "/login", "/register", "/splash", "/forgot-password"];
   if (hideNavPaths.includes(pathname)) {
     return null;
   }

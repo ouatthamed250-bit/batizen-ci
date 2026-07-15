@@ -3,13 +3,7 @@ import type { ReactNode } from "react";
 import "./globals.css";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
-import Sidebar from "@/components/layout/Sidebar";
-import { Header } from "@/components/layout/Header";
-import { BottomNav } from "@/components/layout/BottomNav";
-import { AndroidBackHandler } from "@/components/layout/AndroidBackHandler";
-import { InfoTicker } from "@/components/ui/InfoTicker";
-import { BreakingNewsTicker } from "@/components/ui/BreakingNewsTicker";
-import ChatBot from "@/components/ChatBot";
+import LayoutWrapper from "@/components/layout/LayoutWrapper";
 
 export const metadata: Metadata = {
   title: "BÂTIZEN CI — Construire en confiance",
@@ -40,14 +34,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className="overflow-x-hidden">
         <AuthProvider>
           <ThemeProvider>
-            <Header />
-            <BreakingNewsTicker />
-            <AndroidBackHandler />
-            <InfoTicker />
-            <Sidebar />
-            {children}
-            <BottomNav />
-            <ChatBot />
+            <LayoutWrapper>
+              {children}
+            </LayoutWrapper>
           </ThemeProvider>
         </AuthProvider>
       </body>

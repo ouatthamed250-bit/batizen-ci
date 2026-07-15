@@ -123,7 +123,7 @@ export default function LoginPage() {
       <div className="relative -top-40 right-0 size-80 rounded-full bg-[#0B5FFF] opacity-[0.04] blur-[80px]" />
 
       <div className="relative z-30 left-6 top-6">
-        <BackButton href="/welcome" />
+        <BackButton href="/" />
       </div>
 
       <div

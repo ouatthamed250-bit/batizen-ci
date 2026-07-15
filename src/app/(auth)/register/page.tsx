@@ -98,7 +98,7 @@ export default function RegisterPage() {
       <main className="relative flex min-h-screen flex-col items-center overflow-hidden px-6 pb-10 pt-12">
 
       <div className="absolute left-6 top-6 z-20">
-        <BackButton href="/welcome" />
+        <BackButton href="/login" />
       </div>
 
       <div className="relative z-10 animate-bounceIn">
