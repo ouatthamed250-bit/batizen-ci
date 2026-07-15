@@ -25,20 +25,42 @@ export function hasFirebaseConfig(): boolean {
   return Object.values(firebaseConfig).every((value) => Boolean(value));
 }
 
+// Initialize Firebase safely
+let firebaseApp: FirebaseApp;
+let firebaseAuth: Auth;
+let firebaseDatabase: Database;
+let firebaseStorage: FirebaseStorage;
+let firebaseGoogleProvider: GoogleAuthProvider;
+
+try {
+  firebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+  firebaseAuth = getAuth(firebaseApp);
+  firebaseDatabase = getDatabase(firebaseApp);
+  firebaseStorage = getStorage(firebaseApp);
+  firebaseGoogleProvider = new GoogleAuthProvider();
+  firebaseGoogleProvider.setCustomParameters({ prompt: "select_account" });
+} catch (error) {
+  console.warn("⚠️ Erreur d'initialisation Firebase:", error);
+  // Create minimal stubs to prevent crashes
+  firebaseApp = null as unknown as FirebaseApp;
+  firebaseAuth = null as unknown as Auth;
+  firebaseDatabase = null as unknown as Database;
+  firebaseStorage = null as unknown as FirebaseStorage;
+  firebaseGoogleProvider = null as unknown as GoogleAuthProvider;
+}
+
+export const app = firebaseApp;
+export const auth = firebaseAuth;
+export const database = firebaseDatabase;
+export const storage = firebaseStorage;
+export const googleProvider = firebaseGoogleProvider;
+
 export function getFirebaseServices(): FirebaseServices {
-  if (!hasFirebaseConfig()) {
-    throw new Error("Firebase configuration is incomplete");
-  }
-
-  const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-  const googleProvider = new GoogleAuthProvider();
-  googleProvider.setCustomParameters({ prompt: "select_account" });
-
   return {
-    app,
-    auth: getAuth(app),
-    database: getDatabase(app),
-    storage: getStorage(app),
-    googleProvider,
+    app: firebaseApp,
+    auth: firebaseAuth,
+    database: firebaseDatabase,
+    storage: firebaseStorage,
+    googleProvider: firebaseGoogleProvider,
   };
 }
