@@ -12,6 +12,8 @@ import BtpPageBackground from "@/components/btp/BtpPageBackground";
 import { PremiumHeader } from "@/components/layout/PremiumHeader";
 import { BackButton } from "@/components/ui/BackButton";
 import { formatFcfa } from "@/utils/currency";
+import PlanGenerator2D from "@/components/simulation/PlanGenerator2D";
+import PlanGenerator3D from "@/components/simulation/PlanGenerator3D";
 
 type FormData = {
   nom?: string;
@@ -46,6 +48,7 @@ export default function NouveauChantierPage() {
   const [step, setStep] = useState<Step>(1);
   const [prefilledData, setPrefilledData] = useState<FormData | null>(null);
   const [formData, setFormData] = useState<FormData>({});
+  const [viewMode, setViewMode] = useState<"2d" | "3d">("2d");
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [showRdvForm, setShowRdvForm] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -203,7 +206,7 @@ export default function NouveauChantierPage() {
               {step === 5 && <Step5 formData={formData} setFormData={setFormData} />}
               {step === 6 && <Step6 formData={formData} setFormData={setFormData} />}
               {step === 7 && <Step7 formData={formData} setFormData={setFormData} />}
-              {step === 8 && <Step8 formData={formData} selectedPlan={selectedPlan} onPlanSelect={handlePlanSelect} showRdvForm={showRdvForm} rdvData={rdvData} setRdvData={setRdvData} prefilledData={prefilledData} />}
+{step === 8 && <Step8 formData={formData} selectedPlan={selectedPlan} onPlanSelect={handlePlanSelect} showRdvForm={showRdvForm} rdvData={rdvData} setRdvData={setRdvData} prefilledData={prefilledData} viewMode={viewMode} setViewMode={setViewMode} />}
             </AnimatePresence>
 
             {!loading && (
@@ -345,7 +348,7 @@ function Step7({ formData, setFormData }: { formData: FormData; setFormData: (da
   );
 }
 
-function Step8({ formData, selectedPlan, onPlanSelect, showRdvForm, rdvData, setRdvData, prefilledData }: { formData: FormData; selectedPlan: string | null; onPlanSelect: (plan: string) => void; showRdvForm: boolean; rdvData: any; setRdvData: (data: any) => void; prefilledData: FormData | null }) {
+function Step8({ formData, selectedPlan, onPlanSelect, showRdvForm, rdvData, setRdvData, prefilledData, viewMode, setViewMode }: { formData: FormData; selectedPlan: string | null; onPlanSelect: (plan: string) => void; showRdvForm: boolean; rdvData: any; setRdvData: (data: any) => void; prefilledData: any; viewMode: "2d" | "3d"; setViewMode: (mode: "2d" | "3d") => void }) {
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
       <div className="rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20">
@@ -363,10 +366,50 @@ function Step8({ formData, selectedPlan, onPlanSelect, showRdvForm, rdvData, set
       {prefilledData && (
         <div className="rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20">
           <h2 className="text-xl font-black text-white mb-4">🎨 VOTRE PLAN GRATUIT</h2>
-          <div className="bg-white/10 rounded-xl p-4 mb-4">
-            <p className="text-xs italic text-white/60 mb-2">⚠️ Ceci est juste une maquette de base générée selon vos renseignements. Nos experts vous fourniront un plan professionnel détaillé lors du rendez-vous.</p>
+          <p className="text-xs italic text-white/60 mb-4">⚠️ Ceci est juste une maquette de base générée selon vos renseignements. Nos experts vous fourniront un plan professionnel détaillé lors du rendez-vous.</p>
+          
+          <div className="flex gap-2 mb-3">
+            <button 
+              onClick={() => setViewMode("2d")}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold ${viewMode === "2d" ? "bg-[#FF6B00] text-white" : "bg-white/20 text-white"}`}
+            >
+              📐 Vue 2D
+            </button>
+            <button 
+              onClick={() => setViewMode("3d")}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold ${viewMode === "3d" ? "bg-[#FF6B00] text-white" : "bg-white/20 text-white"}`}
+            >
+              🏠 Vue 3D
+            </button>
           </div>
-          <button className="w-full h-[48px] rounded-[18px] bg-gradient-to-r from-[#FF6B00] to-[#FF8C00] text-white font-bold">📥 Télécharger le plan (PNG)</button>
+          
+          <div className="bg-white rounded-xl p-4">
+            {viewMode === "2d" ? (
+              <PlanGenerator2D
+                surface={prefilledData.terrain?.surface || 150}
+                largeur={prefilledData.terrain?.largeur || 15}
+                longueur={prefilledData.terrain?.longueur || 20}
+                chambres={prefilledData.preferences?.chambres || 3}
+                sallesDeBain={prefilledData.preferences?.sallesDeBain || 2}
+                etages={prefilledData.preferences?.etages || 1}
+                garage={prefilledData.preferences?.garage || false}
+                piscine={prefilledData.preferences?.piscine || false}
+                style={prefilledData.preferences?.style || "Moderne"}
+              />
+            ) : (
+              <PlanGenerator3D
+                surface={prefilledData.terrain?.surface || 150}
+                largeur={prefilledData.terrain?.largeur || 15}
+                longueur={prefilledData.terrain?.longueur || 20}
+                chambres={prefilledData.preferences?.chambres || 3}
+                sallesDeBain={prefilledData.preferences?.sallesDeBain || 2}
+                etages={prefilledData.preferences?.etages || 1}
+                garage={prefilledData.preferences?.garage || false}
+                piscine={prefilledData.preferences?.piscine || false}
+                style={prefilledData.preferences?.style || "Moderne"}
+              />
+            )}
+          </div>
         </div>
       )}
 

@@ -10,6 +10,8 @@ import { BackButton } from "@/components/ui/BackButton";
 import { PremiumButton } from "@/components/ui/PremiumButton";
 import { formatFcfa } from "@/utils/currency";
 import BtpBackground from "@/components/btp/BtpBackground";
+import PlanGenerator2D from "@/components/simulation/PlanGenerator2D";
+import PlanGenerator3D from "@/components/simulation/PlanGenerator3D";
 
 type Etape = "formulaire" | "loading" | "propositions";
 
@@ -355,12 +357,63 @@ export default function SimulationPage() {
                           <p className="text-xs font-bold text-white/60 mb-2">✅ Avantages</p>
                           <ul className="space-y-1">{prop.avantages.map((av, i) => <li key={i} className="text-xs text-white flex items-start gap-2"><CheckCircle2 size={14} className="text-[#22C55E] mt-0.5" />{av}</li>)}</ul>
                         </div>
-                        <PremiumButton onClick={() => handleCreateChantier(prop)} className="w-full mt-4" variant="success">
-                          Voir le plan
-                        </PremiumButton>
-                        <button onClick={() => handleCreateFromSimulation(prop.id)} className="w-full mt-2 h-[48px] rounded-[18px] bg-gradient-to-r from-[#FF6B00] to-[#FF8C00] text-white font-bold">
-                          Créer ce chantier
-                        </button>
+                        {selectedProposition?.id === prop.id && showPlan && (
+                          <div className="mt-4 p-4 bg-white/10 rounded-xl border border-white/20">
+                            <p className="text-xs italic text-white/60 mb-3">
+                              ⚠️ Ceci est juste une maquette de base générée selon vos renseignements.
+                            </p>
+                            <div className="flex gap-2 mb-3">
+                              <button 
+                                onClick={() => setMapView("2d")}
+                                className={`px-3 py-1 rounded text-xs ${mapView === "2d" ? "bg-[#FF6B00] text-white" : "bg-white/20 text-white"}`}
+                              >
+                                Vue 2D
+                              </button>
+                              <button 
+                                onClick={() => setMapView("3d")}
+                                className={`px-3 py-1 rounded text-xs ${mapView === "3d" ? "bg-[#FF6B00] text-white" : "bg-white/20 text-white"}`}
+                              >
+                                Vue 3D
+                              </button>
+                            </div>
+                            <div className="bg-white rounded-lg p-2">
+                              {mapView === "2d" ? (
+                                <PlanGenerator2D
+                                  surface={prop.surface}
+                                  largeur={preferences.terrain.largeur || 15}
+                                  longueur={preferences.terrain.longueur || 20}
+                                  chambres={prop.chambres}
+                                  sallesDeBain={preferences.batiment.sallesDeBain || 2}
+                                  etages={preferences.batiment.etages || 1}
+                                  garage={preferences.batiment.garage || false}
+                                  piscine={preferences.batiment.piscine || false}
+                                  style={preferences.style.architectural || "Moderne"}
+                                />
+                              ) : (
+                                <PlanGenerator3D
+                                  surface={prop.surface}
+                                  largeur={preferences.terrain.largeur || 15}
+                                  longueur={preferences.terrain.longueur || 20}
+                                  chambres={prop.chambres}
+                                  sallesDeBain={preferences.batiment.sallesDeBain || 2}
+                                  etages={preferences.batiment.etages || 1}
+                                  garage={preferences.batiment.garage || false}
+                                  piscine={preferences.batiment.piscine || false}
+                                  style={preferences.style.architectural || "Moderne"}
+                                />
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        
+                        <div className="flex gap-2 mt-2">
+                          <PremiumButton onClick={() => handleCreateChantier(prop)} className="flex-1" variant="success">
+                            Voir le plan
+                          </PremiumButton>
+                          <button onClick={() => handleCreateFromSimulation(prop.id)} className="flex-1 h-[48px] rounded-[18px] bg-gradient-to-r from-[#FF6B00] to-[#FF8C00] text-white font-bold">
+                            Créer ce chantier
+                          </button>
+                        </div>
                       </motion.div>
                     ))}
                   </div>
