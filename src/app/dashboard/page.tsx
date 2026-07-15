@@ -636,9 +636,66 @@ export default function DashboardClientPage() {
                 )}
               </div>
             )}
-          </motion.section>
-        </div>
-      </main>
-    </div>
-  );
-}
+           </motion.section>
+           
+           {/* SECTION E - À propos de BÂTIZEN.CI */}
+           <div className="mt-6 p-4 bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20">
+             <h3 className="text-lg font-bold text-[var(--navy)] mb-3">🏗️ À PROPOS DE BÂTIZEN.CI</h3>
+             <p className="text-sm text-gray-700 mb-3">
+               BÂTIZEN.CI est votre partenaire BTP de confiance en Côte d'Ivoire. 
+               Nous simplifions la construction en vous connectant avec des experts qualifiés, 
+               en vous offrant des outils de simulation avancés et en assurant un suivi transparent de vos projets.
+             </p>
+             <p className="text-sm text-gray-700">
+               Notre mission : rendre la construction accessible, transparente et professionnelle pour tous.
+             </p>
+           </div>
+
+           {/* SECTION F - Alerte Arnaque */}
+           <div className="mt-4 p-4 bg-red-50/80 backdrop-blur-lg rounded-2xl border border-red-200">
+             <h3 className="text-lg font-bold text-red-700 mb-3">🚨 ALERTE ARNAQUE</h3>
+             <p className="text-sm text-gray-800 mb-2 font-semibold">
+               ⚠️ BÂTIZEN.CI ne demande JAMAIS :
+             </p>
+             <ul className="text-sm text-gray-700 space-y-1 mb-3">
+               <li>• Votre code OTP par téléphone</li>
+               <li>• Un paiement avant contrat signé</li>
+               <li>• Vos mots de passe complets</li>
+               <li>• Des frais cachés ou supplémentaires non annoncés</li>
+             </ul>
+             <p className="text-sm text-gray-700">
+               📞 En cas de doute, contactez-nous : +225 07 07 07 07 07
+             </p>
+           </div>
+
+           {/* SECTION G - Nos Engagements */}
+           <div className="mt-4 p-4 bg-green-50/80 backdrop-blur-lg rounded-2xl border border-green-200">
+             <h3 className="text-lg font-bold text-green-700 mb-3">🤝 NOS ENGAGEMENTS</h3>
+             <ul className="text-sm text-gray-700 space-y-2">
+               <li className="flex items-start">
+                 <span className="text-green-600 mr-2">✅</span>
+                 <span>Transparence totale des prix et des délais</span>
+               </li>
+               <li className="flex items-start">
+                 <span className="text-green-600 mr-2">✅</span>
+                 <span>Experts qualifiés et certifiés</span>
+               </li>
+               <li className="flex items-start">
+                 <span className="text-green-600 mr-2">✅</span>
+                 <span>Suivi en temps réel de votre projet</span>
+               </li>
+               <li className="flex items-start">
+                 <span className="text-green-600 mr-2">✅</span>
+                 <span>Garantie décennale sur tous les travaux</span>
+               </li>
+               <li className="flex items-start">
+                 <span className="text-green-600 mr-2">✅</span>
+                 <span>Support client 7j/7</span>
+               </li>
+             </ul>
+           </div>
+         </div>
+       </main>
+     </div>
+   );
+ }
