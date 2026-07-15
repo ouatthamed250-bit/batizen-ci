@@ -194,6 +194,28 @@ export function WeatherWidget({ lat, lng, title, className = "" }: WeatherWidget
     };
   }, [resolvedCoords]);
 
+  const info = codeToInfo(data?.code ?? 0);
+  const alerts = data ? getAlerts(data) : [];
+  const suggestion = useMemo(() => {
+    if (!data) return "";
+    if (data.temp >= 15 && data.temp <= 30 && data.windspeed < 20 && data.code < 51) {
+      return "✅ Bon moment pour peindre et couler du béton";
+    }
+    if (data.code >= 51) {
+      return "❌ Évitez béton et peinture extérieure aujourd'hui";
+    }
+    if (data.windspeed > 20) {
+      return "❌ Évitez toiture et échafaudages (vent fort)";
+    }
+    if (data.temp > 35) {
+      return "⚠️ Canicule : évitez travaux extérieurs entre 11h-15h";
+    }
+    if (data.temp < 15) {
+      return "⚠️ Température basse : privilégiez travaux intérieurs";
+    }
+    return "✅ Conditions moyennes : travaux possibles";
+  }, [data]);
+
   if (loading) {
     return (
       <div
@@ -215,27 +237,6 @@ export function WeatherWidget({ lat, lng, title, className = "" }: WeatherWidget
       </div>
     );
   }
-
-  const info = codeToInfo(data.code);
-  const alerts = getAlerts(data);
-  const suggestion = useMemo(() => {
-    if (data.temp >= 15 && data.temp <= 30 && data.windspeed < 20 && data.code < 51) {
-      return "✅ Bon moment pour peindre et couler du béton";
-    }
-    if (data.code >= 51) {
-      return "❌ Évitez béton et peinture extérieure aujourd'hui";
-    }
-    if (data.windspeed > 20) {
-      return "❌ Évitez toiture et échafaudages (vent fort)";
-    }
-    if (data.temp > 35) {
-      return "⚠️ Canicule : évitez travaux extérieurs entre 11h-15h";
-    }
-    if (data.temp < 15) {
-      return "⚠️ Température basse : privilégiez travaux intérieurs";
-    }
-    return "✅ Conditions moyennes : travaux possibles";
-  }, [data]);
 
   const bg = data.isDay
     ? "linear-gradient(135deg,#4A90E2,#2C5FA8)"
