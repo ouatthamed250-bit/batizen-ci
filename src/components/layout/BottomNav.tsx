@@ -29,13 +29,6 @@ export function BottomNav() {
   const handleHomeClick = (e: React.MouseEvent) => {
     if (pathname === "/" || pathname === "/dashboard") return;
     
-    // Animation de clic
-    const target = e.currentTarget as HTMLElement;
-    target.style.transform = "scale(1.2)";
-    setTimeout(() => {
-      target.style.transform = "scale(1)";
-    }, 150);
-
     // Redirection intelligente
     if (isAuthenticated) {
       router.push("/dashboard");
@@ -46,11 +39,7 @@ export function BottomNav() {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 flex h-[70px] items-center justify-around bg-white/95 backdrop-blur-xl border-t border-white/60 shadow-[0_-4px_20px_rgba(0,0,0,0.1)]"
-      style={{ 
-        paddingBottom: "env(safe-area-inset-bottom)",
-        height: `${NAV_HEIGHT}px`,
-      }}
+      className="fixed inset-x-0 bottom-0 z-40 flex min-h-[70px] items-center justify-around bg-white/80 backdrop-blur-xl border-t border-white/30 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] pb-safe"
       aria-label="Navigation principale"
     >
       {navItems.map((item) => {
@@ -64,20 +53,30 @@ export function BottomNav() {
               onClick={handleHomeClick}
               aria-label="Accueil"
               className={cn(
-                "relative flex min-w-16 flex-col items-center gap-1 text-xs font-semibold transition-all active:scale-95",
-                active ? "text-[#FF6B00]" : "text-[#6B7280] hover:text-[#111827]"
+                "relative flex min-w-16 flex-col items-center gap-1 text-xs transition-all duration-300 active:scale-90",
+                active ? "text-[var(--btp-orange)] font-semibold" : "text-gray-500 font-medium"
               )}
             >
-<span className={cn(
-               "grid size-12 place-items-center rounded-full transition-all",
-               active 
-                 ? "bg-gradient-to-br from-[#FF6B00] to-[#FF8C00] text-white shadow-lg" 
-                 : "bg-white/50 text-[#FF6B00]"
-             )}>
-               <Icon size={22} aria-hidden />
+              <span className={cn(
+                "grid size-12 place-items-center rounded-full transition-all duration-300",
+                active 
+                  ? "text-white shadow-lg" 
+                  : "text-[var(--btp-orange)]"
+              )}
+                style={{
+                  background: active 
+                    ? "linear-gradient(135deg, var(--btp-orange), var(--btp-orange-light))" 
+                    : "rgba(255, 107, 0, 0.1)"
+                }}
+              >
+                <Icon size={22} aria-hidden />
               </span>
-              <span className="leading-none">Accueil</span>
-              {active && <span className="absolute -bottom-1 size-1 rounded-full bg-[#FF6B00]" />}
+              <span className="leading-none">{item.label}</span>
+              {active && (
+                <span className="absolute -bottom-1 flex h-1 w-4 justify-center">
+                  <span className="block h-1 w-1 rounded-full bg-[var(--btp-orange)] shadow-[0_0_8px_var(--btp-orange)]" />
+                </span>
+              )}
             </button>
           );
         }
@@ -89,18 +88,29 @@ export function BottomNav() {
             aria-label={item.label}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "relative flex min-w-16 flex-col items-center gap-1 text-xs font-semibold transition-all active:scale-95",
-              active ? "text-[#0B5FFF]" : "text-[#6B7280] hover:text-[#111827]"
+              "relative flex min-w-16 flex-col items-center gap-1 text-xs transition-all duration-300 active:scale-90",
+              active ? "text-[var(--btp-orange)] font-semibold" : "text-gray-500 font-medium"
             )}
           >
-<span className={cn(
-              "grid size-12 place-items-center rounded-full transition-all",
-              active && "bg-[#EAF2FF]"
-            )}>
+            <span className={cn(
+              "grid size-12 place-items-center rounded-full transition-all duration-300",
+              active && "shadow-lg"
+            )}
+              style={{
+                background: active 
+                  ? "linear-gradient(135deg, var(--btp-orange), var(--btp-orange-light))" 
+                  : "rgba(255, 107, 0, 0.1)",
+                color: active ? "white" : "var(--btp-orange)"
+              }}
+            >
               <Icon size={22} aria-hidden />
             </span>
             <span className="leading-none">{item.label}</span>
-            {active && <span className="absolute -bottom-1 size-1 rounded-full bg-[#0B5FFF]" />}
+            {active && (
+              <span className="absolute -bottom-1 flex h-1 w-4 justify-center">
+                <span className="block h-1 w-1 rounded-full bg-[var(--btp-orange)] shadow-[0_0_8px_var(--btp-orange)]" />
+              </span>
+            )}
           </Link>
         );
       })}
