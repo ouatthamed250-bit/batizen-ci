@@ -218,6 +218,25 @@ export function WeatherWidget({ lat, lng, title, className = "" }: WeatherWidget
 
   const info = codeToInfo(data.code);
   const alerts = getAlerts(data);
+  const suggestion = useMemo(() => {
+    if (data.temp >= 15 && data.temp <= 30 && data.windspeed < 20 && data.code < 51) {
+      return "✅ Bon moment pour peindre et couler du béton";
+    }
+    if (data.code >= 51) {
+      return "❌ Évitez béton et peinture extérieure aujourd'hui";
+    }
+    if (data.windspeed > 20) {
+      return "❌ Évitez toiture et échafaudages (vent fort)";
+    }
+    if (data.temp > 35) {
+      return "⚠️ Canicule : évitez travaux extérieurs entre 11h-15h";
+    }
+    if (data.temp < 15) {
+      return "⚠️ Température basse : privilégiez travaux intérieurs";
+    }
+    return "✅ Conditions moyennes : travaux possibles";
+  }, [data]);
+
   const bg = data.isDay
     ? "linear-gradient(135deg,#4A90E2,#2C5FA8)"
     : "linear-gradient(135deg,#1A2A6C,#0B1437)";
@@ -225,9 +244,9 @@ export function WeatherWidget({ lat, lng, title, className = "" }: WeatherWidget
   return (
     <div
       className={`overflow-hidden rounded-[12px] p-3 text-white shadow-[0_8px_25px_rgba(0,0,0,0.15)] ${className}`}
-      style={{ width: "100%", height: 120, background: bg }}
+      style={{ width: "100%", background: bg }}
     >
-      <div className="flex h-full items-center justify-between gap-3">
+      <div className="flex h-[88px] items-center justify-between gap-3">
         {/* Gauche : Icône météo animée */}
         <div className="flex-shrink-0">
           <span className="animate-float text-5xl">{info.icon}</span>
@@ -279,6 +298,10 @@ export function WeatherWidget({ lat, lng, title, className = "" }: WeatherWidget
           ))}
         </div>
       )}
+
+      <div className="rounded-lg bg-white/20 p-2">
+        <p className="text-[11px] font-bold text-white">💡 {suggestion}</p>
+      </div>
     </div>
   );
 }

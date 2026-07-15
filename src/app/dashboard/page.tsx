@@ -282,8 +282,8 @@ export default function DashboardClientPage() {
     { icon: Hammer, label: "Rénovation", href: "/renovation", color: "#22C55E" },
   ];
 
-return (
-    <main className="min-h-screen bg-[#F7F9FC] pt-20 pb-24">
+  return (
+    <main className="flex flex-col gap-3 px-4 py-3 bg-[#F7F9FC] pb-28">
       {/* SECTION A - Header personnalisé */}
       <header className="relative overflow-hidden">
         <div className="absolute inset-0">
@@ -297,7 +297,7 @@ return (
           <div className="absolute inset-0 bg-gradient-to-b from-[#0D2B6B]/90 via-[#0D2B6B]/75 to-[#0D2B6B]/95" />
         </div>
 
-        <div className="relative px-4 pt-10 pb-8 sm:px-6">
+        <div className="relative px-4 pt-4 pb-2 sm:px-6">
           <motion.div
             initial={{ opacity: 0, y: -16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -311,21 +311,59 @@ return (
             </p>
           </motion.div>
 
-          <div className="mt-5 flex justify-start">
+          <div className="mt-2 flex justify-start">
             <WeatherWidget title="Météo du jour" />
           </div>
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-3xl space-y-8 px-4 pt-6 sm:px-6">
-        {/* SECTION B - Résumé rapide */}
+      {/* SECTION B - Actions rapides - 3 boutons COLLÉS */}
+      <div className="mx-auto w-full max-w-3xl">
+        <motion.section
+          aria-label="Actions rapides"
+          variants={fadeUp}
+          initial="hidden"
+          animate="show"
+        >
+          <div className="grid grid-cols-3 gap-2">
+            {actionsRapides.map((a, i) => (
+              <motion.div 
+                key={a.href} 
+                variants={itemVariants} 
+                custom={i}
+                whileHover={{ y: -4, scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <Link
+                  href={a.href}
+                  className="group flex h-full flex-col items-center gap-2 rounded-[16px] border border-[#E7EBF5] bg-white p-3 text-center shadow-[0_4px_12px_rgba(16,24,40,0.06)] transition-all active:scale-95 hover:shadow-[0_6px_16px_rgba(16,24,40,0.08)]"
+                >
+                  <motion.div
+                    className="grid size-10 place-items-center rounded-[12px] text-white shadow-md"
+                    style={{ backgroundColor: a.color }}
+                    whileHover={{ scale: 1.1, rotate: 5 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                  >
+                    <a.icon size={18} aria-hidden />
+                  </motion.div>
+                  <span className="text-[10px] font-black leading-tight text-[#0D2B6B] group-hover:text-[#0B5FFF] transition-colors">
+                    {a.label}
+                  </span>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+        </motion.section>
+
+        {/* SECTION C - Résumé rapide */}
         <motion.section
           aria-label="Résumé rapide"
           variants={containerVariants}
           initial="hidden"
           animate="show"
+          className="mt-3"
         >
-          <h2 className="mb-4 text-xs font-black uppercase tracking-[0.2em] text-[#6B7280]">
+          <h2 className="mb-3 text-xs font-black uppercase tracking-[0.2em] text-[#6B7280]">
             Résumé rapide
           </h2>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -358,19 +396,20 @@ return (
           )}
         </motion.section>
 
-        {/* SECTION C - Mes chantiers */}
+        {/* SECTION D - Mes chantiers */}
         <motion.section
           aria-label="Mes chantiers"
           variants={fadeUp}
           initial="hidden"
           animate="show"
+          className="mt-3"
         >
-          <h2 className="mb-4 text-xs font-black uppercase tracking-[0.2em] text-[#6B7280]">
+          <h2 className="mb-3 text-xs font-black uppercase tracking-[0.2em] text-[#6B7280]">
             Mes chantiers
           </h2>
 
           {loading ? (
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2">
               <SkeletonChantier />
               <SkeletonChantier />
             </div>
@@ -385,21 +424,21 @@ return (
               </p>
               <Link
                 href="/nouveau-chantier"
-                className="mt-4 inline-flex items-center gap-2 rounded-[16px] bg-[#0B5FFF] px-6 py-2.5 text-sm font-black text-white transition hover:bg-[#0B5FFF]/80"
+                className="mt-3 inline-flex items-center gap-2 rounded-[16px] bg-[#0B5FFF] px-6 py-2.5 text-sm font-black text-white transition hover:bg-[#0B5FFF]/80"
               >
                 <BrickWall size={18} /> Créer un chantier
               </Link>
             </div>
           ) : (
-            <div className="space-y-6">
-              {/* SECTION A : Chantiers en cours */}
+            <div className="space-y-3">
+              {/* Chantiers en cours */}
               {chantiersEnCours.length > 0 && (
                 <div>
                   <h3 className="mb-3 flex items-center gap-2 text-sm font-black text-[#22C55E]">
                     <span className="text-lg">🏗️</span> Chantiers en cours
                   </h3>
                   <motion.div
-                    className="grid gap-4 sm:grid-cols-2"
+                    className="grid gap-3 sm:grid-cols-2"
                     variants={containerVariants}
                     initial="hidden"
                     animate="show"
@@ -411,14 +450,14 @@ return (
                 </div>
               )}
 
-              {/* SECTION B : Chantiers en attente */}
+              {/* Chantiers en attente */}
               {chantiersEnAttente.length > 0 && (
                 <div>
                   <h3 className="mb-3 flex items-center gap-2 text-sm font-black text-[#FF7A00]">
                     <span className="text-lg">⏳</span> Chantiers en attente de validation
                   </h3>
                   <motion.div
-                    className="grid gap-4 sm:grid-cols-2"
+                    className="grid gap-3 sm:grid-cols-2"
                     variants={containerVariants}
                     initial="hidden"
                     animate="show"
@@ -435,14 +474,14 @@ return (
                 </div>
               )}
 
-              {/* SECTION C : Chantiers terminés */}
+              {/* Chantiers terminés */}
               {chantiersTermines.length > 0 && (
                 <div>
                   <h3 className="mb-3 flex items-center gap-2 text-sm font-black text-[#3B82F6]">
                     <span className="text-lg">✅</span> Chantiers terminés
                   </h3>
                   <motion.div
-                    className="grid gap-4 sm:grid-cols-2"
+                    className="grid gap-3 sm:grid-cols-2"
                     variants={containerVariants}
                     initial="hidden"
                     animate="show"
@@ -465,46 +504,6 @@ return (
               )}
             </div>
           )}
-        </motion.section>
-
-        {/* SECTION D - Actions rapides */}
-        <motion.section
-          aria-label="Actions rapides"
-          variants={fadeUp}
-          initial="hidden"
-          animate="show"
-        >
-          <h2 className="mb-4 text-xs font-black uppercase tracking-[0.2em] text-[#6B7280]">
-            Actions rapides
-          </h2>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {actionsRapides.map((a, i) => (
-              <motion.div 
-                key={a.href} 
-                variants={itemVariants} 
-                custom={i}
-                whileHover={{ y: -4, scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <Link
-                  href={a.href}
-                  className="group flex h-full flex-col items-center gap-2.5 rounded-[20px] border border-[#E7EBF5] bg-white p-4 text-center shadow-[0_8px_24px_rgba(16,24,40,0.06)] transition-all active:scale-95 hover:shadow-[0_12px_32px_rgba(16,24,40,0.12)]"
-                >
-                  <motion.div
-                    className="grid size-12 place-items-center rounded-[16px] text-white shadow-lg"
-                    style={{ backgroundColor: a.color }}
-                    whileHover={{ scale: 1.1, rotate: 5 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 10 }}
-                  >
-                    <a.icon size={22} aria-hidden />
-                  </motion.div>
-                  <span className="text-[11px] font-black leading-tight text-[#0D2B6B] group-hover:text-[#0B5FFF] transition-colors">
-                    {a.label}
-                  </span>
-                </Link>
-              </motion.div>
-            ))}
-          </div>
         </motion.section>
       </div>
     </main>

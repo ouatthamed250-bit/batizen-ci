@@ -31,27 +31,18 @@ export function BreakingNewsTicker({ compact = false }: BreakingNewsTickerProps)
   const items = [...alerts, ...alerts];
 
   return (
-    <section className={`overflow-hidden rounded-[24px] border border-[#DCE8FF] bg-[linear-gradient(135deg,#081D4A,#0D2B6B)] text-white shadow-[0_18px_40px_rgba(13,43,107,0.22)] ${compact ? "py-3" : "py-4"}`}>
-      <div className="flex items-center gap-3 px-4 pb-3">
-        <span className="rounded-full bg-[#FF7A00] px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white shadow-[0_10px_24px_rgba(255,122,0,0.35)]">Alerte chantier</span>
-        <p className="text-[11px] font-bold text-white/80">Analyse BÂTIZEN CI — Protection client & contrôle qualité</p>
-      </div>
-      <div className="relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-gradient-to-r from-[#0D2B6B] to-transparent" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-[#0D2B6B] to-transparent" />
-        <div className="marquee-track gap-8 px-4">
+    <section className={`fixed bottom-0 left-0 right-0 z-30 h-8 overflow-hidden border-t border-white/10 bg-[#DC2626] text-white shadow-[0_-4px_20px_rgba(0,0,0,0.15)]`}>
+      <div className="relative h-full overflow-hidden">
+        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-gradient-to-r from-[#DC2626] to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-gradient-to-l from-[#DC2626] to-transparent" />
+        <div className="flex h-full items-center animate-marquee-slow whitespace-nowrap">
           {items.map((item, index) => (
-            <div className="flex items-center gap-3 whitespace-nowrap" key={`${item}-${index}`}>
-              <span className="size-2 rounded-full bg-[#FF7A00] shadow-[0_0_16px_rgba(255,122,0,0.45)]" />
-              <span className={`font-semibold text-white/95 ${compact ? "text-[11px]" : "text-xs"}`}>{item}</span>
+            <div className="flex items-center gap-3 px-6" key={`${item}-${index}`}>
+              <span className="size-1.5 rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.6)]" />
+              <span className="text-[11px] font-bold text-white/95">{item}</span>
             </div>
           ))}
         </div>
-      </div>
-      <div className="mt-3 border-t border-white/10 px-4 pt-3">
-        <p className={`text-white/78 ${compact ? "text-[10px]" : "text-[11px]"}`}>
-          Chez <span className="font-black text-[#FFB15E]">BÂTIZEN CI</span>, vos inquiétudes sont levées : les équipes sont engagées, suivies, contrôlées et payées seulement après vérification du travail exécuté.
-        </p>
       </div>
     </section>
   );
