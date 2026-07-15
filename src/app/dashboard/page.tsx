@@ -182,7 +182,7 @@ function SummaryCard({
   return (
     <motion.div
       variants={itemVariants}
-      className="rounded-[22px] border border-[#E7EBF5] bg-white p-4 shadow-[0_8px_24px_rgba(16,24,40,0.06)]"
+      className="rounded-[22px] border border-white/50 bg-white/90 p-4 shadow-[0_8px_24px_rgba(16,24,40,0.06)] backdrop-blur-sm"
     >
       <div
         className="mb-3 grid size-11 place-items-center rounded-[14px] text-white shadow-sm"
@@ -190,10 +190,133 @@ function SummaryCard({
       >
         <Icon size={20} aria-hidden />
       </div>
-      <p className="text-[10px] font-bold uppercase tracking-wide text-[#6B7280]">
+      <p className="text-[10px] font-bold uppercase tracking-wide text-[var(--muted)]">
         {label}
       </p>
-      <p className="mt-1 text-xl font-black text-[#0D2B6B]">{value}</p>
+      <p className="mt-1 text-xl font-black text-[var(--navy)]">{value}</p>
+    </motion.div>
+  );
+}
+
+function SkeletonChantier() {
+  return (
+    <div className="animate-pulse overflow-hidden rounded-[22px] border border-white/50 bg-white/90 shadow-[0_8px_24px_rgba(16,24,40,0.06)] backdrop-blur-sm">
+      <div className="h-36 w-full bg-[#E7EBF5]" />
+      <div className="space-y-2 p-4">
+        <div className="h-4 w-2/3 rounded bg-[#E7EBF5]" />
+        <div className="h-3 w-1/2 rounded bg-[#E7EBF5]" />
+        <div className="h-2 w-full rounded bg-[#E7EBF5]" />
+        <div className="h-9 w-full rounded-[16px] bg-[#E7EBF5]" />
+      </div>
+    </div>
+  );
+}
+
+function ChantierCard({ chantier, statut }: { chantier: Chantier; statut: string }) {
+  const photo = chantier.photo || chantier.image_url;
+  const nom = chantier.nom_projet || chantier.nom || "Chantier";
+  const pct = Number(chantier.progression ?? chantier.progress ?? 0);
+
+  const getStatutBadge = (s: string) => {
+    switch (s) {
+      case "en_attente":
+        return (
+          <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black text-white bg-[#FF7A00]">
+            ⏳ En attente
+          </span>
+        );
+      case "en_cours":
+        return (
+          <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black text-white bg-[#22C55E]">
+            ✅ En cours
+          </span>
+        );
+      case "termine":
+        return (
+          <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black text-white bg-[#3B82F6]">
+            🏁 Terminé
+          </span>
+        );
+      default:
+        return (
+          <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black text-white bg-[#0B5FFF]">
+            {statutLabel(s)}
+          </span>
+        );
+    }
+  };
+
+  return (
+    <motion.div
+      variants={itemVariants}
+      className="overflow-hidden rounded-[22px] border border-white/50 bg-white/90 shadow-[0_8px_24px_rgba(16,24,40,0.06)] backdrop-blur-sm"
+    >
+      <div className="relative h-36 w-full bg-[#E7EBF5]">
+        {photo ? (
+          <Image src={photo} alt={nom} fill className="object-cover" />
+        ) : (
+          <div className="grid size-full place-items-center text-[#9CA3AF]">
+            <HardHat size={40} />
+          </div>
+        )}
+      </div>
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="font-black text-[var(--navy)]">{nom}</h3>
+          {getStatutBadge(statut)}
+        </div>
+        <p className="mt-0.5 flex items-center gap-1 text-xs text-[var(--muted)]">
+          <HardHat size={12} /> {chantier.type || "—"} · {chantier.localisation || "—"}
+        </p>
+        
+        {statut === "en_cours" && (
+          <div className="mt-3">
+            <ProgressBar value={pct} label="Progression" />
+          </div>
+        )}
+        
+        {statut === "en_attente" && (
+          <div className="mt-3 space-y-1 text-xs text-[var(--muted)]">
+            <p>Plan: {chantier.plan_choisi || "—"}</p>
+            {chantier.rdv_date && (
+              <p className="flex items-center gap-1">
+                <CalendarClock size={12} /> RDV: {formatDateFr(chantier.rdv_date)}
+              </p>
+            )}
+          </div>
+        )}
+        
+        {statut === "termine" && (
+          <div className="mt-3 text-xs text-[var(--muted)]">
+            <p className="flex items-center gap-1">
+              <CalendarClock size={12} /> Fin: {formatDateFr(chantier.date_fin)}
+            </p>
+          </div>
+        )}
+        
+        <div className="mt-4 flex gap-2">
+          {statut === "termine" ? (
+            <>
+              <Link
+                href={`/chantier/${chantier.id}?tab=photos`}
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-[16px] bg-[linear-gradient(135deg,#3B82F6,#0D2B6B)] py-2 text-xs font-black text-white transition active:scale-95"
+              >
+                Voir l'album
+              </Link>
+              <button className="flex flex-1 items-center justify-center gap-1.5 rounded-[16px] bg-[#0B5FFF] py-2 text-xs font-black text-white transition active:scale-95">
+                Télécharger
+              </button>
+            </>
+          ) : (
+            <Link
+              href={`/chantier/${chantier.id}`}
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-[16px] bg-[linear-gradient(135deg,#0B5FFF,#0D2B6B)] py-2.5 text-sm font-black text-white transition active:scale-95"
+            >
+              Voir détails <ChevronRight size={16} />
+            </Link>
+          )}
+        </div>
+      </div>
     </motion.div>
   );
 }
@@ -292,352 +415,230 @@ export default function DashboardClientPage() {
   ];
 
   return (
-    <main className="flex flex-col gap-3 px-4 py-3 bg-[#F7F9FC] pb-28">
-      {/* SECTION A - Header personnalisé */}
-      <header className="relative overflow-hidden">
-        <div className="absolute inset-0">
-          <Image
-            src="https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=2070&auto=format&fit=crop"
-            alt=""
-            fill
-            priority
-            className="object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-[#0D2B6B]/90 via-[#0D2B6B]/75 to-[#0D2B6B]/95" />
-        </div>
+    <div className="relative min-h-screen bg-[var(--bg-dashboard)]">
+      {/* Image de fond villa */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat z-0"
+        style={{ backgroundImage: 'url(/images/villa-bg.jpg)' }}
+      ></div>
+      
+      {/* Overlay blanc 70% avec effet glass */}
+      <div className="absolute inset-0 bg-white/70 backdrop-blur-[2px] z-10"></div>
+      
+      {/* Contenu principal */}
+      <main className="relative z-20 flex flex-col gap-3 px-4 py-4 pb-28">
+        {/* SECTION A - Header personnalisé - style glass morphism */}
+        <header className="rounded-[22px] border border-white/50 bg-white/90 backdrop-blur-sm">
+          <div className="px-4 pt-4 pb-2 sm:px-6">
+            <motion.div
+              initial={{ opacity: 0, y: -16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <h1 className="text-2xl font-black tracking-[-0.03em] text-[var(--navy)] sm:text-3xl">
+                Bonjour {nomClient}
+              </h1>
+              <p className="mt-1 text-sm font-semibold text-[var(--muted)]">
+                {formatDateFrancais(new Date())}
+              </p>
+            </motion.div>
+            
+            <div className="mt-2 flex justify-start">
+              <WeatherWidget title="Météo du jour" />
+            </div>
+          </div>
+        </header>
 
-        <div className="relative px-4 pt-4 pb-2 sm:px-6">
-          <motion.div
-            initial={{ opacity: 0, y: -16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+        {/* SECTION B - Actions rapides - 3 boutons COLLÉS */}
+        <div className="mx-auto w-full max-w-3xl">
+          <motion.section
+            aria-label="Actions rapides"
+            variants={fadeUp}
+            initial="hidden"
+            animate="show"
           >
-            <h1 className="text-2xl font-black tracking-[-0.03em] text-white sm:text-3xl">
-              Bonjour {nomClient}
-            </h1>
-            <p className="mt-1 text-sm font-semibold text-white/80">
-              {formatDateFrancais(new Date())}
-            </p>
-          </motion.div>
-
-          <div className="mt-2 flex justify-start">
-            <WeatherWidget title="Météo du jour" />
-          </div>
-        </div>
-      </header>
-
-      {/* SECTION B - Actions rapides - 3 boutons COLLÉS */}
-      <div className="mx-auto w-full max-w-3xl">
-        <motion.section
-          aria-label="Actions rapides"
-          variants={fadeUp}
-          initial="hidden"
-          animate="show"
-        >
-          <div className="grid grid-cols-3 gap-2">
-            {actionsRapides.map((a, i) => (
-              <motion.div 
-                key={a.href} 
-                variants={itemVariants} 
-                custom={i}
-                whileHover={{ y: -4, scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <Link
-                  href={a.href}
-                  className="group flex h-full flex-col items-center gap-2 rounded-[16px] border border-[#E7EBF5] bg-white p-3 text-center shadow-[0_4px_12px_rgba(16,24,40,0.06)] transition-all active:scale-95 hover:shadow-[0_6px_16px_rgba(16,24,40,0.08)]"
+            <div className="grid grid-cols-3 gap-2">
+              {actionsRapides.map((a, i) => (
+                <motion.div 
+                  key={a.href} 
+                  variants={itemVariants} 
+                  custom={i}
+                  whileHover={{ y: -4, scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                 >
-                  <motion.div
-                    className="grid size-10 place-items-center rounded-[12px] text-white shadow-md"
-                    style={{ backgroundColor: a.color }}
-                    whileHover={{ scale: 1.1, rotate: 5 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                  <Link
+                    href={a.href}
+                    className="group flex h-full flex-col items-center gap-2 rounded-[16px] border border-white/50 bg-white/90 p-3 text-center shadow-[0_4px_12px_rgba(16,24,40,0.06)] backdrop-blur-sm transition-all active:scale-95 hover:shadow-[0_6px_16px_rgba(16,24,40,0.08)]"
                   >
-                    <a.icon size={18} aria-hidden />
-                  </motion.div>
-                  <span className="text-[10px] font-black leading-tight text-[#0D2B6B] group-hover:text-[#0B5FFF] transition-colors">
-                    {a.label}
-                  </span>
-                </Link>
-              </motion.div>
-            ))}
-          </div>
-        </motion.section>
+                    <motion.div
+                      className="grid size-10 place-items-center rounded-[12px] text-white shadow-md"
+                      style={{ backgroundColor: a.color }}
+                      whileHover={{ scale: 1.1, rotate: 5 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                    >
+                      <a.icon size={18} aria-hidden />
+                    </motion.div>
+                    <span className="text-[10px] font-black leading-tight text-[var(--navy)] group-hover:text-[var(--primary)] transition-colors">
+                      {a.label}
+                    </span>
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+          </motion.section>
 
-        {/* SECTION C - Résumé rapide */}
-        <motion.section
-          aria-label="Résumé rapide"
-          variants={containerVariants}
-          initial="hidden"
-          animate="show"
-          className="mt-3"
-        >
-          <h2 className="mb-3 text-xs font-black uppercase tracking-[0.2em] text-[#6B7280]">
-            Résumé rapide
-          </h2>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {loading ? (
-              <>
-                <SkeletonCard />
-                <SkeletonCard />
-                <SkeletonCard />
-                <SkeletonCard />
-              </>
-            ) : (
-              <>
-                <SummaryCard icon={HardHat} label="Chantiers actifs" value={`${chantiersActifs}`} color="#0B5FFF" />
-                <SummaryCard icon={Wallet} label="Dépensé ce mois" value={formatFcfa(depensesMois)} color="#FF7A00" />
-                <SummaryCard
-                  icon={CalendarClock}
-                  label="Prochain RDV"
-                  value={prochainRdv ? (prochainRdv.type || "Prévu") : "Aucun"}
-                  color="#22C55E"
-                />
-                <SummaryCard icon={Bell} label="Notifications" value={`${notifsNonLues}`} color="#EC4899" />
-              </>
+          {/* SECTION C - Résumé rapide */}
+          <motion.section
+            aria-label="Résumé rapide"
+            variants={containerVariants}
+            initial="hidden"
+            animate="show"
+            className="mt-3"
+          >
+            <h2 className="mb-3 text-xs font-black uppercase tracking-[0.2em] text-[var(--muted)]">
+              Résumé rapide
+            </h2>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {loading ? (
+                <>
+                  <SkeletonCard />
+                  <SkeletonCard />
+                  <SkeletonCard />
+                  <SkeletonCard />
+                </>
+              ) : (
+                <>
+                  <SummaryCard icon={HardHat} label="Chantiers actifs" value={`${chantiersActifs}`} color="#0B5FFF" />
+                  <SummaryCard icon={Wallet} label="Dépensé ce mois" value={formatFcfa(depensesMois)} color="#FF7A00" />
+                  <SummaryCard
+                    icon={CalendarClock}
+                    label="Prochain RDV"
+                    value={prochainRdv ? (prochainRdv.type || "Prévu") : "Aucun"}
+                    color="#22C55E"
+                  />
+                  <SummaryCard icon={Bell} label="Notifications" value={`${notifsNonLues}`} color="#EC4899" />
+                </>
+              )}
+            </div>
+            {!loading && prochainRdv?.date && (
+              <p className="mt-2 text-xs font-semibold text-[var(--muted)]">
+                📅 {formatDateFr(prochainRdv.date)}
+                {prochainRdv.lieu ? ` · ${prochainRdv.lieu}` : ""}
+              </p>
             )}
-          </div>
-          {!loading && prochainRdv?.date && (
-            <p className="mt-2 text-xs font-semibold text-[#6B7280]">
-              📅 {formatDateFr(prochainRdv.date)}
-              {prochainRdv.lieu ? ` · ${prochainRdv.lieu}` : ""}
-            </p>
-          )}
-        </motion.section>
+          </motion.section>
 
-        {/* SECTION D - Mes chantiers */}
-        <motion.section
-          aria-label="Mes chantiers"
-          variants={fadeUp}
-          initial="hidden"
-          animate="show"
-          className="mt-3"
-        >
-          <h2 className="mb-3 text-xs font-black uppercase tracking-[0.2em] text-[#6B7280]">
-            Mes chantiers
-          </h2>
+          {/* SECTION D - Mes chantiers */}
+          <motion.section
+            aria-label="Mes chantiers"
+            variants={fadeUp}
+            initial="hidden"
+            animate="show"
+            className="mt-3"
+          >
+            <h2 className="mb-3 text-xs font-black uppercase tracking-[0.2em] text-[var(--muted)]">
+              Mes chantiers
+            </h2>
 
-          {loading ? (
-            <div className="grid gap-3 sm:grid-cols-2">
-              <SkeletonChantier />
-              <SkeletonChantier />
-            </div>
-          ) : mesChantiers.length === 0 ? (
-            <div className="rounded-[22px] border border-dashed border-[#E7EBF5] bg-white p-8 text-center">
-              <HardHat size={48} className="mx-auto mb-3 text-[#9CA3AF]" />
-              <p className="text-sm font-bold text-[#6B7280]">
-                Vous n'avez pas encore de chantier
-              </p>
-              <p className="mt-1 text-xs text-[#9CA3AF]">
-                Commencez par créer votre premier projet !
-              </p>
-              <Link
-                href="/nouveau-chantier"
-                className="mt-3 inline-flex items-center gap-2 rounded-[16px] bg-[#0B5FFF] px-6 py-2.5 text-sm font-black text-white transition hover:bg-[#0B5FFF]/80"
-              >
-                <BrickWall size={18} /> Créer un chantier
-              </Link>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {/* Chantiers en cours */}
-              {chantiersEnCours.length > 0 && (
-                <div>
-                  <h3 className="mb-3 flex items-center gap-2 text-sm font-black text-[#22C55E]">
-                    <span className="text-lg">🏗️</span> Chantiers en cours
-                  </h3>
-                  <motion.div
-                    className="grid gap-3 sm:grid-cols-2"
-                    variants={containerVariants}
-                    initial="hidden"
-                    animate="show"
-                  >
-                    {chantiersEnCours.map((c) => (
-                      <ChantierCard key={c.id} chantier={c} statut="en_cours" />
-                    ))}
-                  </motion.div>
-                </div>
-              )}
-
-              {/* Chantiers en attente */}
-              {chantiersEnAttente.length > 0 && (
-                <div>
-                  <h3 className="mb-3 flex items-center gap-2 text-sm font-black text-[#FF7A00]">
-                    <span className="text-lg">⏳</span> Chantiers en attente de validation
-                  </h3>
-                  <motion.div
-                    className="grid gap-3 sm:grid-cols-2"
-                    variants={containerVariants}
-                    initial="hidden"
-                    animate="show"
-                  >
-                    {chantiersEnAttente.map((c) => (
-                      <ChantierCard key={c.id} chantier={c} statut="en_attente" />
-                    ))}
-                  </motion.div>
-                  <div className="mt-3 rounded-[16px] bg-orange-50 border border-orange-200 p-3 text-center">
-                    <p className="text-xs font-semibold text-orange-700">
-                      Un expert vous contactera bientôt pour confirmer votre projet
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Chantiers terminés */}
-              {chantiersTermines.length > 0 && (
-                <div>
-                  <h3 className="mb-3 flex items-center gap-2 text-sm font-black text-[#3B82F6]">
-                    <span className="text-lg">✅</span> Chantiers terminés
-                  </h3>
-                  <motion.div
-                    className="grid gap-3 sm:grid-cols-2"
-                    variants={containerVariants}
-                    initial="hidden"
-                    animate="show"
-                  >
-                    {chantiersTermines.map((c) => (
-                      <ChantierCard key={c.id} chantier={c} statut="termine" />
-                    ))}
-                  </motion.div>
-                </div>
-              )}
-
-              {/* Bouton Créer un autre chantier */}
-              {mesChantiers.length > 0 && (
+            {loading ? (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <SkeletonChantier />
+                <SkeletonChantier />
+              </div>
+            ) : mesChantiers.length === 0 ? (
+              <div className="rounded-[22px] border border-dashed border-white/50 bg-white/90 p-8 text-center backdrop-blur-sm">
+                <HardHat size={48} className="mx-auto mb-3 text-[#9CA3AF]" />
+                <p className="text-sm font-bold text-[var(--muted)]">
+                  Vous n'avez pas encore de chantier
+                </p>
+                <p className="mt-1 text-xs text-[#9CA3AF]">
+                  Commencez par créer votre premier projet !
+                </p>
                 <Link
                   href="/nouveau-chantier"
-                  className="flex items-center justify-center gap-2 rounded-[20px] border-2 border-dashed border-[#0B5FFF] bg-white py-4 text-sm font-black text-[#0B5FFF] transition hover:bg-[#0B5FFF] hover:text-white"
+                  className="mt-3 inline-flex items-center gap-2 rounded-[16px] bg-[var(--primary)] px-6 py-2.5 text-sm font-black text-white transition hover:bg-[var(--primary)]/80"
                 >
-                  <BrickWall size={20} /> Créer un autre chantier
+                  <BrickWall size={18} /> Créer un chantier
                 </Link>
-              )}
-            </div>
-          )}
-        </motion.section>
-      </div>
-    </main>
-  );
-}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {/* Chantiers en cours */}
+                {chantiersEnCours.length > 0 && (
+                  <div>
+                    <h3 className="mb-3 flex items-center gap-2 text-sm font-black text-[#22C55E]">
+                      <span className="text-lg">🏗️</span> Chantiers en cours
+                    </h3>
+                    <motion.div
+                      className="grid gap-3 sm:grid-cols-2"
+                      variants={containerVariants}
+                      initial="hidden"
+                      animate="show"
+                    >
+                      {chantiersEnCours.map((c) => (
+                        <ChantierCard key={c.id} chantier={c} statut="en_cours" />
+                      ))}
+                    </motion.div>
+                  </div>
+                )}
 
-function ChantierCard({ chantier, statut }: { chantier: Chantier; statut: string }) {
-  const photo = chantier.photo || chantier.image_url;
-  const nom = chantier.nom_projet || chantier.nom || "Chantier";
-  const pct = Number(chantier.progression ?? chantier.progress ?? 0);
+                {/* Chantiers en attente */}
+                {chantiersEnAttente.length > 0 && (
+                  <div>
+                    <h3 className="mb-3 flex items-center gap-2 text-sm font-black text-[#FF7A00]">
+                      <span className="text-lg">⏳</span> Chantiers en attente de validation
+                    </h3>
+                    <motion.div
+                      className="grid gap-3 sm:grid-cols-2"
+                      variants={containerVariants}
+                      initial="hidden"
+                      animate="show"
+                    >
+                      {chantiersEnAttente.map((c) => (
+                        <ChantierCard key={c.id} chantier={c} statut="en_attente" />
+                      ))}
+                    </motion.div>
+                    <div className="mt-3 rounded-[16px] bg-orange-50 border border-orange-200 p-3 text-center">
+                      <p className="text-xs font-semibold text-orange-700">
+                        Un expert vous contactera bientôt pour confirmer votre projet
+                      </p>
+                    </div>
+                  </div>
+                )}
 
-  const getStatutBadge = (s: string) => {
-    switch (s) {
-      case "en_attente":
-        return (
-          <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black text-white bg-[#FF7A00]">
-            ⏳ En attente
-          </span>
-        );
-      case "en_cours":
-        return (
-          <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black text-white bg-[#22C55E]">
-            ✅ En cours
-          </span>
-        );
-      case "termine":
-        return (
-          <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black text-white bg-[#3B82F6]">
-            🏁 Terminé
-          </span>
-        );
-      default:
-        return (
-          <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black text-white bg-[#0B5FFF]">
-            {statutLabel(s)}
-          </span>
-        );
-    }
-  };
+                {/* Chantiers terminés */}
+                {chantiersTermines.length > 0 && (
+                  <div>
+                    <h3 className="mb-3 flex items-center gap-2 text-sm font-black text-[#3B82F6]">
+                      <span className="text-lg">✅</span> Chantiers terminés
+                    </h3>
+                    <motion.div
+                      className="grid gap-3 sm:grid-cols-2"
+                      variants={containerVariants}
+                      initial="hidden"
+                      animate="show"
+                    >
+                      {chantiersTermines.map((c) => (
+                        <ChantierCard key={c.id} chantier={c} statut="termine" />
+                      ))}
+                    </motion.div>
+                  </div>
+                )}
 
-  return (
-    <motion.div
-      variants={itemVariants}
-      className="overflow-hidden rounded-[22px] border border-[#E7EBF5] bg-white shadow-[0_8px_24px_rgba(16,24,40,0.06)] backdrop-blur-sm"
-    >
-      <div className="relative h-36 w-full bg-[#E7EBF5]">
-        {photo ? (
-          <Image src={photo} alt={nom} fill className="object-cover" />
-        ) : (
-          <div className="grid size-full place-items-center text-[#9CA3AF]">
-            <HardHat size={40} />
-          </div>
-        )}
-      </div>
-      <div className="p-4">
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="font-black text-[#0D2B6B]">{nom}</h3>
-          {getStatutBadge(statut)}
-        </div>
-        <p className="mt-0.5 flex items-center gap-1 text-xs text-[#6B7280]">
-          <HardHat size={12} /> {chantier.type || "—"} · {chantier.localisation || "—"}
-        </p>
-        
-        {statut === "en_cours" && (
-          <div className="mt-3">
-            <ProgressBar value={pct} label="Progression" />
-          </div>
-        )}
-        
-        {statut === "en_attente" && (
-          <div className="mt-3 space-y-1 text-xs text-[#6B7280]">
-            <p>Plan: {chantier.plan_choisi || "—"}</p>
-            {chantier.rdv_date && (
-              <p className="flex items-center gap-1">
-                <CalendarClock size={12} /> RDV: {formatDateFr(chantier.rdv_date)}
-              </p>
+                {/* Bouton Créer un autre chantier */}
+                {mesChantiers.length > 0 && (
+                  <Link
+                    href="/nouveau-chantier"
+                    className="flex items-center justify-center gap-2 rounded-[20px] border-2 border-dashed border-[var(--primary)] bg-white/90 py-4 text-sm font-black text-[var(--primary)] backdrop-blur-sm transition hover:bg-[var(--primary)] hover:text-white"
+                  >
+                    <BrickWall size={20} /> Créer un autre chantier
+                  </Link>
+                )}
+              </div>
             )}
-          </div>
-        )}
-        
-        {statut === "termine" && (
-          <div className="mt-3 text-xs text-[#6B7280]">
-            <p className="flex items-center gap-1">
-              <CalendarClock size={12} /> Fin: {formatDateFr(chantier.date_fin)}
-            </p>
-          </div>
-        )}
-        
-        <div className="mt-4 flex gap-2">
-          {statut === "termine" ? (
-            <>
-              <Link
-                href={`/chantier/${chantier.id}?tab=photos`}
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-[16px] bg-[linear-gradient(135deg,#3B82F6,#0D2B6B)] py-2 text-xs font-black text-white transition active:scale-95"
-              >
-                Voir l'album
-              </Link>
-              <button className="flex flex-1 items-center justify-center gap-1.5 rounded-[16px] bg-[#0B5FFF] py-2 text-xs font-black text-white transition active:scale-95">
-                Télécharger
-              </button>
-            </>
-          ) : (
-            <Link
-              href={`/chantier/${chantier.id}`}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-[16px] bg-[linear-gradient(135deg,#0B5FFF,#0D2B6B)] py-2.5 text-sm font-black text-white transition active:scale-95"
-            >
-              Voir détails <ChevronRight size={16} />
-            </Link>
-          )}
+          </motion.section>
         </div>
-      </div>
-    </motion.div>
-  );
-}
-
-function SkeletonChantier() {
-  return (
-    <div className="animate-pulse overflow-hidden rounded-[22px] border border-[#E7EBF5] bg-white shadow-[0_8px_24px_rgba(16,24,40,0.06)]">
-      <div className="h-36 w-full bg-[#E7EBF5]" />
-      <div className="space-y-2 p-4">
-        <div className="h-4 w-2/3 rounded bg-[#E7EBF5]" />
-        <div className="h-3 w-1/2 rounded bg-[#E7EBF5]" />
-        <div className="h-2 w-full rounded bg-[#E7EBF5]" />
-        <div className="h-9 w-full rounded-[16px] bg-[#E7EBF5]" />
-      </div>
+      </main>
     </div>
   );
 }
