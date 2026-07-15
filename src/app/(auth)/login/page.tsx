@@ -119,12 +119,6 @@ export default function LoginPage() {
       
       {/* Contenu centré */}
       <div className="relative z-20 min-h-screen flex flex-col items-center justify-center px-4 py-4">
-        <div className="relative -top-20 right-0 size-40 rounded-full bg-[#0B5FFF] opacity-[0.04] blur-[40px]" />
-
-        <div className="relative z-30 left-4 top-4">
-          <BackButton href="/" />
-        </div>
-
         {adminModal && (
           <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4" onClick={() => setAdminModal(false)}>
             <div

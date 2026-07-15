@@ -15,6 +15,7 @@ import {
   LogOut,
   Menu,
   X,
+  Handshake,
 } from "lucide-react";
 import { logoutAdmin } from "@/lib/admin";
 
@@ -25,6 +26,7 @@ const SIDEBAR = [
   { key: "rendez-vous", label: "Rendez-vous", icon: CalendarDays },
   { key: "materiaux", label: "Matériaux", icon: BrickWall },
   { key: "promotions", label: "Promotions", icon: Megaphone },
+  { key: "partenaires", label: "Partenaires", icon: Handshake },
   { key: "statistiques", label: "Statistiques", icon: BarChart3 },
   { key: "parametres", label: "Paramètres", icon: Settings },
 ];

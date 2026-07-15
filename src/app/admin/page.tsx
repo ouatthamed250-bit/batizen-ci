@@ -108,18 +108,29 @@ type Promo = {
   active?: boolean;
 };
 
+type Partenaire = {
+  id: string;
+  nom?: string;
+  logo?: string;
+  description?: string;
+  statut?: "actif" | "bientot_disponible";
+};
+
+const PARTNER_STATUTS: Array<"actif" | "bientot_disponible"> = ["actif", "bientot_disponible"];
+
 const COLORS = ["#FF7A00", "#0B5FFF", "#22C55E", "#8B5CF6", "#EC4899", "#F59E0B"];
 
 function AdminContent() {
   const params = useSearchParams();
   const section = params.get("section") || "clients";
 
-  const [clients, setClients] = useState<Client[]>([]);
+const [clients, setClients] = useState<Client[]>([]);
   const [chantiers, setChantiers] = useState<Chantier[]>([]);
   const [ouvriers, setOuvriers] = useState<Ouvrier[]>([]);
   const [rdvs, setRdvs] = useState<RDV[]>([]);
   const [materiaux, setMateriaux] = useState<Materiau[]>([]);
   const [promos, setPromos] = useState<Promo[]>([]);
+  const [partenaires, setPartenaires] = useState<Partenaire[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
@@ -198,6 +209,7 @@ function AdminContent() {
             {section === "rendez-vous" && <RdvSection data={rdvs} onChange={setRdvs} />}
             {section === "materiaux" && <MateriauxSection data={materiaux} onAdd={setMateriaux} onDelete={setMateriaux} />}
             {section === "promotions" && <PromosSection data={promos} onAdd={setPromos} />}
+{section === "partenaires" && <PartenairesSection data={partenaires} onAdd={setPartenaires} />}
             {section === "statistiques" && <StatsSection chantiers={chantiers} clients={clients} materiaux={materiaux} />}
             {section === "parametres" && <SettingsSection />}
             {section === "notifications" && <AdminNotificationsSection data={notifications} onMarkRead={async (id) => { await markAsRead("admin", id); }} />}
@@ -779,6 +791,72 @@ function AdminNotificationsSection({ data, onMarkRead }: { data: Notification[];
       {data.length === 0 && (
         <div className="rounded-[16px] border border-white/10 bg-white/5 p-8 text-center">
           <p className="text-white/50">Aucune notification pour le moment.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ---------- Partenaires ---------- */
+function PartenairesSection({ data, onAdd }: { data: Partenaire[]; onAdd: (updater: (prev: Partenaire[]) => Partenaire[]) => void }) {
+  const [open, setOpen] = useState(false);
+  const [nom, setNom] = useState("");
+  const [logo, setLogo] = useState("");
+  const [description, setDescription] = useState("");
+  const [statut, setStatut] = useState<"actif" | "bientot_disponible">("bientot_disponible");
+
+  function submit(e: FormEvent) {
+    e.preventDefault();
+    onAdd((prev) => [...prev, { id: `pt${Date.now()}`, nom, logo, description, statut }]);
+    setNom(""); setLogo(""); setDescription(""); setStatut("bientot_disponible"); setOpen(false);
+  }
+
+  return (
+    <div className="space-y-4">
+      <button onClick={() => setOpen((o) => !o)} className="flex items-center gap-2 rounded-[12px] bg-[#FF7A00] px-4 py-2.5 text-sm font-black">
+        <Plus size={18} /> Ajouter un partenaire
+      </button>
+      {open && (
+        <form onSubmit={submit} className="space-y-3 rounded-[16px] border border-white/10 bg-white/5 p-4">
+          <Input label="Nom du partenaire" value={nom} set={setNom} />
+          <Input label="URL du logo" value={logo} set={setLogo} />
+          <label className="block">
+            <span className="mb-1 block text-xs text-white/60">Description</span>
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="h-20 w-full rounded-[12px] bg-white/5 px-3 py-2 outline-none ring-1 ring-white/10" />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs text-white/60">Statut</span>
+            <select value={statut} onChange={(e) => setStatut(e.target.value as "actif" | "bientot_disponible")} className="h-11 w-full rounded-[12px] bg-white/5 px-3 outline-none ring-1 ring-white/10">
+              <option value="bientot_disponible">Bientôt disponible</option>
+              <option value="actif">Actif</option>
+            </select>
+          </label>
+          <button className="h-11 w-full rounded-[12px] bg-[#0B5FFF] font-black">Ajouter</button>
+        </form>
+      )}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {data.map((p) => (
+          <div key={p.id} className="rounded-[16px] border border-white/10 bg-white/5 p-4">
+            <div className="flex items-center gap-3">
+              {p.logo ? (
+                <img src={p.logo} alt={p.nom} className="h-12 w-12 rounded-xl object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+              ) : (
+                <div className="grid h-12 w-12 place-items-center rounded-xl bg-white/10">🏢</div>
+              )}
+              <div>
+                <h3 className="font-black">{p.nom || "—"}</h3>
+                <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${p.statut === "actif" ? "bg-green-500/20 text-green-400" : "bg-yellow-500/20 text-yellow-400"}`}>
+                  {p.statut === "actif" ? "Actif" : "Bientôt disponible"}
+                </span>
+              </div>
+            </div>
+            <p className="mt-2 text-sm text-white/60">{p.description || "—"}</p>
+          </div>
+        ))}
+      </div>
+      {data.length === 0 && (
+        <div className="rounded-[16px] border border-white/10 bg-white/5 p-8 text-center">
+          <p className="text-white/50">Aucun partenaire enregistré.</p>
         </div>
       )}
     </div>

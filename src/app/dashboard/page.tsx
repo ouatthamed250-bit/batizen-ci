@@ -70,6 +70,14 @@ type NotificationItem = {
   message?: string;
 };
 
+type Partenaire = {
+  id: string;
+  nom?: string;
+  logo?: string;
+  description?: string;
+  statut?: "actif" | "bientot_disponible";
+};
+
 /* ------------------------------------------------------------------ */
 /* Helpers                                                            */
 /* ------------------------------------------------------------------ */
@@ -205,6 +213,7 @@ export default function DashboardClientPage() {
   const [chantiersEnCours, setChantiersEnCours] = useState<Chantier[]>([]);
   const [chantiersEnAttente, setChantiersEnAttente] = useState<Chantier[]>([]);
   const [chantiersTermines, setChantiersTermines] = useState<Chantier[]>([]);
+  const [partenaires, setPartenaires] = useState<Partenaire[]>([]);
 
   const nomClient = user?.displayName || user?.email?.split("@")[0] || "Client";
 
