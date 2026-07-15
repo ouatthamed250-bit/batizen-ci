@@ -118,79 +118,63 @@ export default function LoginPage() {
       />
       <div className="absolute inset-0 bg-black/60 z-10"></div>
       
-      {/* Contenu centré */}
-      <div className="relative z-20 min-h-screen flex flex-col items-center justify-center px-4 py-8">
-        <div className="relative -top-40 right-0 size-80 rounded-full bg-[#0B5FFF] opacity-[0.04] blur-[80px]" />
+       {/* Contenu centré */}
+       <div className="relative z-20 min-h-screen flex flex-col items-center justify-center px-4 py-4">
+         <div className="relative -top-20 right-0 size-40 rounded-full bg-[#0B5FFF] opacity-[0.04] blur-[40px]" />
 
-        <div className="relative z-30 left-6 top-6">
-          <BackButton href="/" />
-        </div>
+         <div className="relative z-30 left-4 top-4">
+           <BackButton href="/" />
+         </div>
 
-        <div
-          className="animate-bounceIn cursor-pointer select-none"
-          onClick={handleLogoTap}
-          title="BÂTIZEN CI"
-        >
-          <Image src="/assets/images/logo.png" alt="BÂTIZEN CI" width={100} height={100} priority className="rounded-[28px] shadow-[0_20px_40px_rgba(11,95,255,0.15)]" />
-        </div>
+         {adminModal && (
+           <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4" onClick={() => setAdminModal(false)}>
+             <div
+               className="w-full max-w-sm rounded-[24px] bg-[#111827] p-6 text-white shadow-2xl"
+               onClick={(e) => e.stopPropagation()}
+             >
+               <div className="mb-4 flex items-center justify-between">
+                 <h3 className="flex items-center gap-2 text-lg font-black">
+                   <ShieldAlert className="text-[#FF7A00]" /> Code admin requis
+                 </h3>
+                 <button type="button" onClick={() => setAdminModal(false)} aria-label="Fermer">
+                   <X size={20} />
+                 </button>
+               </div>
+               <form onSubmit={handleAdminSubmit} className="space-y-4">
+                 <input
+                   value={adminCode}
+                   onChange={(e) => setAdminCode(e.target.value)}
+                   placeholder="Saisissez le code"
+                   autoFocus
+                   className="h-12 w-full rounded-[14px] bg-[#1F2937] px-4 text-sm font-bold text-white outline-none ring-1 ring-white/10 focus:ring-[#FF7A00]"
+                 />
+                 {adminError && <p className="text-sm font-semibold text-red-400">{adminError}</p>}
+                 <button
+                   type="submit"
+                   className="h-12 w-full rounded-[14px] bg-[#FF7A00] font-black text-white transition active:scale-95"
+                 >
+                   Valider
+                 </button>
+               </form>
+             </div>
+           </div>
+         )}
 
-        {adminModal && (
-          <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4" onClick={() => setAdminModal(false)}>
-            <div
-              className="w-full max-w-sm rounded-[24px] bg-[#111827] p-6 text-white shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="mb-4 flex items-center justify-between">
-                <h3 className="flex items-center gap-2 text-lg font-black">
-                  <ShieldAlert className="text-[#FF7A00]" /> Code admin requis
-                </h3>
-                <button type="button" onClick={() => setAdminModal(false)} aria-label="Fermer">
-                  <X size={20} />
-                </button>
-              </div>
-              <form onSubmit={handleAdminSubmit} className="space-y-4">
-                <input
-                  value={adminCode}
-                  onChange={(e) => setAdminCode(e.target.value)}
-                  placeholder="Saisissez le code"
-                  autoFocus
-                  className="h-12 w-full rounded-[14px] bg-[#1F2937] px-4 text-sm font-bold text-white outline-none ring-1 ring-white/10 focus:ring-[#FF7A00]"
-                />
-                {adminError && <p className="text-sm font-semibold text-red-400">{adminError}</p>}
-                <button
-                  type="submit"
-                  className="h-12 w-full rounded-[14px] bg-[#FF7A00] font-black text-white transition active:scale-95"
-                >
-                  Valider
-                </button>
-              </form>
-            </div>
-          </div>
-        )}
+         {/* Logo + Titre - Unique bloc */}
+         <div className="text-center mb-4">
+           <img 
+             src="/assets/images/logo.png" 
+             alt="BÂTIZEN.CI" 
+             className="w-20 h-20 mx-auto mb-3 rounded-2xl shadow-lg"
+           />
+           <h1 className="text-2xl font-bold text-white">BÂTIZEN.CI</h1>
+           <p className="text-sm text-white/80">Votre partenaire BTP</p>
+         </div>
 
-        <div className="animate-fadeInUp stagger-1 mt-4 text-center">
-          <h1 className="text-2xl font-black tracking-[-0.04em]">
-            <span className="text-[#0D2B6B]">BÂTIZEN</span>{" "}
-            <span className="text-[#FF7A00]">CI</span>
-          </h1>
-          <div className="mt-1 flex items-center justify-center gap-2">
-            <div className="h-px w-5 bg-[#0B5FFF]" />
-            <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#0B5FFF]">Construction Technology</span>
-            <div className="h-px w-5 bg-[#0B5FFF]" />
-          </div>
-        </div>
-
-        <div className="animate-fadeInUp stagger-2 mt-6 text-center">
-          <h2 className="text-[26px] font-black text-[#0D2B6B]">Bienvenue !</h2>
-          <p className="mt-2 max-w-[260px] text-sm text-[#6B7280]">Connectez-vous pour accéder à tous vos projets et gérer vos chantiers.</p>
-        </div>
-
-        {/* Logo + Titre */}
-        <div className="text-center mb-4 mt-6">
-          <img src="/assets/images/logo.png" className="w-16 h-16 mx-auto mb-2" alt="BÂTIZEN CI" />
-          <h1 className="text-2xl font-bold text-white">BÂTIZEN.CI</h1>
-          <p className="text-sm text-white/80">Votre partenaire BTP</p>
-        </div>
+         <div className="animate-fadeInUp stagger-1 mt-2 text-center">
+           <h2 className="text-xl font-black text-white">Bienvenue !</h2>
+           <p className="mt-1 max-w-[260px] text-sm text-white/60">Connectez-vous pour accéder à tous vos projets.</p>
+         </div>
 
         <div className="animate-fadeInUp stagger-3 mt-4 w-full max-w-sm rounded-[28px] bg-white/10 backdrop-blur-lg p-6 border border-white/20">
           {/* Toggle Login Method */}
