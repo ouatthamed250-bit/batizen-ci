@@ -31,6 +31,7 @@ import { formatFcfa } from "@/utils/currency";
 type Chantier = {
   id: string;
   client_id?: string;
+  userId?: string;
   nom?: string;
   nom_projet?: string;
   photo?: string;
@@ -41,6 +42,12 @@ type Chantier = {
   progress?: number;
   date_fin?: string;
   date_debut?: string;
+  type?: string;
+  localisation?: string;
+  plan_choisi?: string;
+  rdv_date?: string;
+  budget?: number;
+  date_soumission?: string;
 };
 
 type Paiement = {
@@ -195,6 +202,9 @@ export default function DashboardClientPage() {
   const [prochainRdv, setProchainRdv] = useState<RendezVous | null>(null);
   const [notifsNonLues, setNotifsNonLues] = useState(0);
   const [mesChantiers, setMesChantiers] = useState<Chantier[]>([]);
+  const [chantiersEnCours, setChantiersEnCours] = useState<Chantier[]>([]);
+  const [chantiersEnAttente, setChantiersEnAttente] = useState<Chantier[]>([]);
+  const [chantiersTermines, setChantiersTermines] = useState<Chantier[]>([]);
 
   const nomClient = user?.displayName || user?.email?.split("@")[0] || "Client";
 
@@ -251,8 +261,11 @@ export default function DashboardClientPage() {
       // B - Notifications non lues
       setNotifsNonLues(allNotifs.filter((n) => n.lu === false).length);
 
-      // C - Mes chantiers
+      // C - Mes chantiers - Trier par statut
       setMesChantiers(mesChantiersData);
+      setChantiersEnCours(mesChantiersData.filter(c => (c.statut || c.status) === "en_cours"));
+      setChantiersEnAttente(mesChantiersData.filter(c => (c.statut || c.status) === "en_attente"));
+      setChantiersTermines(mesChantiersData.filter(c => (c.statut || c.status) === "termine" || (c.statut || c.status) === "terminé"));
 
       setLoading(false);
     }
@@ -275,7 +288,7 @@ return (
       <header className="relative overflow-hidden">
         <div className="absolute inset-0">
           <Image
-            src="/images/chantier-bg.jpg"
+            src="https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=2070&auto=format&fit=crop"
             alt=""
             fill
             priority
@@ -345,15 +358,15 @@ return (
           )}
         </motion.section>
 
-        {/* SECTION C - Mes chantiers en cours */}
+        {/* SECTION C - Mes chantiers */}
         <motion.section
-          aria-label="Mes chantiers en cours"
+          aria-label="Mes chantiers"
           variants={fadeUp}
           initial="hidden"
           animate="show"
         >
           <h2 className="mb-4 text-xs font-black uppercase tracking-[0.2em] text-[#6B7280]">
-            Mes chantiers en cours
+            Mes chantiers
           </h2>
 
           {loading ? (
@@ -363,63 +376,94 @@ return (
             </div>
           ) : mesChantiers.length === 0 ? (
             <div className="rounded-[22px] border border-dashed border-[#E7EBF5] bg-white p-8 text-center">
+              <HardHat size={48} className="mx-auto mb-3 text-[#9CA3AF]" />
               <p className="text-sm font-bold text-[#6B7280]">
-                Vous n'avez aucun chantier en cours
+                Vous n'avez pas encore de chantier
               </p>
+              <p className="mt-1 text-xs text-[#9CA3AF]">
+                Commencez par créer votre premier projet !
+              </p>
+              <Link
+                href="/nouveau-chantier"
+                className="mt-4 inline-flex items-center gap-2 rounded-[16px] bg-[#0B5FFF] px-6 py-2.5 text-sm font-black text-white transition hover:bg-[#0B5FFF]/80"
+              >
+                <BrickWall size={18} /> Créer un chantier
+              </Link>
             </div>
           ) : (
-            <motion.div
-              className="grid gap-4 sm:grid-cols-2"
-              variants={containerVariants}
-              initial="hidden"
-              animate="show"
-            >
-              {mesChantiers.map((c) => {
-                const photo = c.photo || c.image_url;
-                const nom = c.nom_projet || c.nom || "Chantier";
-                const pct = Number(c.progression ?? c.progress ?? 0);
-                return (
+            <div className="space-y-6">
+              {/* SECTION A : Chantiers en cours */}
+              {chantiersEnCours.length > 0 && (
+                <div>
+                  <h3 className="mb-3 flex items-center gap-2 text-sm font-black text-[#22C55E]">
+                    <span className="text-lg">🏗️</span> Chantiers en cours
+                  </h3>
                   <motion.div
-                    key={c.id}
-                    variants={itemVariants}
-                    className="overflow-hidden rounded-[22px] border border-[#E7EBF5] bg-white shadow-[0_8px_24px_rgba(16,24,40,0.06)]"
+                    className="grid gap-4 sm:grid-cols-2"
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="show"
                   >
-                    <div className="relative h-36 w-full bg-[#E7EBF5]">
-                      {photo ? (
-                        <Image src={photo} alt={nom} fill className="object-cover" />
-                      ) : (
-                        <div className="grid size-full place-items-center text-[#9CA3AF]">
-                          <HardHat size={40} />
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-4">
-                      <div className="flex items-start justify-between gap-2">
-                        <h3 className="font-black text-[#0D2B6B]">{nom}</h3>
-                        <span
-                          className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black text-white"
-                          style={{ backgroundColor: statutColor(c.statut || c.status) }}
-                        >
-                          {statutLabel(c.statut || c.status)}
-                        </span>
-                      </div>
-                      <p className="mt-0.5 flex items-center gap-1 text-xs text-[#6B7280]">
-                        <CalendarClock size={12} /> Fin prévue : {formatDateFr(c.date_fin)}
-                      </p>
-                      <div className="mt-3">
-                        <ProgressBar value={pct} label="Progression" />
-                      </div>
-                      <Link
-                        href={`/chantier/${c.id}`}
-                        className="mt-4 flex items-center justify-center gap-1.5 rounded-[16px] bg-[linear-gradient(135deg,#0B5FFF,#0D2B6B)] py-2.5 text-sm font-black text-white transition active:scale-95"
-                      >
-                        Voir détails <ChevronRight size={16} />
-                      </Link>
-                    </div>
+                    {chantiersEnCours.map((c) => (
+                      <ChantierCard key={c.id} chantier={c} statut="en_cours" />
+                    ))}
                   </motion.div>
-                );
-              })}
-            </motion.div>
+                </div>
+              )}
+
+              {/* SECTION B : Chantiers en attente */}
+              {chantiersEnAttente.length > 0 && (
+                <div>
+                  <h3 className="mb-3 flex items-center gap-2 text-sm font-black text-[#FF7A00]">
+                    <span className="text-lg">⏳</span> Chantiers en attente de validation
+                  </h3>
+                  <motion.div
+                    className="grid gap-4 sm:grid-cols-2"
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="show"
+                  >
+                    {chantiersEnAttente.map((c) => (
+                      <ChantierCard key={c.id} chantier={c} statut="en_attente" />
+                    ))}
+                  </motion.div>
+                  <div className="mt-3 rounded-[16px] bg-orange-50 border border-orange-200 p-3 text-center">
+                    <p className="text-xs font-semibold text-orange-700">
+                      Un expert vous contactera bientôt pour confirmer votre projet
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* SECTION C : Chantiers terminés */}
+              {chantiersTermines.length > 0 && (
+                <div>
+                  <h3 className="mb-3 flex items-center gap-2 text-sm font-black text-[#3B82F6]">
+                    <span className="text-lg">✅</span> Chantiers terminés
+                  </h3>
+                  <motion.div
+                    className="grid gap-4 sm:grid-cols-2"
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="show"
+                  >
+                    {chantiersTermines.map((c) => (
+                      <ChantierCard key={c.id} chantier={c} statut="termine" />
+                    ))}
+                  </motion.div>
+                </div>
+              )}
+
+              {/* Bouton Créer un autre chantier */}
+              {mesChantiers.length > 0 && (
+                <Link
+                  href="/nouveau-chantier"
+                  className="flex items-center justify-center gap-2 rounded-[20px] border-2 border-dashed border-[#0B5FFF] bg-white py-4 text-sm font-black text-[#0B5FFF] transition hover:bg-[#0B5FFF] hover:text-white"
+                >
+                  <BrickWall size={20} /> Créer un autre chantier
+                </Link>
+              )}
+            </div>
           )}
         </motion.section>
 
@@ -435,18 +479,26 @@ return (
           </h2>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {actionsRapides.map((a, i) => (
-              <motion.div key={a.href} variants={itemVariants} custom={i}>
+              <motion.div 
+                key={a.href} 
+                variants={itemVariants} 
+                custom={i}
+                whileHover={{ y: -4, scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
                 <Link
                   href={a.href}
-                  className="flex h-full flex-col items-center gap-2.5 rounded-[20px] border border-[#E7EBF5] bg-white p-4 text-center shadow-[0_8px_24px_rgba(16,24,40,0.06)] transition active:scale-95"
+                  className="group flex h-full flex-col items-center gap-2.5 rounded-[20px] border border-[#E7EBF5] bg-white p-4 text-center shadow-[0_8px_24px_rgba(16,24,40,0.06)] transition-all active:scale-95 hover:shadow-[0_12px_32px_rgba(16,24,40,0.12)]"
                 >
-                  <div
-                    className="grid size-12 place-items-center rounded-[16px] text-white"
+                  <motion.div
+                    className="grid size-12 place-items-center rounded-[16px] text-white shadow-lg"
                     style={{ backgroundColor: a.color }}
+                    whileHover={{ scale: 1.1, rotate: 5 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 10 }}
                   >
                     <a.icon size={22} aria-hidden />
-                  </div>
-                  <span className="text-[11px] font-black leading-tight text-[#0D2B6B]">
+                  </motion.div>
+                  <span className="text-[11px] font-black leading-tight text-[#0D2B6B] group-hover:text-[#0B5FFF] transition-colors">
                     {a.label}
                   </span>
                 </Link>
@@ -456,6 +508,115 @@ return (
         </motion.section>
       </div>
     </main>
+  );
+}
+
+function ChantierCard({ chantier, statut }: { chantier: Chantier; statut: string }) {
+  const photo = chantier.photo || chantier.image_url;
+  const nom = chantier.nom_projet || chantier.nom || "Chantier";
+  const pct = Number(chantier.progression ?? chantier.progress ?? 0);
+
+  const getStatutBadge = (s: string) => {
+    switch (s) {
+      case "en_attente":
+        return (
+          <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black text-white bg-[#FF7A00]">
+            ⏳ En attente
+          </span>
+        );
+      case "en_cours":
+        return (
+          <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black text-white bg-[#22C55E]">
+            ✅ En cours
+          </span>
+        );
+      case "termine":
+        return (
+          <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black text-white bg-[#3B82F6]">
+            🏁 Terminé
+          </span>
+        );
+      default:
+        return (
+          <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black text-white bg-[#0B5FFF]">
+            {statutLabel(s)}
+          </span>
+        );
+    }
+  };
+
+  return (
+    <motion.div
+      variants={itemVariants}
+      className="overflow-hidden rounded-[22px] border border-[#E7EBF5] bg-white shadow-[0_8px_24px_rgba(16,24,40,0.06)] backdrop-blur-sm"
+    >
+      <div className="relative h-36 w-full bg-[#E7EBF5]">
+        {photo ? (
+          <Image src={photo} alt={nom} fill className="object-cover" />
+        ) : (
+          <div className="grid size-full place-items-center text-[#9CA3AF]">
+            <HardHat size={40} />
+          </div>
+        )}
+      </div>
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="font-black text-[#0D2B6B]">{nom}</h3>
+          {getStatutBadge(statut)}
+        </div>
+        <p className="mt-0.5 flex items-center gap-1 text-xs text-[#6B7280]">
+          <HardHat size={12} /> {chantier.type || "—"} · {chantier.localisation || "—"}
+        </p>
+        
+        {statut === "en_cours" && (
+          <div className="mt-3">
+            <ProgressBar value={pct} label="Progression" />
+          </div>
+        )}
+        
+        {statut === "en_attente" && (
+          <div className="mt-3 space-y-1 text-xs text-[#6B7280]">
+            <p>Plan: {chantier.plan_choisi || "—"}</p>
+            {chantier.rdv_date && (
+              <p className="flex items-center gap-1">
+                <CalendarClock size={12} /> RDV: {formatDateFr(chantier.rdv_date)}
+              </p>
+            )}
+          </div>
+        )}
+        
+        {statut === "termine" && (
+          <div className="mt-3 text-xs text-[#6B7280]">
+            <p className="flex items-center gap-1">
+              <CalendarClock size={12} /> Fin: {formatDateFr(chantier.date_fin)}
+            </p>
+          </div>
+        )}
+        
+        <div className="mt-4 flex gap-2">
+          {statut === "termine" ? (
+            <>
+              <Link
+                href={`/chantier/${chantier.id}?tab=photos`}
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-[16px] bg-[linear-gradient(135deg,#3B82F6,#0D2B6B)] py-2 text-xs font-black text-white transition active:scale-95"
+              >
+                Voir l'album
+              </Link>
+              <button className="flex flex-1 items-center justify-center gap-1.5 rounded-[16px] bg-[#0B5FFF] py-2 text-xs font-black text-white transition active:scale-95">
+                Télécharger
+              </button>
+            </>
+          ) : (
+            <Link
+              href={`/chantier/${chantier.id}`}
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-[16px] bg-[linear-gradient(135deg,#0B5FFF,#0D2B6B)] py-2.5 text-sm font-black text-white transition active:scale-95"
+            >
+              Voir détails <ChevronRight size={16} />
+            </Link>
+          )}
+        </div>
+      </div>
+    </motion.div>
   );
 }
 

@@ -43,6 +43,7 @@ type Client = {
 type Chantier = {
   id: string;
   client_id?: string;
+  userId?: string;
   nom?: string;
   nom_projet?: string;
   adresse?: string;
@@ -50,6 +51,28 @@ type Chantier = {
   progress?: number;
   statut?: string;
   date_fin?: string;
+  type?: string;
+  budget?: number;
+  plan_choisi?: string;
+  date_soumission?: string;
+  surface_terrain?: number;
+  surface_construite?: number;
+  niveaux?: number;
+  chambres?: number;
+  salles_de_bain?: number;
+  localisation?: string;
+  type_terrain?: string;
+  apport_personnel?: number;
+  mode_financement?: string;
+  dateActivation?: number;
+  activePar?: string;
+  rdv_lieu?: string;
+  rdv_date?: string;
+  rdv_heure?: string;
+  rdv_commentaire?: string;
+  client_nom?: string;
+  client_email?: string;
+  client_telephone?: string;
 };
 type Ouvrier = {
   id: string;
@@ -277,59 +300,147 @@ function ClientsSection({
 
 /* ---------- Chantiers ---------- */
 function ChantiersSection({ data, onAdd }: { data: Chantier[]; onAdd: (updater: (prev: Chantier[]) => Chantier[]) => void }) {
-  const [open, setOpen] = useState(false);
-  const [nom, setNom] = useState("");
-  const [adresse, setAdresse] = useState("");
-  const [progression, setProgression] = useState(0);
+  const [filterStatut, setFilterStatut] = useState<string>("tous");
+  const [filterPlan, setFilterPlan] = useState<string>("tous");
+  const [filterDate, setFilterDate] = useState<string>("tous");
 
-  function submit(e: FormEvent) {
-    e.preventDefault();
-    onAdd((prev) => [
-      ...prev,
-      { id: `c${Date.now()}`, nom_projet: nom, adresse, progression, statut: "en_cours" },
-    ]);
-    setNom(""); setAdresse(""); setProgression(0); setOpen(false);
-  }
+  const filteredChantiers = data.filter((c) => {
+    if (filterStatut !== "tous" && c.statut !== filterStatut) return false;
+    if (filterPlan !== "tous" && c.plan_choisi !== filterPlan) return false;
+    if (filterDate === "recent" && c.date_soumission) {
+      const date = new Date(c.date_soumission);
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      if (date < thirtyDaysAgo) return false;
+    }
+    if (filterDate === "ancien" && c.date_soumission) {
+      const date = new Date(c.date_soumission);
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      if (date >= thirtyDaysAgo) return false;
+    }
+    return true;
+  });
+
+  const getStatutBadge = (statut?: string) => {
+    switch (statut) {
+      case "en_attente":
+        return <span className="rounded-full px-2 py-0.5 text-xs font-bold bg-orange-500/20 text-orange-400">⏳ En attente</span>;
+      case "en_cours":
+        return <span className="rounded-full px-2 py-0.5 text-xs font-bold bg-green-500/20 text-green-400">✅ En cours</span>;
+      case "termine":
+        return <span className="rounded-full px-2 py-0.5 text-xs font-bold bg-blue-500/20 text-blue-400">🏁 Terminé</span>;
+      default:
+        return <span className="rounded-full px-2 py-0.5 text-xs font-bold bg-white/10 text-white/50">{statut || "—"}</span>;
+    }
+  };
+
+  const formatDate = (dateStr?: string) => {
+    if (!dateStr) return "—";
+    return new Date(dateStr).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
+  };
+
+  const formatBudget = (budget?: number) => {
+    if (!budget) return "—";
+    return new Intl.NumberFormat("fr-FR").format(budget) + " F";
+  };
 
   return (
     <div className="space-y-4">
-      <button onClick={() => setOpen((o) => !o)} className="flex items-center gap-2 rounded-[12px] bg-[#FF7A00] px-4 py-2.5 text-sm font-black">
-        <Plus size={18} /> Nouveau chantier
-      </button>
-
-      {open && (
-        <form onSubmit={submit} className="space-y-3 rounded-[16px] border border-white/10 bg-white/5 p-4">
-          <Input label="Nom du projet" value={nom} set={setNom} />
-          <Input label="Adresse" value={adresse} set={setAdresse} />
-          <label className="block">
-            <span className="mb-1 block text-xs text-white/60">Avancement (%)</span>
-            <input type="number" min={0} max={100} value={progression}
-              onChange={(e) => setProgression(Number(e.target.value))}
-              className="h-11 w-full rounded-[12px] bg-white/5 px-3 outline-none ring-1 ring-white/10" />
-          </label>
-          <button className="h-11 w-full rounded-[12px] bg-[#0B5FFF] font-black">Créer</button>
-        </form>
-      )}
-
-      <div className="overflow-x-auto rounded-[16px] border border-white/10">
-        <table className="w-full min-w-[760px] text-left text-sm">
-          <thead className="bg-white/5 text-xs uppercase text-white/50">
-            <tr><Th>Client</Th><Th>Projet</Th><Th>Adresse</Th><Th>Avancement</Th><Th>Statut</Th><Th>Fin</Th></tr>
-          </thead>
-          <tbody>
-            {data.map((c) => (
-              <tr key={c.id} className="border-t border-white/10">
-                <Td>{c.client_id || "—"}</Td>
-                <Td className="font-bold">{c.nom_projet || c.nom || "—"}</Td>
-                <Td>{c.adresse || "—"}</Td>
-                <Td>{Number(c.progression ?? c.progress ?? 0)}%</Td>
-                <Td>{c.statut || "—"}</Td>
-                <Td>{c.date_fin || "—"}</Td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {/* Filtres */}
+      <div className="flex flex-wrap gap-3 rounded-[14px] bg-white/5 p-4">
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-white/60">Statut:</span>
+          <select
+            value={filterStatut}
+            onChange={(e) => setFilterStatut(e.target.value)}
+            className="h-9 rounded-[10px] bg-white/10 px-3 text-xs font-bold outline-none ring-1 ring-white/10 focus:ring-[#FF7A00]"
+          >
+            <option value="tous">Tous</option>
+            <option value="en_attente">En attente</option>
+            <option value="en_cours">En cours</option>
+            <option value="termine">Terminé</option>
+          </select>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-white/60">Plan:</span>
+          <select
+            value={filterPlan}
+            onChange={(e) => setFilterPlan(e.target.value)}
+            className="h-9 rounded-[10px] bg-white/10 px-3 text-xs font-bold outline-none ring-1 ring-white/10 focus:ring-[#FF7A00]"
+          >
+            <option value="tous">Tous</option>
+            <option value="Standard">Standard</option>
+            <option value="Premium">Premium</option>
+            <option value="Expert">Expert</option>
+          </select>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-white/60">Date:</span>
+          <select
+            value={filterDate}
+            onChange={(e) => setFilterDate(e.target.value)}
+            className="h-9 rounded-[10px] bg-white/10 px-3 text-xs font-bold outline-none ring-1 ring-white/10 focus:ring-[#FF7A00]"
+          >
+            <option value="tous">Toutes</option>
+            <option value="recent">Récent (30j)</option>
+            <option value="ancien">Ancien (+30j)</option>
+          </select>
+        </div>
       </div>
+
+      {/* Liste des chantiers en cartes */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {filteredChantiers.map((c) => (
+          <div key={c.id} className="rounded-[16px] border border-white/10 bg-white/5 p-4">
+            <div className="mb-3 flex items-start justify-between">
+              <div>
+                <h3 className="font-black text-[#FF7A00]">{c.nom_projet || c.nom || "Sans nom"}</h3>
+                <p className="text-sm text-white/60">{c.client_nom || "Client inconnu"}</p>
+              </div>
+              {getStatutBadge(c.statut)}
+            </div>
+            
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-white/50">Type:</span>
+                <span className="font-bold">{c.type || "—"}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-white/50">Budget:</span>
+                <span className="font-bold">{formatBudget(c.budget)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-white/50">Plan:</span>
+                <span className="font-bold">{c.plan_choisi || "—"}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-white/50">Soumission:</span>
+                <span className="font-bold">{formatDate(c.date_soumission)}</span>
+              </div>
+              {c.rdv_date && (
+                <div className="flex justify-between">
+                  <span className="text-white/50">RDV:</span>
+                  <span className="font-bold">{formatDate(c.rdv_date)} {c.rdv_heure || ""}</span>
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={() => window.location.href = `/admin/chantier/${c.id}`}
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-[12px] bg-[#0B5FFF] px-4 py-2.5 text-sm font-black transition hover:bg-[#0B5FFF]/80"
+            >
+              <Eye size={16} /> Voir détails
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {filteredChantiers.length === 0 && (
+        <div className="rounded-[16px] border border-white/10 bg-white/5 p-8 text-center">
+          <p className="text-white/50">Aucun chantier ne correspond aux filtres sélectionnés.</p>
+        </div>
+      )}
     </div>
   );
 }
@@ -630,13 +741,16 @@ function SettingsSection() {
       <p className="text-sm text-white/60">Paramètres généraux de la plateforme BATIZEN.</p>
       <div className="space-y-3">
         <div className="flex items-center justify-between rounded-[12px] bg-white/5 px-4 py-3 text-sm">
-          <span>Code secret admin</span><span className="font-black text-[#FF7A00]">BATIZEN2026</span>
+          <span>Code secret admin</span><span className="font-black text-[#FF7A00]">••••••••</span>
         </div>
         <div className="flex items-center justify-between rounded-[12px] bg-white/5 px-4 py-3 text-sm">
           <span>Notifications push</span><span className="text-green-400">Activées</span>
         </div>
         <div className="flex items-center justify-between rounded-[12px] bg-white/5 px-4 py-3 text-sm">
           <span>Mode maintenance</span><span className="text-white/50">Désactivé</span>
+        </div>
+        <div className="flex items-center justify-between rounded-[12px] bg-white/5 px-4 py-3 text-sm">
+          <span>Sécurité tentatives</span><span className="text-green-400">Activée (max 5)</span>
         </div>
       </div>
     </div>

@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/Badge";
 import { BackButton } from "@/components/ui/BackButton";
 import PlanGenerator from "@/components/plans/PlanGenerator";
 import { PageBackground } from "@/components/layout/PageBackground";
+import BtpBackground from "@/components/btp/BtpBackground";
 import { formatFcfa } from "@/utils/currency";
 import { RenovationEngine, type TravauxRenovation, type EtatMaison } from "@/services/RenovationEngine";
 import { VILLES_CI } from "@/constants/villes";
@@ -278,8 +279,11 @@ export default function RenovationPage() {
   );
 
   return (
-    <PageBackground src="/images/renovation-bg.jpg" overlayOpacity={0.4}>
+    <BtpBackground
+      imageUrl="https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=2070&auto=format&fit=crop"
+      overlay="medium"
+    >
       {pageContent}
-    </PageBackground>
+    </BtpBackground>
   );
 }

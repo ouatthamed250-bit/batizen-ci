@@ -27,7 +27,7 @@ export function PlanViewer({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-      <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white p-6">
+      <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white/80 backdrop-blur-xl p-6 border border-white/20">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-black text-[#0D2B6B]">
             🏠 Plan de la proposition {proposition}

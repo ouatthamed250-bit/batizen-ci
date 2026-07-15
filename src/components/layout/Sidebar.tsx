@@ -25,6 +25,8 @@ const menuItems: MenuItem[] = [
   { label: "Contact", icon: "📞", href: "/support" },
   { label: "Documents", icon: "📄", href: "/scanner" },
   { label: "Paramètres", icon: "⚙️", href: "/parametres" },
+  { label: "Chantiers terminés", icon: "✅", href: "/historique" },
+  { label: "Mes rapports", icon: "📊", href: "/rapports" },
 ];
 
 export default function Sidebar() {

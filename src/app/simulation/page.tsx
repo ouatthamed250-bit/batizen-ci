@@ -10,6 +10,7 @@ import { BackButton } from "@/components/ui/BackButton";
 import { HouseModel3D } from "@/components/simulation/HouseModel3D";
 import { PlanViewer } from "@/components/simulation/PlanViewer";
 import { formatFcfa } from "@/utils/currency";
+import BtpBackground from "@/components/btp/BtpBackground";
 
 type Etape = "formulaire" | "loading" | "propositions" | "plan";
 
@@ -121,11 +122,15 @@ export default function SimulationPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#F5F5F5] to-white">
+    <div className="min-h-screen">
       <PremiumHeader />
 
-      <main className="min-h-screen pt-24 pb-32">
-        <div className="mx-auto max-w-4xl px-4">
+      <BtpBackground
+        imageUrl="https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=2070&auto=format&fit=crop"
+        overlay="medium"
+      >
+        <main className="min-h-screen pt-24 pb-32">
+          <div className="mx-auto max-w-4xl px-4">
           {/* Titre */}
           <div className="text-center mb-8">
             <h1 className="text-3xl font-black text-[#0D2B6B]">
@@ -146,7 +151,7 @@ export default function SimulationPage() {
                 exit={{ opacity: 0, y: -20 }}
                 className="space-y-6"
               >
-                <div className="rounded-[24px] bg-white p-6 shadow-lg">
+                <div className="rounded-[24px] bg-white/80 backdrop-blur-xl p-6 shadow-lg border border-white/20">
                   <div className="flex items-center justify-between mb-6">
                     <h2 className="text-xl font-black text-[#0D2B6B]">
                       {formStep === 1 ? "💼 Budget & Terrain" : "🎨 Préférences"}
@@ -389,7 +394,7 @@ export default function SimulationPage() {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.1 }}
-                      className="rounded-[24px] bg-white p-6 shadow-lg border border-[#E7EBF5] hover:shadow-xl transition-all"
+                      className="rounded-[24px] bg-white/80 backdrop-blur-xl p-6 shadow-lg border border-white/20 hover:shadow-xl transition-all"
                     >
                       <div className="flex items-center justify-between mb-4">
                         <span className="text-2xl font-black text-[#0D2B6B]">
@@ -456,6 +461,7 @@ export default function SimulationPage() {
           </AnimatePresence>
         </div>
       </main>
+      </BtpBackground>
 
       {/* Plan Viewer Modal */}
       {selectedProposition && (
@@ -478,14 +484,14 @@ export default function SimulationPage() {
           animate={{ opacity: 1, y: 0 }}
           className="mx-auto max-w-4xl px-4 pb-24"
         >
-          <div className="rounded-[24px] bg-white p-6 shadow-lg">
+          <div className="rounded-[24px] bg-white/80 backdrop-blur-xl p-6 shadow-lg border border-white/20">
             <h3 className="text-2xl font-black text-[#0D2B6B] mb-6 text-center">
               🎯 Plans professionnels détaillés
             </h3>
 
             <div className="space-y-4">
               {/* Plan Standard */}
-              <div className="rounded-[20px] border-2 border-[#E7EBF5] p-6">
+              <div className="rounded-[20px] bg-white/60 backdrop-blur-lg border-2 border-white/30 p-6">
                 <div className="flex items-start justify-between mb-3">
                   <div>
                     <h4 className="text-lg font-black text-[#0D2B6B]">PLAN STANDARD</h4>
@@ -519,7 +525,7 @@ export default function SimulationPage() {
               </div>
 
               {/* Plan Premium */}
-              <div className="rounded-[20px] border-2 border-[#FF6B00] p-6">
+              <div className="rounded-[20px] bg-white/60 backdrop-blur-lg border-2 border-[#FF6B00] p-6">
                 <div className="flex items-start justify-between mb-3">
                   <div>
                     <h4 className="text-lg font-black text-[#0D2B6B]">PLAN PREMIUM</h4>
@@ -557,7 +563,7 @@ export default function SimulationPage() {
               </div>
 
               {/* Plan Expert */}
-              <div className="rounded-[20px] border-2 border-[#E7EBF5] p-6">
+              <div className="rounded-[20px] bg-white/60 backdrop-blur-lg border-2 border-white/30 p-6">
                 <div className="flex items-start justify-between mb-3">
                   <div>
                     <h4 className="text-lg font-black text-[#0D2B6B]">PLAN EXPERT</h4>

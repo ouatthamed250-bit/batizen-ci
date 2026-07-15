@@ -49,12 +49,16 @@ export default function LoginPage() {
   async function handleAdminSubmit(e: React.FormEvent) {
     e.preventDefault();
     setAdminError("");
-    const ok = await verifyAdminCode(adminCode);
-    if (ok) {
-      setAdminModal(false);
-      router.replace("/admin");
-    } else {
-      setAdminError("Code incorrect. Réessayez.");
+    try {
+      const ok = await verifyAdminCode(adminCode);
+      if (ok) {
+        setAdminModal(false);
+        router.replace("/admin");
+      } else {
+        setAdminError("Code incorrect. Réessayez.");
+      }
+    } catch (err) {
+      setAdminError(err instanceof Error ? err.message : "Erreur de connexion.");
     }
   }
 
@@ -80,8 +84,7 @@ export default function LoginPage() {
       if (loginMethod === "email") {
         await login(email, password);
       } else {
-        // Pour l'instant, on utilise l'email comme fallback pour téléphone
-        // TODO: Implémenter la vraie auth par téléphone avec Firebase Phone Auth
+        // Authentification par téléphone non disponible pour le moment
         setError("La connexion par téléphone sera bientôt disponible. Utilisez votre email.");
         setLoading(false);
         return;

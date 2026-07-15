@@ -1,27 +1,1030 @@
 "use client";
 
-import { useState } from "react";
-import NouveauChantierHero from "@/components/nouveau-chantier/NouveauChantierHero";
-import NouveauChantierTimeline from "@/components/nouveau-chantier/NouveauChantierTimeline";
-import NouveauChantierFormulaire from "@/components/nouveau-chantier/NouveauChantierFormulaire";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowRight, ArrowLeft, CheckCircle2, HardHat, MapPin, Wallet, Calendar, Building2, Home, Store, Warehouse, Paintbrush, Hammer } from "lucide-react";
+import { useAuthContext } from "@/contexts/AuthContext";
+import { ref, set, get } from "firebase/database";
+import { getFirebaseServices } from "@/lib/firebase";
 import { PHOTOS_CHANTIER } from "@/data/photos-chantier";
 import BtpPageBackground from "@/components/btp/BtpPageBackground";
+import { PremiumHeader } from "@/components/layout/PremiumHeader";
+import { BackButton } from "@/components/ui/BackButton";
+import { formatFcfa } from "@/utils/currency";
+
+type FormData = {
+  nom?: string;
+  type?: string;
+  surfaceTerrain?: number;
+  surfaceConstruite?: number;
+  niveaux?: number;
+  chambres?: number;
+  sallesDeBain?: number;
+  ville?: string;
+  commune?: string;
+  quartier?: string;
+  adresse?: string;
+  typeTerrain?: string;
+  materiauxGrosOeuvre?: any;
+  materiauxFinitions?: any;
+  budget?: number;
+  apport?: number;
+  financement?: string[];
+  delai?: string;
+  dateDebut?: string;
+  contraintes?: string;
+  planChoisi?: string;
+  rendezVous?: any;
+};
+
+type Step = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
 export default function NouveauChantierPage() {
-  const [showFormulaire, setShowFormulaire] = useState(false);
+  const router = useRouter();
+  const { user } = useAuthContext();
+  const [step, setStep] = useState<Step>(1);
+  const [prefilledData, setPrefilledData] = useState<FormData | null>(null);
+  const [formData, setFormData] = useState<FormData>({});
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [showRdvForm, setShowRdvForm] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [rdvData, setRdvData] = useState({
+    lieu: "bureau",
+    date: "",
+    heure: "10:00",
+    nom: "",
+    telephone: "",
+    email: "",
+    commentaire: ""
+  });
+
+  // Read simulation data from localStorage
+  useEffect(() => {
+    const simulationData = localStorage.getItem('simulationData');
+    if (simulationData) {
+      try {
+        const parsed = JSON.parse(simulationData);
+        setPrefilledData(parsed);
+        setFormData(parsed);
+      } catch (e) {
+        console.error("Error parsing simulation data:", e);
+      }
+    }
+  }, []);
+
+  const handleNext = () => {
+    if (step < 8) setStep((step + 1) as Step);
+  };
+
+  const handleBack = () => {
+    if (step > 1) setStep((step - 1) as Step);
+  };
+
+  const handlePlanSelect = (plan: string) => {
+    setSelectedPlan(plan);
+    setFormData({ ...formData, planChoisi: plan });
+    setShowRdvForm(true);
+  };
+
+  const handleSubmit = async () => {
+    if (!user) return;
+    
+    setLoading(true);
+    
+    try {
+      const { database } = getFirebaseServices();
+      const newId = `chantier_${Date.now()}`;
+      
+      // Create chantier in Firebase
+      await set(ref(database, `chantiers/${newId}`), {
+        id: newId,
+        userId: user.uid,
+        nom: formData.nom,
+        type: formData.type,
+        surface: formData.surfaceConstruite,
+        localisation: {
+          ville: formData.ville,
+          commune: formData.commune,
+          quartier: formData.quartier,
+          adresse: formData.adresse
+        },
+        materiaux: {
+          grosOeuvre: formData.materiauxGrosOeuvre,
+          finitions: formData.materiauxFinitions
+        },
+        budget: formData.budget,
+        apport: formData.apport,
+        financement: formData.financement,
+        delai: formData.delai,
+        dateDebut: formData.dateDebut,
+        contraintes: formData.contraintes,
+        planChoisi: formData.planChoisi,
+        rendezVous: rdvData,
+        statut: "en_attente",
+        dateCreation: Date.now(),
+        dateMiseAJour: Date.now()
+      });
+
+      // Send notification to admin
+      await set(ref(database, `notifications/admin/nouveau_chantier_${newId}`), {
+        type: "nouveau_chantier",
+        chantierId: newId,
+        userId: user.uid,
+        userName: user.displayName || user.email,
+        planChoisi: formData.planChoisi,
+        rendezVous: rdvData,
+        dateCreation: Date.now(),
+        lu: false
+      });
+
+      // Clear simulation data
+      localStorage.removeItem('simulationData');
+
+      // Redirect after 5 seconds
+      setTimeout(() => {
+        router.replace('/dashboard');
+      }, 5000);
+    } catch (error) {
+      console.error("Error creating chantier:", error);
+      setLoading(false);
+    }
+  };
 
   return (
     <BtpPageBackground imageUrl={PHOTOS_CHANTIER.nouveauChantier} overlayClassName="bg-gradient-to-b from-black/60 via-black/70 to-black/80">
       <div className="min-h-screen">
-        <NouveauChantierHero onOpenFormulaire={() => setShowFormulaire(true)} />
+        <PremiumHeader />
+        
+        <main className="min-h-screen pt-24 pb-32">
+          <div className="mx-auto max-w-4xl px-4">
+            {/* Back button */}
+            <div className="mb-6">
+              <BackButton href="/dashboard" />
+            </div>
 
-        {showFormulaire && (
-          <div className="relative z-20">
-            <NouveauChantierTimeline />
-            <NouveauChantierFormulaire onClose={() => setShowFormulaire(false)} />
+            {/* Prefilled data banner */}
+            {prefilledData && (
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-6 rounded-[18px] bg-[#EAF2FF] border border-[#0B5FFF]/30 p-4"
+              >
+                <div className="flex items-center gap-3">
+                  <CheckCircle2 size={20} className="text-[#0B5FFF]" />
+                  <p className="text-sm font-bold text-[#0D2B6B]">
+                    📐 Données importées depuis votre simulation. Vous pouvez modifier les champs.
+                  </p>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Progress bar */}
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-[#6B7280]">Étape {step}/8</span>
+                <span className="text-xs font-bold text-[#FF6B00]">{Math.round((step / 8) * 100)}%</span>
+              </div>
+              <div className="h-2 w-full rounded-full bg-[#E7EBF5]">
+                <motion.div
+                  className="h-2 rounded-full bg-gradient-to-r from-[#FF6B00] to-[#FF8C00]"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${(step / 8) * 100}%` }}
+                  transition={{ duration: 0.3 }}
+                />
+              </div>
+            </div>
+
+            {/* Form content */}
+            <AnimatePresence mode="wait">
+              {step === 1 && <Step1 formData={formData} setFormData={setFormData} />}
+              {step === 2 && <Step2 formData={formData} setFormData={setFormData} />}
+              {step === 3 && <Step3 formData={formData} setFormData={setFormData} />}
+              {step === 4 && <Step4 formData={formData} setFormData={setFormData} />}
+              {step === 5 && <Step5 formData={formData} setFormData={setFormData} />}
+              {step === 6 && <Step6 formData={formData} setFormData={setFormData} />}
+              {step === 7 && <Step7 formData={formData} setFormData={setFormData} />}
+              {step === 8 && (
+                <Step8 
+                  formData={formData} 
+                  selectedPlan={selectedPlan}
+                  onPlanSelect={handlePlanSelect}
+                  showRdvForm={showRdvForm}
+                  rdvData={rdvData}
+                  setRdvData={setRdvData}
+                />
+              )}
+            </AnimatePresence>
+
+            {/* Navigation buttons */}
+            {!loading && (
+              <div className="mt-8 flex gap-4">
+                {step > 1 && (
+                  <button
+                    onClick={handleBack}
+                    className="flex h-[56px] items-center justify-center gap-2 rounded-[18px] bg-[#F7F9FC] px-8 font-bold text-[#0D2B6B] transition hover:bg-[#E7EBF5]"
+                  >
+                    <ArrowLeft size={20} />
+                    Précédent
+                  </button>
+                )}
+                {step < 8 ? (
+                  <button
+                    onClick={handleNext}
+                    className="flex h-[56px] flex-1 items-center justify-center gap-2 rounded-[18px] bg-gradient-to-r from-[#FF6B00] to-[#FF8C00] px-8 font-bold text-white shadow-lg transition hover:shadow-xl"
+                  >
+                    Suivant
+                    <ArrowRight size={20} />
+                  </button>
+                ) : selectedPlan && showRdvForm ? (
+                  <button
+                    onClick={handleSubmit}
+                    className="flex h-[56px] flex-1 items-center justify-center gap-2 rounded-[18px] bg-gradient-to-r from-[#22C55E] to-[#15803D] px-8 font-bold text-white shadow-lg transition hover:shadow-xl"
+                  >
+                    <CheckCircle2 size={20} />
+                    Soumettre le projet
+                  </button>
+                ) : null}
+              </div>
+            )}
+
+            {/* Loading screen */}
+            {loading && <LoadingScreen />}
           </div>
-        )}
+        </main>
       </div>
     </BtpPageBackground>
+  );
+}
+
+// Step 1: Type de projet
+function Step1({ formData, setFormData }: { formData: FormData; setFormData: (data: FormData) => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="rounded-[24px] bg-white/80 backdrop-blur-xl p-6 shadow-lg border border-white/20"
+    >
+      <div className="flex items-center gap-3 mb-6">
+        <div className="grid size-12 place-items-center rounded-[16px] bg-[#FF6B00]">
+          <Building2 size={24} className="text-white" />
+        </div>
+        <div>
+          <h2 className="text-xl font-black text-[#0D2B6B]">Type de projet</h2>
+          <p className="text-sm text-[#6B7280]">Décrivez votre projet de construction</p>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <div>
+          <label className="mb-2 block text-sm font-bold text-[#6B7280]">Nom du projet</label>
+          <input
+            type="text"
+            value={formData.nom || ""}
+            onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
+            placeholder="Ex: Ma villa à Cocody"
+            className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-[#FF6B00]/30"
+          />
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-bold text-[#6B7280]">Type de projet</label>
+          <select
+            value={formData.type || ""}
+            onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+            className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
+          >
+            <option value="">Sélectionnez...</option>
+            <option value="villa">🏠 Villa</option>
+            <option value="immeuble">🏢 Immeuble</option>
+            <option value="duplex">🏘️ Duplex</option>
+            <option value="commerce">🏪 Commerce</option>
+            <option value="entrepot">🏭 Entrepôt</option>
+            <option value="renovation">🔨 Rénovation</option>
+            <option value="autre">📋 Autre</option>
+          </select>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// Step 2: Surface et dimensions
+function Step2({ formData, setFormData }: { formData: FormData; setFormData: (data: FormData) => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="rounded-[24px] bg-white/80 backdrop-blur-xl p-6 shadow-lg border border-white/20"
+    >
+      <div className="flex items-center gap-3 mb-6">
+        <div className="grid size-12 place-items-center rounded-[16px] bg-[#FF6B00]">
+          <Home size={24} className="text-white" />
+        </div>
+        <div>
+          <h2 className="text-xl font-black text-[#0D2B6B]">Surface et dimensions</h2>
+          <p className="text-sm text-[#6B7280]">Définissez les dimensions de votre projet</p>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="mb-2 block text-sm font-bold text-[#6B7280]">Surface terrain (m²)</label>
+            <input
+              type="number"
+              value={formData.surfaceTerrain || ""}
+              onChange={(e) => setFormData({ ...formData, surfaceTerrain: Number(e.target.value) })}
+              placeholder="250"
+              className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-[#FF6B00]/30"
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-bold text-[#6B7280]">Surface construite (m²)</label>
+            <input
+              type="number"
+              value={formData.surfaceConstruite || ""}
+              onChange={(e) => setFormData({ ...formData, surfaceConstruite: Number(e.target.value) })}
+              placeholder="180"
+              className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-[#FF6B00]/30"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4">
+          <div>
+            <label className="mb-2 block text-sm font-bold text-[#6B7280]">Niveaux</label>
+            <select
+              value={formData.niveaux || ""}
+              onChange={(e) => setFormData({ ...formData, niveaux: Number(e.target.value) })}
+              className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
+            >
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4+</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-bold text-[#6B7280]">Chambres</label>
+            <select
+              value={formData.chambres || ""}
+              onChange={(e) => setFormData({ ...formData, chambres: Number(e.target.value) })}
+              className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
+            >
+              {[1, 2, 3, 4, 5, 6].map(n => (
+                <option key={n} value={n}>{n}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-bold text-[#6B7280]">Salles de bain</label>
+            <select
+              value={formData.sallesDeBain || ""}
+              onChange={(e) => setFormData({ ...formData, sallesDeBain: Number(e.target.value) })}
+              className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
+            >
+              {[1, 2, 3, 4].map(n => (
+                <option key={n} value={n}>{n}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// Step 3: Localisation
+function Step3({ formData, setFormData }: { formData: FormData; setFormData: (data: FormData) => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="rounded-[24px] bg-white/80 backdrop-blur-xl p-6 shadow-lg border border-white/20"
+    >
+      <div className="flex items-center gap-3 mb-6">
+        <div className="grid size-12 place-items-center rounded-[16px] bg-[#FF6B00]">
+          <MapPin size={24} className="text-white" />
+        </div>
+        <div>
+          <h2 className="text-xl font-black text-[#0D2B6B]">Localisation</h2>
+          <p className="text-sm text-[#6B7280]">Où se trouve votre terrain ?</p>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <div>
+          <label className="mb-2 block text-sm font-bold text-[#6B7280]">Ville</label>
+          <select
+            value={formData.ville || ""}
+            onChange={(e) => setFormData({ ...formData, ville: e.target.value })}
+            className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
+          >
+            <option value="">Sélectionnez...</option>
+            <option value="Abidjan">Abidjan</option>
+            <option value="Yamoussoukro">Yamoussoukro</option>
+            <option value="Bouaké">Bouaké</option>
+            <option value="Korhogo">Korhogo</option>
+            <option value="San-Pédro">San-Pédro</option>
+            <option value="Daloa">Daloa</option>
+          </select>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="mb-2 block text-sm font-bold text-[#6B7280]">Commune</label>
+            <input
+              type="text"
+              value={formData.commune || ""}
+              onChange={(e) => setFormData({ ...formData, commune: e.target.value })}
+              placeholder="Cocody"
+              className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-[#FF6B00]/30"
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-bold text-[#6B7280]">Quartier</label>
+            <input
+              type="text"
+              value={formData.quartier || ""}
+              onChange={(e) => setFormData({ ...formData, quartier: e.target.value })}
+              placeholder="Riviera"
+              className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-[#FF6B00]/30"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-bold text-[#6B7280]">Adresse précise</label>
+          <input
+            type="text"
+            value={formData.adresse || ""}
+            onChange={(e) => setFormData({ ...formData, adresse: e.target.value })}
+            placeholder="Ex: Rue 12, Villa 45"
+            className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-[#FF6B00]/30"
+          />
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-bold text-[#6B7280]">Type de terrain</label>
+          <select
+            value={formData.typeTerrain || ""}
+            onChange={(e) => setFormData({ ...formData, typeTerrain: e.target.value })}
+            className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
+          >
+            <option value="plat">Plat</option>
+            <option value="pente">En pente</option>
+            <option value="difficile">Accès difficile</option>
+          </select>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// Step 4: Matériaux gros œuvre
+function Step4({ formData, setFormData }: { formData: FormData; setFormData: (data: FormData) => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="rounded-[24px] bg-white/80 backdrop-blur-xl p-6 shadow-lg border border-white/20"
+    >
+      <div className="flex items-center gap-3 mb-6">
+        <div className="grid size-12 place-items-center rounded-[16px] bg-[#FF6B00]">
+          <HardHat size={24} className="text-white" />
+        </div>
+        <div>
+          <h2 className="text-xl font-black text-[#0D2B6B]">Matériaux gros œuvre</h2>
+          <p className="text-sm text-[#6B7280]">Sélectionnez les matériaux de base</p>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <div>
+          <label className="mb-2 block text-sm font-bold text-[#6B7280]">Ciment</label>
+          <select
+            value={formData.materiauxGrosOeuvre?.ciment || ""}
+            onChange={(e) => setFormData({ 
+              ...formData, 
+              materiauxGrosOeuvre: { ...formData.materiauxGrosOeuvre, ciment: e.target.value } 
+            })}
+            className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
+          >
+            <option value="">Sélectionnez...</option>
+            <option value="cpj42">Ciment CPJ 42.5 - 5 200 FCFA/sac</option>
+            <option value="cpj35">Ciment CPJ 35 - 4 800 FCFA/sac</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-bold text-[#6B7280]">Fer à béton</label>
+          <select
+            value={formData.materiauxGrosOeuvre?.fer || ""}
+            onChange={(e) => setFormData({ 
+              ...formData, 
+              materiauxGrosOeuvre: { ...formData.materiauxGrosOeuvre, fer: e.target.value } 
+            })}
+            className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
+          >
+            <option value="">Sélectionnez...</option>
+            <option value="ha12">HA 12mm - 4 200 FCFA/barre</option>
+            <option value="ha10">HA 10mm - 3 800 FCFA/barre</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-bold text-[#6B7280]">Briques/Parpaings</label>
+          <select
+            value={formData.materiauxGrosOeuvre?.briques || ""}
+            onChange={(e) => setFormData({ 
+              ...formData, 
+              materiauxGrosOeuvre: { ...formData.materiauxGrosOeuvre, briques: e.target.value } 
+            })}
+            className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
+          >
+            <option value="">Sélectionnez...</option>
+            <option value="15x20x40">15x20x40 - 350 FCFA/unité</option>
+            <option value="20x20x40">20x20x40 - 400 FCFA/unité</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-bold text-[#6B7280]">Sable</label>
+          <select
+            value={formData.materiauxGrosOeuvre?.sable || ""}
+            onChange={(e) => setFormData({ 
+              ...formData, 
+              materiauxGrosOeuvre: { ...formData.materiauxGrosOeuvre, sable: e.target.value } 
+            })}
+            className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
+          >
+            <option value="">Sélectionnez...</option>
+            <option value="sable1">Sable fin - 45 000 FCFA/m³</option>
+            <option value="sable2">Sable grossier - 40 000 FCFA/m³</option>
+          </select>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// Step 5: Matériaux finitions
+function Step5({ formData, setFormData }: { formData: FormData; setFormData: (data: FormData) => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="rounded-[24px] bg-white/80 backdrop-blur-xl p-6 shadow-lg border border-white/20"
+    >
+      <div className="flex items-center gap-3 mb-6">
+        <div className="grid size-12 place-items-center rounded-[16px] bg-[#FF6B00]">
+          <Paintbrush size={24} className="text-white" />
+        </div>
+        <div>
+          <h2 className="text-xl font-black text-[#0D2B6B]">Matériaux finitions</h2>
+          <p className="text-sm text-[#6B7280]">Sélectionnez les matériaux de finition</p>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <div>
+          <label className="mb-2 block text-sm font-bold text-[#6B7280]">Carrelage</label>
+          <select
+            value={formData.materiauxFinitions?.carrelage || ""}
+            onChange={(e) => setFormData({ 
+              ...formData, 
+              materiauxFinitions: { ...formData.materiauxFinitions, carrelage: e.target.value } 
+            })}
+            className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
+          >
+            <option value="">Sélectionnez...</option>
+            <option value="premium">Carrelage premium - 12 500 FCFA/m²</option>
+            <option value="standard">Carrelage standard - 8 500 FCFA/m²</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-bold text-[#6B7280]">Peinture</label>
+          <select
+            value={formData.materiauxFinitions?.peinture || ""}
+            onChange={(e) => setFormData({ 
+              ...formData, 
+              materiauxFinitions: { ...formData.materiauxFinitions, peinture: e.target.value } 
+            })}
+            className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
+          >
+            <option value="">Sélectionnez...</option>
+            <option value="lux">Peinture lux - 15 000 FCFA/seau</option>
+            <option value="standard">Peinture standard - 10 000 FCFA/seau</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-bold text-[#6B7280]">Toiture</label>
+          <select
+            value={formData.materiauxFinitions?.toiture || ""}
+            onChange={(e) => setFormData({ 
+              ...formData, 
+              materiauxFinitions: { ...formData.materiauxFinitions, toiture: e.target.value } 
+            })}
+            className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
+          >
+            <option value="">Sélectionnez...</option>
+            <option value="tuile">Tuile - 8 000 FCFA/m²</option>
+            <option value="bac">Bac acier - 6 500 FCFA/m²</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-bold text-[#6B7280]">Menuiserie</label>
+          <select
+            value={formData.materiauxFinitions?.menuiserie || ""}
+            onChange={(e) => setFormData({ 
+              ...formData, 
+              materiauxFinitions: { ...formData.materiauxFinitions, menuiserie: e.target.value } 
+            })}
+            className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
+          >
+            <option value="">Sélectionnez...</option>
+            <option value="bois">Bois - 25 000 FCFA/porte</option>
+            <option value="alu">Aluminium - 35 000 FCFA/porte</option>
+          </select>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// Step 6: Budget et financement
+function Step6({ formData, setFormData }: { formData: FormData; setFormData: (data: FormData) => void }) {
+  const toggleFinancement = (mode: string) => {
+    const current = formData.financement || [];
+    if (current.includes(mode)) {
+      setFormData({ 
+        ...formData, 
+        financement: current.filter(f => f !== mode) 
+      });
+    } else {
+      setFormData({ 
+        ...formData, 
+        financement: [...current, mode] 
+      });
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="rounded-[24px] bg-white/80 backdrop-blur-xl p-6 shadow-lg border border-white/20"
+    >
+      <div className="flex items-center gap-3 mb-6">
+        <div className="grid size-12 place-items-center rounded-[16px] bg-[#FF6B00]">
+          <Wallet size={24} className="text-white" />
+        </div>
+        <div>
+          <h2 className="text-xl font-black text-[#0D2B6B]">Budget et financement</h2>
+          <p className="text-sm text-[#6B7280]">Définissez votre budget</p>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="mb-2 block text-sm font-bold text-[#6B7280]">Budget total (FCFA)</label>
+            <input
+              type="number"
+              value={formData.budget || ""}
+              onChange={(e) => setFormData({ ...formData, budget: Number(e.target.value) })}
+              placeholder="45 000 000"
+              className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-[#FF6B00]/30"
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-bold text-[#6B7280]">Apport personnel (FCFA)</label>
+            <input
+              type="number"
+              value={formData.apport || ""}
+              onChange={(e) => setFormData({ ...formData, apport: Number(e.target.value) })}
+              placeholder="15 000 000"
+              className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-[#FF6B00]/30"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="mb-3 block text-sm font-bold text-[#6B7280]">Mode de financement</label>
+          <div className="flex flex-wrap gap-2">
+            {['Comptant', 'Échelonné', 'Crédit bancaire', 'Mixte'].map(mode => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => toggleFinancement(mode)}
+                className={`rounded-full px-4 py-2 text-xs font-bold transition-all ${
+                  (formData.financement || []).includes(mode)
+                    ? 'bg-[#FF6B00] text-white'
+                    : 'bg-[#F7F9FC] text-[#6B7280]'
+                }`}
+              >
+                {mode}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// Step 7: Délai et planning
+function Step7({ formData, setFormData }: { formData: FormData; setFormData: (data: FormData) => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="rounded-[24px] bg-white/80 backdrop-blur-xl p-6 shadow-lg border border-white/20"
+    >
+      <div className="flex items-center gap-3 mb-6">
+        <div className="grid size-12 place-items-center rounded-[16px] bg-[#FF6B00]">
+          <Calendar size={24} className="text-white" />
+        </div>
+        <div>
+          <h2 className="text-xl font-black text-[#0D2B6B]">Délai et planning</h2>
+          <p className="text-sm text-[#6B7280]">Définissez votre planning</p>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <div>
+          <label className="mb-2 block text-sm font-bold text-[#6B7280]">Délai souhaité</label>
+          <select
+            value={formData.delai || ""}
+            onChange={(e) => setFormData({ ...formData, delai: e.target.value })}
+            className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
+          >
+            <option value="6mois">6 mois</option>
+            <option value="12mois">12 mois</option>
+            <option value="18mois">18 mois</option>
+            <option value="24mois">24 mois+</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-bold text-[#6B7280]">Date de début souhaitée</label>
+          <input
+            type="date"
+            value={formData.dateDebut || ""}
+            onChange={(e) => setFormData({ ...formData, dateDebut: e.target.value })}
+            className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-[#FF6B00]/30"
+          />
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-bold text-[#6B7280]">Contraintes particulières</label>
+          <textarea
+            value={formData.contraintes || ""}
+            onChange={(e) => setFormData({ ...formData, contraintes: e.target.value })}
+            placeholder="Ex: Saison des pluies, accès limité, etc."
+            rows={3}
+            className="w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-[#FF6B00]/30"
+          />
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// Step 8: Récapitulatif + Plans payants
+function Step8({ 
+  formData, 
+  selectedPlan, 
+  onPlanSelect,
+  showRdvForm,
+  rdvData,
+  setRdvData
+}: { 
+  formData: FormData; 
+  selectedPlan: string | null;
+  onPlanSelect: (plan: string) => void;
+  showRdvForm: boolean;
+  rdvData: any;
+  setRdvData: (data: any) => void;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="space-y-6"
+    >
+      {/* Récapitulatif */}
+      <div className="rounded-[24px] bg-white/80 backdrop-blur-xl p-6 shadow-lg border border-white/20">
+        <h2 className="text-xl font-black text-[#0D2B6B] mb-4">📋 Récapitulatif</h2>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-[#6B7280]">Nom du projet</span>
+            <span className="font-bold text-[#0D2B6B]">{formData.nom || '—'}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-[#6B7280]">Type</span>
+            <span className="font-bold text-[#0D2B6B]">{formData.type || '—'}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-[#6B7280]">Surface</span>
+            <span className="font-bold text-[#0D2B6B]">{formData.surfaceConstruite || 0} m²</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-[#6B7280]">Localisation</span>
+            <span className="font-bold text-[#0D2B6B]">{formData.ville || '—'}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-[#6B7280]">Budget</span>
+            <span className="font-bold text-[#0D2B6B]">{formatFcfa(formData.budget || 0)}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Plans payants */}
+      <div className="rounded-[24px] bg-white/80 backdrop-blur-xl p-6 shadow-lg border border-white/20">
+        <h2 className="text-xl font-black text-[#0D2B6B] mb-4">🎯 Choisissez votre plan professionnel</h2>
+        <div className="space-y-4">
+          {[
+            { id: 'standard', name: 'PLAN STANDARD', price: '100 000 FCFA', features: ['Plan 2D détaillé', 'Plan 3D', 'Liste des matériaux', 'Devis estimatif'] },
+            { id: 'premium', name: 'PLAN PREMIUM', price: '200 000 FCFA', features: ['Tout le Standard +', 'Plans électriques', 'Plans plomberie', 'Coupe et façades', 'Suivi technique (1 visite)'], recommended: true },
+            { id: 'expert', name: 'PLAN EXPERT', price: '350 000 FCFA', features: ['Tout le Premium +', 'Plans structure complets', 'Étude de sol', 'Suivi de chantier (3 visites)', 'Assistance administrative'] }
+          ].map(plan => (
+            <div
+              key={plan.id}
+              onClick={() => onPlanSelect(plan.id)}
+              className={`rounded-[20px] border-2 p-6 cursor-pointer transition-all ${
+                selectedPlan === plan.id 
+                  ? 'border-[#FF6B00] bg-[#FF6B00]/5' 
+                  : 'border-white/30 bg-white/60'
+              } ${plan.recommended ? 'relative' : ''}`}
+            >
+              {plan.recommended && (
+                <span className="absolute -top-3 right-4 rounded-full bg-[#FF6B00] px-3 py-1 text-xs font-bold text-white">
+                  Recommandé
+                </span>
+              )}
+              <div className="flex items-start justify-between mb-3">
+                <h3 className="text-lg font-black text-[#0D2B6B]">{plan.name}</h3>
+                <p className="text-2xl font-black text-[#FF6B00]">{plan.price}</p>
+              </div>
+              <ul className="space-y-2 mb-4">
+                {plan.features.map((feature, i) => (
+                  <li key={i} className="text-sm text-[#6B7280] flex items-start gap-2">
+                    <CheckCircle2 size={16} className="text-[#22C55E] mt-0.5" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+              <button className="w-full bg-[#FF6B00] text-white font-bold py-3 rounded-xl">
+                {selectedPlan === plan.id ? '✓ Sélectionné' : 'SÉLECTIONNER'}
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Formulaire de rendez-vous */}
+      {showRdvForm && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-[24px] bg-white/80 backdrop-blur-xl p-6 shadow-lg border border-white/20"
+        >
+          <h2 className="text-xl font-black text-[#0D2B6B] mb-4">📅 Prendre rendez-vous avec un expert</h2>
+          <div className="space-y-4">
+            <div>
+              <label className="mb-2 block text-sm font-bold text-[#6B7280]">Lieu du rendez-vous</label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="lieu"
+                    value="bureau"
+                    checked={rdvData.lieu === 'bureau'}
+                    onChange={(e) => setRdvData({ ...rdvData, lieu: e.target.value })}
+                    className="accent-[#FF6B00]"
+                  />
+                  <span className="text-sm">Dans nos bureaux (Abidjan, Cocody)</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="lieu"
+                    value="terrain"
+                    checked={rdvData.lieu === 'terrain'}
+                    onChange={(e) => setRdvData({ ...rdvData, lieu: e.target.value })}
+                    className="accent-[#FF6B00]"
+                  />
+                  <span className="text-sm">Sur votre terrain</span>
+                </label>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="mb-2 block text-sm font-bold text-[#6B7280]">Date souhaitée</label>
+                <input
+                  type="date"
+                  value={rdvData.date}
+                  onChange={(e) => setRdvData({ ...rdvData, date: e.target.value })}
+                  className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
+                />
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-bold text-[#6B7280]">Heure souhaitée</label>
+                <select
+                  value={rdvData.heure}
+                  onChange={(e) => setRdvData({ ...rdvData, heure: e.target.value })}
+                  className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
+                >
+                  <option value="09:00">09:00</option>
+                  <option value="10:00">10:00</option>
+                  <option value="11:00">11:00</option>
+                  <option value="14:00">14:00</option>
+                  <option value="15:00">15:00</option>
+                  <option value="16:00">16:00</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-bold text-[#6B7280]">Nom complet</label>
+              <input
+                type="text"
+                value={rdvData.nom}
+                onChange={(e) => setRdvData({ ...rdvData, nom: e.target.value })}
+                className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="mb-2 block text-sm font-bold text-[#6B7280]">Téléphone</label>
+                <input
+                  type="tel"
+                  value={rdvData.telephone}
+                  onChange={(e) => setRdvData({ ...rdvData, telephone: e.target.value })}
+                  className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
+                />
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-bold text-[#6B7280]">Email</label>
+                <input
+                  type="email"
+                  value={rdvData.email}
+                  onChange={(e) => setRdvData({ ...rdvData, email: e.target.value })}
+                  className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-bold text-[#6B7280]">Commentaire</label>
+              <textarea
+                value={rdvData.commentaire}
+                onChange={(e) => setRdvData({ ...rdvData, commentaire: e.target.value })}
+                rows={3}
+                className="w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
+              />
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </motion.div>
+  );
+}
+
+// Loading screen
+function LoadingScreen() {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+    >
+      <div className="text-center">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+          className="mx-auto mb-6 size-24"
+        >
+          <HardHat size={96} className="text-[#FF6B00]" />
+        </motion.div>
+        <h2 className="text-2xl font-black text-white mb-2">🏗️ Votre projet est en cours de création...</h2>
+        <p className="text-sm text-white/70">Veuillez patienter pendant que nous enregistrons vos informations</p>
+      </div>
+    </motion.div>
   );
 }

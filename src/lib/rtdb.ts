@@ -7,7 +7,9 @@ import {
   query,
   orderByChild,
   equalTo,
+  onValue,
   type DatabaseReference,
+  type Unsubscribe,
 } from "firebase/database";
 import { getFirebaseServices, hasFirebaseConfig } from "./firebase";
 
@@ -76,4 +78,47 @@ export async function rtdbGetListByChild<T = Record<string, unknown>>(
   } catch {
     return [];
   }
+}
+
+/**
+ * Écoute les changements en temps réel sur un chemin Firebase.
+ * Renvoie une fonction de désabonnement.
+ */
+export function rtdbSubscribe<T = unknown>(
+  path: string,
+  callback: (data: T | null) => void
+): Unsubscribe {
+  const r = dbRef(path);
+  if (!r) return () => {};
+  
+  try {
+    const unsubscribe = onValue(r, (snapshot) => {
+      const data = snapshot.exists() ? (snapshot.val() as T) : null;
+      callback(data);
+    });
+    return unsubscribe;
+  } catch {
+    return () => {};
+  }
+}
+
+/**
+ * Écoute les changements en temps réel sur une collection Firebase.
+ * Normalise les données en tableau avec propriété `id`.
+ */
+export function rtdbSubscribeList<T = Record<string, unknown>>(
+  path: string,
+  callback: (data: T[]) => void
+): Unsubscribe {
+  return rtdbSubscribe<Record<string, T>>(path, (data) => {
+    if (!data) {
+      callback([]);
+      return;
+    }
+    const normalized = Object.entries(data).map(([id, value]) => ({
+      ...(value as object),
+      id,
+    })) as T[];
+    callback(normalized);
+  });
 }

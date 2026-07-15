@@ -8,6 +8,7 @@ import { ArrowRight, Lock, Mail, MapPin, Phone, User, Shield, AlertCircle, Check
 import { useAuthContext } from "@/contexts/AuthContext";
 import { checkPasswordStrength } from "@/hooks/useAuth";
 import { BackButton } from "@/components/ui/BackButton";
+import BtpBackground from "@/components/btp/BtpBackground";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -90,11 +91,11 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="relative flex min-h-screen flex-col items-center overflow-hidden bg-gradient-to-br from-[#F7F9FC] via-white to-[#EAF2FF] px-6 pb-10 pt-12">
-      {/* Background 3D effects */}
-      <div className="absolute -top-40 -left-20 size-80 rounded-full bg-[#0B5FFF] opacity-[0.08] blur-[100px] animate-pulse" />
-      <div className="absolute -bottom-40 -right-20 size-96 rounded-full bg-[#FF7A00] opacity-[0.06] blur-[120px] animate-pulse" style={{ animationDelay: '1s' }} />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-[600px] rounded-full bg-[#22C55E] opacity-[0.03] blur-[150px]" />
+    <BtpBackground
+      imageUrl="https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=2070&auto=format&fit=crop"
+      overlay="light"
+    >
+      <main className="relative flex min-h-screen flex-col items-center overflow-hidden px-6 pb-10 pt-12">
 
       <div className="absolute left-6 top-6 z-20">
         <BackButton href="/welcome" />
@@ -215,5 +216,6 @@ export default function RegisterPage() {
         Déjà un compte ? <Link href="/login" className="font-black text-[#0B5FFF] hover:underline transition-colors">Se connecter →</Link>
       </p>
     </main>
+    </BtpBackground>
   );
 }
