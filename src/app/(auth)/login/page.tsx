@@ -4,10 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { ArrowRight, Cloud, Headphones, Lock, Phone, ShieldCheck, X, ShieldAlert } from "lucide-react";
+import { ArrowRight, Cloud, Headphones, Lock, Phone, ShieldCheck } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { BackButton } from "@/components/ui/BackButton";
-import { verifyAdminCode } from "@/lib/admin";
+import AdminSecretModal from "@/components/auth/AdminSecretModal";
 
 export const dynamic = "force-static";
 
@@ -23,9 +23,7 @@ export default function LoginPage() {
   // Connexion secrète admin (5 taps sur le logo en 2s)
   const [tapCount, setTapCount] = useState(0);
   const [tapTimer, setTapTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
-  const [adminModal, setAdminModal] = useState(false);
-  const [adminCode, setAdminCode] = useState("");
-  const [adminError, setAdminError] = useState("");
+  const [showAdminModal, setShowAdminModal] = useState(false);
 
   function handleLogoTap() {
     const newCount = tapCount + 1;
@@ -38,23 +36,7 @@ export default function LoginPage() {
     if (newCount >= 5) {
       setTapCount(0);
       if (tapTimer) clearTimeout(tapTimer);
-      setAdminModal(true);
-    }
-  }
-
-  async function handleAdminSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setAdminError("");
-    try {
-      const ok = await verifyAdminCode(adminCode);
-      if (ok) {
-        setAdminModal(false);
-        router.replace("/admin");
-      } else {
-        setAdminError("Code incorrect. Réessayez.");
-      }
-    } catch (err) {
-      setAdminError(err instanceof Error ? err.message : "Erreur de connexion.");
+      setShowAdminModal(true);
     }
   }
 
@@ -119,38 +101,12 @@ export default function LoginPage() {
       
       {/* Contenu centré */}
       <div className="relative z-20 min-h-screen flex flex-col items-center justify-center px-4 py-4">
-        {adminModal && (
-          <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4" onClick={() => setAdminModal(false)}>
-            <div
-              className="w-full max-w-sm rounded-[24px] bg-[#111827] p-6 text-white shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="mb-4 flex items-center justify-between">
-                <h3 className="flex items-center gap-2 text-lg font-black">
-                  <ShieldAlert className="text-[#FF7A00]" /> Code admin requis
-                </h3>
-                <button type="button" onClick={() => setAdminModal(false)} aria-label="Fermer">
-                  <X size={20} />
-                </button>
-              </div>
-              <form onSubmit={handleAdminSubmit} className="space-y-4">
-                <input
-                  value={adminCode}
-                  onChange={(e) => setAdminCode(e.target.value)}
-                  placeholder="Saisissez le code"
-                  autoFocus
-                  className="h-12 w-full rounded-[14px] bg-[#1F2937] px-4 text-sm font-bold text-white outline-none ring-1 ring-white/10 focus:ring-[#FF7A00]"
-                />
-                {adminError && <p className="text-sm font-semibold text-red-400">{adminError}</p>}
-                <button
-                  type="submit"
-                  className="h-12 w-full rounded-[14px] bg-[#FF7A00] font-black text-white transition active:scale-95"
-                >
-                  Valider
-                </button>
-              </form>
-            </div>
-          </div>
+        {/* Modal Admin Secret */}
+        {showAdminModal && (
+          <AdminSecretModal 
+            isOpen={showAdminModal} 
+            onClose={() => setShowAdminModal(false)} 
+          />
         )}
 
         {/* Logo + Titre - Unique bloc */}
@@ -158,7 +114,8 @@ export default function LoginPage() {
           <img 
             src="/assets/images/logo.png" 
             alt="BÂTIZEN.CI" 
-            className="w-20 h-20 mx-auto mb-3 rounded-2xl shadow-lg"
+            className="w-20 h-20 mx-auto mb-3 rounded-2xl shadow-lg cursor-pointer"
+            onClick={handleLogoTap}
           />
           <h1 className="text-2xl font-bold text-white">BÂTIZEN.CI</h1>
           <p className="text-sm text-white/80">Votre partenaire BTP</p>
