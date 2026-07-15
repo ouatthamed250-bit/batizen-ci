@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, ArrowLeft, CheckCircle2, HardHat, MapPin, Wallet, Calendar, Building2, Home, Store, Warehouse, Paintbrush, Hammer } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
-import { ref, set, get } from "firebase/database";
+import { ref, set } from "firebase/database";
 import { getFirebaseServices } from "@/lib/firebase";
 import { PHOTOS_CHANTIER } from "@/data/photos-chantier";
 import BtpPageBackground from "@/components/btp/BtpPageBackground";
@@ -49,6 +49,7 @@ export default function NouveauChantierPage() {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [showRdvForm, setShowRdvForm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [chantierId, setChantierId] = useState<string | null>(null);
   const [rdvData, setRdvData] = useState({
     lieu: "bureau",
     date: "",
@@ -95,6 +96,7 @@ export default function NouveauChantierPage() {
     try {
       const { database } = getFirebaseServices();
       const newId = `chantier_${Date.now()}`;
+      setChantierId(newId);
       
       // Create chantier in Firebase
       await set(ref(database, `chantiers/${newId}`), {
@@ -103,16 +105,8 @@ export default function NouveauChantierPage() {
         nom: formData.nom,
         type: formData.type,
         surface: formData.surfaceConstruite,
-        localisation: {
-          ville: formData.ville,
-          commune: formData.commune,
-          quartier: formData.quartier,
-          adresse: formData.adresse
-        },
-        materiaux: {
-          grosOeuvre: formData.materiauxGrosOeuvre,
-          finitions: formData.materiauxFinitions
-        },
+        localisation: { ville: formData.ville, commune: formData.commune, quartier: formData.quartier, adresse: formData.adresse },
+        materiaux: { grosOeuvre: formData.materiauxGrosOeuvre, finitions: formData.materiauxFinitions },
         budget: formData.budget,
         apport: formData.apport,
         financement: formData.financement,
@@ -142,14 +136,36 @@ export default function NouveauChantierPage() {
       localStorage.removeItem('simulationData');
 
       // Redirect after 5 seconds
-      setTimeout(() => {
-        router.replace('/dashboard');
-      }, 5000);
+      setTimeout(() => { router.replace('/dashboard'); }, 5000);
     } catch (error) {
       console.error("Error creating chantier:", error);
       setLoading(false);
     }
   };
+
+  // Show success screen after submission
+  if (loading && chantierId) {
+    return (
+      <BtpPageBackground imageUrl={PHOTOS_CHANTIER.nouveauChantier} overlayClassName="bg-gradient-to-b from-black/60 via-black/70 to-black/80">
+        <div className="min-h-screen pt-24 flex items-center justify-center">
+          <div className="rounded-[24px] bg-white/10 backdrop-blur-xl p-8 border border-white/20 max-w-md w-full mx-4 text-center">
+            <CheckCircle2 size={64} className="text-[#22C55E] mx-auto mb-4" />
+            <h2 className="text-2xl font-black text-white mb-4">✅ Projet soumis avec succès !</h2>
+            <div className="space-y-3 text-left mb-6">
+              <p className="text-white"><span className="text-white/60">🏗️ Projet :</span> {formData.nom || '—'}</p>
+              <p className="text-white"><span className="text-white/60">📅 RDV :</span> {rdvData.date || 'À définir'} à {rdvData.heure}</p>
+              <p className="text-white"><span className="text-white/60">💼 Plan :</span> {selectedPlan || '—'}</p>
+              <p className="text-white/80">⏳ Statut : En attente de validation</p>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => router.push('/dashboard')} className="flex-1 h-[56px] rounded-[18px] bg-white/20 font-bold text-white">Retour au Dashboard</button>
+              <button onClick={() => router.push(`/chantier/${chantierId}`)} className="flex-1 h-[56px] rounded-[18px] bg-gradient-to-r from-[#FF6B00] to-[#FF8C00] font-bold text-white">Voir mon chantier</button>
+            </div>
+          </div>
+        </div>
+      </BtpPageBackground>
+    );
+  }
 
   return (
     <BtpPageBackground imageUrl={PHOTOS_CHANTIER.nouveauChantier} overlayClassName="bg-gradient-to-b from-black/60 via-black/70 to-black/80">
@@ -158,44 +174,27 @@ export default function NouveauChantierPage() {
         
         <main className="min-h-screen pt-24 pb-32">
           <div className="mx-auto max-w-4xl px-4">
-            {/* Back button */}
-            <div className="mb-6">
-              <BackButton href="/dashboard" />
-            </div>
+            <div className="mb-6"><BackButton href="/dashboard" /></div>
 
-            {/* Prefilled data banner */}
             {prefilledData && (
-              <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-6 rounded-[18px] bg-[#EAF2FF] border border-[#0B5FFF]/30 p-4"
-              >
+              <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-6 rounded-[18px] bg-white/20 border border-white/30 p-4">
                 <div className="flex items-center gap-3">
-                  <CheckCircle2 size={20} className="text-[#0B5FFF]" />
-                  <p className="text-sm font-bold text-[#0D2B6B]">
-                    📐 Données importées depuis votre simulation. Vous pouvez modifier les champs.
-                  </p>
+                  <CheckCircle2 size={20} className="text-[#FF6B00]" />
+                  <p className="text-sm font-bold text-white">📐 Données importées depuis votre simulation. Vous pouvez modifier les champs.</p>
                 </div>
               </motion.div>
             )}
 
-            {/* Progress bar */}
             <div className="mb-8">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-[#6B7280]">Étape {step}/8</span>
+                <span className="text-xs font-bold text-white">Étape {step}/8</span>
                 <span className="text-xs font-bold text-[#FF6B00]">{Math.round((step / 8) * 100)}%</span>
               </div>
-              <div className="h-2 w-full rounded-full bg-[#E7EBF5]">
-                <motion.div
-                  className="h-2 rounded-full bg-gradient-to-r from-[#FF6B00] to-[#FF8C00]"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${(step / 8) * 100}%` }}
-                  transition={{ duration: 0.3 }}
-                />
+              <div className="h-2 w-full rounded-full bg-white/20">
+                <motion.div className="h-2 rounded-full bg-gradient-to-r from-[#FF6B00] to-[#FF8C00]" initial={{ width: 0 }} animate={{ width: `${(step / 8) * 100}%` }} transition={{ duration: 0.3 }} />
               </div>
             </div>
 
-            {/* Form content */}
             <AnimatePresence mode="wait">
               {step === 1 && <Step1 formData={formData} setFormData={setFormData} />}
               {step === 2 && <Step2 formData={formData} setFormData={setFormData} />}
@@ -204,52 +203,27 @@ export default function NouveauChantierPage() {
               {step === 5 && <Step5 formData={formData} setFormData={setFormData} />}
               {step === 6 && <Step6 formData={formData} setFormData={setFormData} />}
               {step === 7 && <Step7 formData={formData} setFormData={setFormData} />}
-              {step === 8 && (
-                <Step8 
-                  formData={formData} 
-                  selectedPlan={selectedPlan}
-                  onPlanSelect={handlePlanSelect}
-                  showRdvForm={showRdvForm}
-                  rdvData={rdvData}
-                  setRdvData={setRdvData}
-                />
-              )}
+              {step === 8 && <Step8 formData={formData} selectedPlan={selectedPlan} onPlanSelect={handlePlanSelect} showRdvForm={showRdvForm} rdvData={rdvData} setRdvData={setRdvData} prefilledData={prefilledData} />}
             </AnimatePresence>
 
-            {/* Navigation buttons */}
             {!loading && (
               <div className="mt-8 flex gap-4">
                 {step > 1 && (
-                  <button
-                    onClick={handleBack}
-                    className="flex h-[56px] items-center justify-center gap-2 rounded-[18px] bg-[#F7F9FC] px-8 font-bold text-[#0D2B6B] transition hover:bg-[#E7EBF5]"
-                  >
-                    <ArrowLeft size={20} />
-                    Précédent
+                  <button onClick={handleBack} className="flex h-[56px] items-center justify-center gap-2 rounded-[18px] bg-white/20 px-8 font-bold text-white transition hover:bg-white/30">
+                    <ArrowLeft size={20} /> Précédent
                   </button>
                 )}
                 {step < 8 ? (
-                  <button
-                    onClick={handleNext}
-                    className="flex h-[56px] flex-1 items-center justify-center gap-2 rounded-[18px] bg-gradient-to-r from-[#FF6B00] to-[#FF8C00] px-8 font-bold text-white shadow-lg transition hover:shadow-xl"
-                  >
-                    Suivant
-                    <ArrowRight size={20} />
+                  <button onClick={handleNext} className="flex h-[56px] flex-1 items-center justify-center gap-2 rounded-[18px] bg-gradient-to-r from-[#FF6B00] to-[#FF8C00] px-8 font-bold text-white shadow-lg transition hover:shadow-xl">
+                    Suivant <ArrowRight size={20} />
                   </button>
                 ) : selectedPlan && showRdvForm ? (
-                  <button
-                    onClick={handleSubmit}
-                    className="flex h-[56px] flex-1 items-center justify-center gap-2 rounded-[18px] bg-gradient-to-r from-[#22C55E] to-[#15803D] px-8 font-bold text-white shadow-lg transition hover:shadow-xl"
-                  >
-                    <CheckCircle2 size={20} />
-                    Soumettre le projet
+                  <button onClick={handleSubmit} className="flex h-[56px] flex-1 items-center justify-center gap-2 rounded-[18px] bg-gradient-to-r from-[#22C55E] to-[#15803D] px-8 font-bold text-white shadow-lg transition hover:shadow-xl">
+                    <CheckCircle2 size={20} /> Soumettre le projet
                   </button>
                 ) : null}
               </div>
             )}
-
-            {/* Loading screen */}
-            {loading && <LoadingScreen />}
           </div>
         </main>
       </div>
@@ -257,774 +231,181 @@ export default function NouveauChantierPage() {
   );
 }
 
-// Step 1: Type de projet
 function Step1({ formData, setFormData }: { formData: FormData; setFormData: (data: FormData) => void }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      className="rounded-[24px] bg-white/80 backdrop-blur-xl p-6 shadow-lg border border-white/20"
-    >
+    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20">
       <div className="flex items-center gap-3 mb-6">
-        <div className="grid size-12 place-items-center rounded-[16px] bg-[#FF6B00]">
-          <Building2 size={24} className="text-white" />
-        </div>
-        <div>
-          <h2 className="text-xl font-black text-[#0D2B6B]">Type de projet</h2>
-          <p className="text-sm text-[#6B7280]">Décrivez votre projet de construction</p>
-        </div>
+        <div className="grid size-12 place-items-center rounded-[16px] bg-[#FF6B00]"><Building2 size={24} className="text-white" /></div>
+        <div><h2 className="text-xl font-black text-white">Type de projet</h2><p className="text-sm text-white/60">Décrivez votre projet de construction</p></div>
       </div>
-
       <div className="space-y-4">
-        <div>
-          <label className="mb-2 block text-sm font-bold text-[#6B7280]">Nom du projet</label>
-          <input
-            type="text"
-            value={formData.nom || ""}
-            onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
-            placeholder="Ex: Ma villa à Cocody"
-            className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-[#FF6B00]/30"
-          />
-        </div>
-
-        <div>
-          <label className="mb-2 block text-sm font-bold text-[#6B7280]">Type de projet</label>
-          <select
-            value={formData.type || ""}
-            onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-            className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
-          >
-            <option value="">Sélectionnez...</option>
-            <option value="villa">🏠 Villa</option>
-            <option value="immeuble">🏢 Immeuble</option>
-            <option value="duplex">🏘️ Duplex</option>
-            <option value="commerce">🏪 Commerce</option>
-            <option value="entrepot">🏭 Entrepôt</option>
-            <option value="renovation">🔨 Rénovation</option>
-            <option value="autre">📋 Autre</option>
-          </select>
+        <div><label className="mb-2 block text-sm font-bold text-white">Nom du projet</label><input type="text" value={formData.nom || ""} onChange={(e) => setFormData({ ...formData, nom: e.target.value })} placeholder="Ex: Ma villa à Cocody" className="h-[54px] w-full rounded-[18px] bg-white/20 px-4 text-sm font-bold text-white outline-none placeholder:text-white/40" /></div>
+        <div><label className="mb-2 block text-sm font-bold text-white">Type de projet</label>
+          <select value={formData.type || ""} onChange={(e) => setFormData({ ...formData, type: e.target.value })} className="h-[54px] w-full rounded-[18px] bg-white/20 px-4 text-sm font-bold text-white outline-none"><option value="">Sélectionnez...</option><option value="villa">🏠 Villa</option><option value="immeuble">🏢 Immeuble</option><option value="duplex">🏘️ Duplex</option><option value="commerce">🏪 Commerce</option><option value="entrepot">🏭 Entrepôt</option><option value="renovation">🔨 Rénovation</option><option value="autre">📋 Autre</option></select>
         </div>
       </div>
     </motion.div>
   );
 }
 
-// Step 2: Surface et dimensions
 function Step2({ formData, setFormData }: { formData: FormData; setFormData: (data: FormData) => void }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      className="rounded-[24px] bg-white/80 backdrop-blur-xl p-6 shadow-lg border border-white/20"
-    >
-      <div className="flex items-center gap-3 mb-6">
-        <div className="grid size-12 place-items-center rounded-[16px] bg-[#FF6B00]">
-          <Home size={24} className="text-white" />
-        </div>
-        <div>
-          <h2 className="text-xl font-black text-[#0D2B6B]">Surface et dimensions</h2>
-          <p className="text-sm text-[#6B7280]">Définissez les dimensions de votre projet</p>
-        </div>
-      </div>
-
+    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20">
+      <div className="flex items-center gap-3 mb-6"><div className="grid size-12 place-items-center rounded-[16px] bg-[#FF6B00]"><Home size={24} className="text-white" /></div><div><h2 className="text-xl font-black text-white">Surface et dimensions</h2><p className="text-sm text-white/60">Définissez les dimensions de votre projet</p></div></div>
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="mb-2 block text-sm font-bold text-[#6B7280]">Surface terrain (m²)</label>
-            <input
-              type="number"
-              value={formData.surfaceTerrain || ""}
-              onChange={(e) => setFormData({ ...formData, surfaceTerrain: Number(e.target.value) })}
-              placeholder="250"
-              className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-[#FF6B00]/30"
-            />
-          </div>
-          <div>
-            <label className="mb-2 block text-sm font-bold text-[#6B7280]">Surface construite (m²)</label>
-            <input
-              type="number"
-              value={formData.surfaceConstruite || ""}
-              onChange={(e) => setFormData({ ...formData, surfaceConstruite: Number(e.target.value) })}
-              placeholder="180"
-              className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-[#FF6B00]/30"
-            />
-          </div>
+          <div><label className="mb-2 block text-sm font-bold text-white">Surface terrain (m²)</label><input type="number" value={formData.surfaceTerrain || ""} onChange={(e) => setFormData({ ...formData, surfaceTerrain: Number(e.target.value) })} placeholder="250" className="h-[54px] w-full rounded-[18px] bg-white/20 px-4 text-sm font-bold text-white outline-none" /></div>
+          <div><label className="mb-2 block text-sm font-bold text-white">Surface construite (m²)</label><input type="number" value={formData.surfaceConstruite || ""} onChange={(e) => setFormData({ ...formData, surfaceConstruite: Number(e.target.value) })} placeholder="180" className="h-[54px] w-full rounded-[18px] bg-white/20 px-4 text-sm font-bold text-white outline-none" /></div>
         </div>
-
         <div className="grid grid-cols-3 gap-4">
-          <div>
-            <label className="mb-2 block text-sm font-bold text-[#6B7280]">Niveaux</label>
-            <select
-              value={formData.niveaux || ""}
-              onChange={(e) => setFormData({ ...formData, niveaux: Number(e.target.value) })}
-              className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
-            >
-              <option value="1">1</option>
-              <option value="2">2</option>
-              <option value="3">3</option>
-              <option value="4">4+</option>
-            </select>
-          </div>
-          <div>
-            <label className="mb-2 block text-sm font-bold text-[#6B7280]">Chambres</label>
-            <select
-              value={formData.chambres || ""}
-              onChange={(e) => setFormData({ ...formData, chambres: Number(e.target.value) })}
-              className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
-            >
-              {[1, 2, 3, 4, 5, 6].map(n => (
-                <option key={n} value={n}>{n}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="mb-2 block text-sm font-bold text-[#6B7280]">Salles de bain</label>
-            <select
-              value={formData.sallesDeBain || ""}
-              onChange={(e) => setFormData({ ...formData, sallesDeBain: Number(e.target.value) })}
-              className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
-            >
-              {[1, 2, 3, 4].map(n => (
-                <option key={n} value={n}>{n}</option>
-              ))}
-            </select>
-          </div>
+          <div><label className="mb-2 block text-sm font-bold text-white">Niveaux</label><select value={formData.niveaux || ""} onChange={(e) => setFormData({ ...formData, niveaux: Number(e.target.value) })} className="h-[54px] w-full rounded-[18px] bg-white/20 px-4 text-sm font-bold text-white outline-none"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4+</option></select></div>
+          <div><label className="mb-2 block text-sm font-bold text-white">Chambres</label><select value={formData.chambres || ""} onChange={(e) => setFormData({ ...formData, chambres: Number(e.target.value) })} className="h-[54px] w-full rounded-[18px] bg-white/20 px-4 text-sm font-bold text-white outline-none">{[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n}</option>)}</select></div>
+          <div><label className="mb-2 block text-sm font-bold text-white">Salles de bain</label><select value={formData.sallesDeBain || ""} onChange={(e) => setFormData({ ...formData, sallesDeBain: Number(e.target.value) })} className="h-[54px] w-full rounded-[18px] bg-white/20 px-4 text-sm font-bold text-white outline-none">{[1,2,3,4].map(n => <option key={n} value={n}>{n}</option>)}</select></div>
         </div>
       </div>
     </motion.div>
   );
 }
 
-// Step 3: Localisation
 function Step3({ formData, setFormData }: { formData: FormData; setFormData: (data: FormData) => void }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      className="rounded-[24px] bg-white/80 backdrop-blur-xl p-6 shadow-lg border border-white/20"
-    >
-      <div className="flex items-center gap-3 mb-6">
-        <div className="grid size-12 place-items-center rounded-[16px] bg-[#FF6B00]">
-          <MapPin size={24} className="text-white" />
-        </div>
-        <div>
-          <h2 className="text-xl font-black text-[#0D2B6B]">Localisation</h2>
-          <p className="text-sm text-[#6B7280]">Où se trouve votre terrain ?</p>
-        </div>
-      </div>
-
+    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20">
+      <div className="flex items-center gap-3 mb-6"><div className="grid size-12 place-items-center rounded-[16px] bg-[#FF6B00]"><MapPin size={24} className="text-white" /></div><div><h2 className="text-xl font-black text-white">Localisation</h2><p className="text-sm text-white/60">Où se trouve votre terrain ?</p></div></div>
       <div className="space-y-4">
-        <div>
-          <label className="mb-2 block text-sm font-bold text-[#6B7280]">Ville</label>
-          <select
-            value={formData.ville || ""}
-            onChange={(e) => setFormData({ ...formData, ville: e.target.value })}
-            className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
-          >
-            <option value="">Sélectionnez...</option>
-            <option value="Abidjan">Abidjan</option>
-            <option value="Yamoussoukro">Yamoussoukro</option>
-            <option value="Bouaké">Bouaké</option>
-            <option value="Korhogo">Korhogo</option>
-            <option value="San-Pédro">San-Pédro</option>
-            <option value="Daloa">Daloa</option>
-          </select>
-        </div>
-
+        <div><label className="mb-2 block text-sm font-bold text-white">Ville</label><select value={formData.ville || ""} onChange={(e) => setFormData({ ...formData, ville: e.target.value })} className="h-[54px] w-full rounded-[18px] bg-white/20 px-4 text-sm font-bold text-white outline-none"><option value="">Sélectionnez...</option><option value="Abidjan">Abidjan</option><option value="Yamoussoukro">Yamoussoukro</option><option value="Bouaké">Bouaké</option><option value="Korhogo">Korhogo</option><option value="San-Pédro">San-Pédro</option><option value="Daloa">Daloa</option></select></div>
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="mb-2 block text-sm font-bold text-[#6B7280]">Commune</label>
-            <input
-              type="text"
-              value={formData.commune || ""}
-              onChange={(e) => setFormData({ ...formData, commune: e.target.value })}
-              placeholder="Cocody"
-              className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-[#FF6B00]/30"
-            />
-          </div>
-          <div>
-            <label className="mb-2 block text-sm font-bold text-[#6B7280]">Quartier</label>
-            <input
-              type="text"
-              value={formData.quartier || ""}
-              onChange={(e) => setFormData({ ...formData, quartier: e.target.value })}
-              placeholder="Riviera"
-              className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-[#FF6B00]/30"
-            />
-          </div>
+          <div><label className="mb-2 block text-sm font-bold text-white">Commune</label><input type="text" value={formData.commune || ""} onChange={(e) => setFormData({ ...formData, commune: e.target.value })} placeholder="Cocody" className="h-[54px] w-full rounded-[18px] bg-white/20 px-4 text-sm font-bold text-white outline-none" /></div>
+          <div><label className="mb-2 block text-sm font-bold text-white">Quartier</label><input type="text" value={formData.quartier || ""} onChange={(e) => setFormData({ ...formData, quartier: e.target.value })} placeholder="Riviera" className="h-[54px] w-full rounded-[18px] bg-white/20 px-4 text-sm font-bold text-white outline-none" /></div>
         </div>
-
-        <div>
-          <label className="mb-2 block text-sm font-bold text-[#6B7280]">Adresse précise</label>
-          <input
-            type="text"
-            value={formData.adresse || ""}
-            onChange={(e) => setFormData({ ...formData, adresse: e.target.value })}
-            placeholder="Ex: Rue 12, Villa 45"
-            className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-[#FF6B00]/30"
-          />
-        </div>
-
-        <div>
-          <label className="mb-2 block text-sm font-bold text-[#6B7280]">Type de terrain</label>
-          <select
-            value={formData.typeTerrain || ""}
-            onChange={(e) => setFormData({ ...formData, typeTerrain: e.target.value })}
-            className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
-          >
-            <option value="plat">Plat</option>
-            <option value="pente">En pente</option>
-            <option value="difficile">Accès difficile</option>
-          </select>
-        </div>
+        <div><label className="mb-2 block text-sm font-bold text-white">Adresse précise</label><input type="text" value={formData.adresse || ""} onChange={(e) => setFormData({ ...formData, adresse: e.target.value })} placeholder="Ex: Rue 12, Villa 45" className="h-[54px] w-full rounded-[18px] bg-white/20 px-4 text-sm font-bold text-white outline-none" /></div>
+        <div><label className="mb-2 block text-sm font-bold text-white">Type de terrain</label><select value={formData.typeTerrain || ""} onChange={(e) => setFormData({ ...formData, typeTerrain: e.target.value })} className="h-[54px] w-full rounded-[18px] bg-white/20 px-4 text-sm font-bold text-white outline-none"><option value="plat">Plat</option><option value="pente">En pente</option><option value="difficile">Accès difficile</option></select></div>
       </div>
     </motion.div>
   );
 }
 
-// Step 4: Matériaux gros œuvre
 function Step4({ formData, setFormData }: { formData: FormData; setFormData: (data: FormData) => void }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      className="rounded-[24px] bg-white/80 backdrop-blur-xl p-6 shadow-lg border border-white/20"
-    >
-      <div className="flex items-center gap-3 mb-6">
-        <div className="grid size-12 place-items-center rounded-[16px] bg-[#FF6B00]">
-          <HardHat size={24} className="text-white" />
-        </div>
-        <div>
-          <h2 className="text-xl font-black text-[#0D2B6B]">Matériaux gros œuvre</h2>
-          <p className="text-sm text-[#6B7280]">Sélectionnez les matériaux de base</p>
-        </div>
-      </div>
-
+    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20">
+      <div className="flex items-center gap-3 mb-6"><div className="grid size-12 place-items-center rounded-[16px] bg-[#FF6B00]"><HardHat size={24} className="text-white" /></div><div><h2 className="text-xl font-black text-white">Matériaux gros œuvre</h2><p className="text-sm text-white/60">Sélectionnez les matériaux de base</p></div></div>
       <div className="space-y-4">
-        <div>
-          <label className="mb-2 block text-sm font-bold text-[#6B7280]">Ciment</label>
-          <select
-            value={formData.materiauxGrosOeuvre?.ciment || ""}
-            onChange={(e) => setFormData({ 
-              ...formData, 
-              materiauxGrosOeuvre: { ...formData.materiauxGrosOeuvre, ciment: e.target.value } 
-            })}
-            className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
-          >
-            <option value="">Sélectionnez...</option>
-            <option value="cpj42">Ciment CPJ 42.5 - 5 200 FCFA/sac</option>
-            <option value="cpj35">Ciment CPJ 35 - 4 800 FCFA/sac</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="mb-2 block text-sm font-bold text-[#6B7280]">Fer à béton</label>
-          <select
-            value={formData.materiauxGrosOeuvre?.fer || ""}
-            onChange={(e) => setFormData({ 
-              ...formData, 
-              materiauxGrosOeuvre: { ...formData.materiauxGrosOeuvre, fer: e.target.value } 
-            })}
-            className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
-          >
-            <option value="">Sélectionnez...</option>
-            <option value="ha12">HA 12mm - 4 200 FCFA/barre</option>
-            <option value="ha10">HA 10mm - 3 800 FCFA/barre</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="mb-2 block text-sm font-bold text-[#6B7280]">Briques/Parpaings</label>
-          <select
-            value={formData.materiauxGrosOeuvre?.briques || ""}
-            onChange={(e) => setFormData({ 
-              ...formData, 
-              materiauxGrosOeuvre: { ...formData.materiauxGrosOeuvre, briques: e.target.value } 
-            })}
-            className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
-          >
-            <option value="">Sélectionnez...</option>
-            <option value="15x20x40">15x20x40 - 350 FCFA/unité</option>
-            <option value="20x20x40">20x20x40 - 400 FCFA/unité</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="mb-2 block text-sm font-bold text-[#6B7280]">Sable</label>
-          <select
-            value={formData.materiauxGrosOeuvre?.sable || ""}
-            onChange={(e) => setFormData({ 
-              ...formData, 
-              materiauxGrosOeuvre: { ...formData.materiauxGrosOeuvre, sable: e.target.value } 
-            })}
-            className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
-          >
-            <option value="">Sélectionnez...</option>
-            <option value="sable1">Sable fin - 45 000 FCFA/m³</option>
-            <option value="sable2">Sable grossier - 40 000 FCFA/m³</option>
-          </select>
-        </div>
+        <div><label className="mb-2 block text-sm font-bold text-white">Ciment</label><select value={formData.materiauxGrosOeuvre?.ciment || ""} onChange={(e) => setFormData({ ...formData, materiauxGrosOeuvre: { ...formData.materiauxGrosOeuvre, ciment: e.target.value } })} className="h-[54px] w-full rounded-[18px] bg-white/20 px-4 text-sm font-bold text-white outline-none"><option value="">Sélectionnez...</option><option value="cpj42">Ciment CPJ 42.5 - 5 200 FCFA/sac</option><option value="cpj35">Ciment CPJ 35 - 4 800 FCFA/sac</option></select></div>
+        <div><label className="mb-2 block text-sm font-bold text-white">Fer à béton</label><select value={formData.materiauxGrosOeuvre?.fer || ""} onChange={(e) => setFormData({ ...formData, materiauxGrosOeuvre: { ...formData.materiauxGrosOeuvre, fer: e.target.value } })} className="h-[54px] w-full rounded-[18px] bg-white/20 px-4 text-sm font-bold text-white outline-none"><option value="">Sélectionnez...</option><option value="ha12">HA 12mm - 4 200 FCFA/barre</option><option value="ha10">HA 10mm - 3 800 FCFA/barre</option></select></div>
+        <div><label className="mb-2 block text-sm font-bold text-white">Briques/Parpaings</label><select value={formData.materiauxGrosOeuvre?.briques || ""} onChange={(e) => setFormData({ ...formData, materiauxGrosOeuvre: { ...formData.materiauxGrosOeuvre, briques: e.target.value } })} className="h-[54px] w-full rounded-[18px] bg-white/20 px-4 text-sm font-bold text-white outline-none"><option value="">Sélectionnez...</option><option value="15x20x40">15x20x40 - 350 FCFA/unité</option><option value="20x20x40">20x20x40 - 400 FCFA/unité</option></select></div>
+        <div><label className="mb-2 block text-sm font-bold text-white">Sable</label><select value={formData.materiauxGrosOeuvre?.sable || ""} onChange={(e) => setFormData({ ...formData, materiauxGrosOeuvre: { ...formData.materiauxGrosOeuvre, sable: e.target.value } })} className="h-[54px] w-full rounded-[18px] bg-white/20 px-4 text-sm font-bold text-white outline-none"><option value="">Sélectionnez...</option><option value="sable1">Sable fin - 45 000 FCFA/m³</option><option value="sable2">Sable grossier - 40 000 FCFA/m³</option></select></div>
       </div>
     </motion.div>
   );
 }
 
-// Step 5: Matériaux finitions
 function Step5({ formData, setFormData }: { formData: FormData; setFormData: (data: FormData) => void }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      className="rounded-[24px] bg-white/80 backdrop-blur-xl p-6 shadow-lg border border-white/20"
-    >
-      <div className="flex items-center gap-3 mb-6">
-        <div className="grid size-12 place-items-center rounded-[16px] bg-[#FF6B00]">
-          <Paintbrush size={24} className="text-white" />
-        </div>
-        <div>
-          <h2 className="text-xl font-black text-[#0D2B6B]">Matériaux finitions</h2>
-          <p className="text-sm text-[#6B7280]">Sélectionnez les matériaux de finition</p>
-        </div>
-      </div>
-
+    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20">
+      <div className="flex items-center gap-3 mb-6"><div className="grid size-12 place-items-center rounded-[16px] bg-[#FF6B00]"><Paintbrush size={24} className="text-white" /></div><div><h2 className="text-xl font-black text-white">Matériaux finitions</h2><p className="text-sm text-white/60">Sélectionnez les matériaux de finition</p></div></div>
       <div className="space-y-4">
-        <div>
-          <label className="mb-2 block text-sm font-bold text-[#6B7280]">Carrelage</label>
-          <select
-            value={formData.materiauxFinitions?.carrelage || ""}
-            onChange={(e) => setFormData({ 
-              ...formData, 
-              materiauxFinitions: { ...formData.materiauxFinitions, carrelage: e.target.value } 
-            })}
-            className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
-          >
-            <option value="">Sélectionnez...</option>
-            <option value="premium">Carrelage premium - 12 500 FCFA/m²</option>
-            <option value="standard">Carrelage standard - 8 500 FCFA/m²</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="mb-2 block text-sm font-bold text-[#6B7280]">Peinture</label>
-          <select
-            value={formData.materiauxFinitions?.peinture || ""}
-            onChange={(e) => setFormData({ 
-              ...formData, 
-              materiauxFinitions: { ...formData.materiauxFinitions, peinture: e.target.value } 
-            })}
-            className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
-          >
-            <option value="">Sélectionnez...</option>
-            <option value="lux">Peinture lux - 15 000 FCFA/seau</option>
-            <option value="standard">Peinture standard - 10 000 FCFA/seau</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="mb-2 block text-sm font-bold text-[#6B7280]">Toiture</label>
-          <select
-            value={formData.materiauxFinitions?.toiture || ""}
-            onChange={(e) => setFormData({ 
-              ...formData, 
-              materiauxFinitions: { ...formData.materiauxFinitions, toiture: e.target.value } 
-            })}
-            className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
-          >
-            <option value="">Sélectionnez...</option>
-            <option value="tuile">Tuile - 8 000 FCFA/m²</option>
-            <option value="bac">Bac acier - 6 500 FCFA/m²</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="mb-2 block text-sm font-bold text-[#6B7280]">Menuiserie</label>
-          <select
-            value={formData.materiauxFinitions?.menuiserie || ""}
-            onChange={(e) => setFormData({ 
-              ...formData, 
-              materiauxFinitions: { ...formData.materiauxFinitions, menuiserie: e.target.value } 
-            })}
-            className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
-          >
-            <option value="">Sélectionnez...</option>
-            <option value="bois">Bois - 25 000 FCFA/porte</option>
-            <option value="alu">Aluminium - 35 000 FCFA/porte</option>
-          </select>
-        </div>
+        <div><label className="mb-2 block text-sm font-bold text-white">Carrelage</label><select value={formData.materiauxFinitions?.carrelage || ""} onChange={(e) => setFormData({ ...formData, materiauxFinitions: { ...formData.materiauxFinitions, carrelage: e.target.value } })} className="h-[54px] w-full rounded-[18px] bg-white/20 px-4 text-sm font-bold text-white outline-none"><option value="">Sélectionnez...</option><option value="premium">Carrelage premium - 12 500 FCFA/m²</option><option value="standard">Carrelage standard - 8 500 FCFA/m²</option></select></div>
+        <div><label className="mb-2 block text-sm font-bold text-white">Peinture</label><select value={formData.materiauxFinitions?.peinture || ""} onChange={(e) => setFormData({ ...formData, materiauxFinitions: { ...formData.materiauxFinitions, peinture: e.target.value } })} className="h-[54px] w-full rounded-[18px] bg-white/20 px-4 text-sm font-bold text-white outline-none"><option value="">Sélectionnez...</option><option value="lux">Peinture lux - 15 000 FCFA/seau</option><option value="standard">Peinture standard - 10 000 FCFA/seau</option></select></div>
+        <div><label className="mb-2 block text-sm font-bold text-white">Toiture</label><select value={formData.materiauxFinitions?.toiture || ""} onChange={(e) => setFormData({ ...formData, materiauxFinitions: { ...formData.materiauxFinitions, toiture: e.target.value } })} className="h-[54px] w-full rounded-[18px] bg-white/20 px-4 text-sm font-bold text-white outline-none"><option value="">Sélectionnez...</option><option value="tuile">Tuile - 8 000 FCFA/m²</option><option value="bac">Bac acier - 6 500 FCFA/m²</option></select></div>
+        <div><label className="mb-2 block text-sm font-bold text-white">Menuiserie</label><select value={formData.materiauxFinitions?.menuiserie || ""} onChange={(e) => setFormData({ ...formData, materiauxFinitions: { ...formData.materiauxFinitions, menuiserie: e.target.value } })} className="h-[54px] w-full rounded-[18px] bg-white/20 px-4 text-sm font-bold text-white outline-none"><option value="">Sélectionnez...</option><option value="bois">Bois - 25 000 FCFA/porte</option><option value="alu">Aluminium - 35 000 FCFA/porte</option></select></div>
       </div>
     </motion.div>
   );
 }
 
-// Step 6: Budget et financement
 function Step6({ formData, setFormData }: { formData: FormData; setFormData: (data: FormData) => void }) {
   const toggleFinancement = (mode: string) => {
     const current = formData.financement || [];
-    if (current.includes(mode)) {
-      setFormData({ 
-        ...formData, 
-        financement: current.filter(f => f !== mode) 
-      });
-    } else {
-      setFormData({ 
-        ...formData, 
-        financement: [...current, mode] 
-      });
-    }
+    setFormData({ ...formData, financement: current.includes(mode) ? current.filter(f => f !== mode) : [...current, mode] });
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      className="rounded-[24px] bg-white/80 backdrop-blur-xl p-6 shadow-lg border border-white/20"
-    >
-      <div className="flex items-center gap-3 mb-6">
-        <div className="grid size-12 place-items-center rounded-[16px] bg-[#FF6B00]">
-          <Wallet size={24} className="text-white" />
-        </div>
-        <div>
-          <h2 className="text-xl font-black text-[#0D2B6B]">Budget et financement</h2>
-          <p className="text-sm text-[#6B7280]">Définissez votre budget</p>
-        </div>
-      </div>
-
+    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20">
+      <div className="flex items-center gap-3 mb-6"><div className="grid size-12 place-items-center rounded-[16px] bg-[#FF6B00]"><Wallet size={24} className="text-white" /></div><div><h2 className="text-xl font-black text-white">Budget et financement</h2><p className="text-sm text-white/60">Définissez votre budget</p></div></div>
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="mb-2 block text-sm font-bold text-[#6B7280]">Budget total (FCFA)</label>
-            <input
-              type="number"
-              value={formData.budget || ""}
-              onChange={(e) => setFormData({ ...formData, budget: Number(e.target.value) })}
-              placeholder="45 000 000"
-              className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-[#FF6B00]/30"
-            />
-          </div>
-          <div>
-            <label className="mb-2 block text-sm font-bold text-[#6B7280]">Apport personnel (FCFA)</label>
-            <input
-              type="number"
-              value={formData.apport || ""}
-              onChange={(e) => setFormData({ ...formData, apport: Number(e.target.value) })}
-              placeholder="15 000 000"
-              className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-[#FF6B00]/30"
-            />
-          </div>
+          <div><label className="mb-2 block text-sm font-bold text-white">Budget total (FCFA)</label><input type="number" value={formData.budget || ""} onChange={(e) => setFormData({ ...formData, budget: Number(e.target.value) })} placeholder="45 000 000" className="h-[54px] w-full rounded-[18px] bg-white/20 px-4 text-sm font-bold text-white outline-none" /></div>
+          <div><label className="mb-2 block text-sm font-bold text-white">Apport personnel (FCFA)</label><input type="number" value={formData.apport || ""} onChange={(e) => setFormData({ ...formData, apport: Number(e.target.value) })} placeholder="15 000 000" className="h-[54px] w-full rounded-[18px] bg-white/20 px-4 text-sm font-bold text-white outline-none" /></div>
         </div>
-
-        <div>
-          <label className="mb-3 block text-sm font-bold text-[#6B7280]">Mode de financement</label>
-          <div className="flex flex-wrap gap-2">
-            {['Comptant', 'Échelonné', 'Crédit bancaire', 'Mixte'].map(mode => (
-              <button
-                key={mode}
-                type="button"
-                onClick={() => toggleFinancement(mode)}
-                className={`rounded-full px-4 py-2 text-xs font-bold transition-all ${
-                  (formData.financement || []).includes(mode)
-                    ? 'bg-[#FF6B00] text-white'
-                    : 'bg-[#F7F9FC] text-[#6B7280]'
-                }`}
-              >
-                {mode}
-              </button>
-            ))}
-          </div>
-        </div>
+        <div><label className="mb-3 block text-sm font-bold text-white">Mode de financement</label><div className="flex flex-wrap gap-2">{['Comptant', 'Échelonné', 'Crédit bancaire', 'Mixte'].map(mode => <button key={mode} type="button" onClick={() => toggleFinancement(mode)} className={`rounded-full px-4 py-2 text-xs font-bold transition-all ${(formData.financement || []).includes(mode) ? 'bg-white/30 text-white' : 'bg-white/10 text-white/60'}`}>{mode}</button>)}</div></div>
       </div>
     </motion.div>
   );
 }
 
-// Step 7: Délai et planning
 function Step7({ formData, setFormData }: { formData: FormData; setFormData: (data: FormData) => void }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      className="rounded-[24px] bg-white/80 backdrop-blur-xl p-6 shadow-lg border border-white/20"
-    >
-      <div className="flex items-center gap-3 mb-6">
-        <div className="grid size-12 place-items-center rounded-[16px] bg-[#FF6B00]">
-          <Calendar size={24} className="text-white" />
-        </div>
-        <div>
-          <h2 className="text-xl font-black text-[#0D2B6B]">Délai et planning</h2>
-          <p className="text-sm text-[#6B7280]">Définissez votre planning</p>
-        </div>
-      </div>
-
+    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20">
+      <div className="flex items-center gap-3 mb-6"><div className="grid size-12 place-items-center rounded-[16px] bg-[#FF6B00]"><Calendar size={24} className="text-white" /></div><div><h2 className="text-xl font-black text-white">Délai et planning</h2><p className="text-sm text-white/60">Définissez votre planning</p></div></div>
       <div className="space-y-4">
-        <div>
-          <label className="mb-2 block text-sm font-bold text-[#6B7280]">Délai souhaité</label>
-          <select
-            value={formData.delai || ""}
-            onChange={(e) => setFormData({ ...formData, delai: e.target.value })}
-            className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
-          >
-            <option value="6mois">6 mois</option>
-            <option value="12mois">12 mois</option>
-            <option value="18mois">18 mois</option>
-            <option value="24mois">24 mois+</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="mb-2 block text-sm font-bold text-[#6B7280]">Date de début souhaitée</label>
-          <input
-            type="date"
-            value={formData.dateDebut || ""}
-            onChange={(e) => setFormData({ ...formData, dateDebut: e.target.value })}
-            className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-[#FF6B00]/30"
-          />
-        </div>
-
-        <div>
-          <label className="mb-2 block text-sm font-bold text-[#6B7280]">Contraintes particulières</label>
-          <textarea
-            value={formData.contraintes || ""}
-            onChange={(e) => setFormData({ ...formData, contraintes: e.target.value })}
-            placeholder="Ex: Saison des pluies, accès limité, etc."
-            rows={3}
-            className="w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-[#FF6B00]/30"
-          />
-        </div>
+        <div><label className="mb-2 block text-sm font-bold text-white">Délai souhaité</label><select value={formData.delai || ""} onChange={(e) => setFormData({ ...formData, delai: e.target.value })} className="h-[54px] w-full rounded-[18px] bg-white/20 px-4 text-sm font-bold text-white outline-none"><option value="6mois">6 mois</option><option value="12mois">12 mois</option><option value="18mois">18 mois</option><option value="24mois">24 mois+</option></select></div>
+        <div><label className="mb-2 block text-sm font-bold text-white">Date de début souhaitée</label><input type="date" value={formData.dateDebut || ""} onChange={(e) => setFormData({ ...formData, dateDebut: e.target.value })} className="h-[54px] w-full rounded-[18px] bg-white/20 px-4 text-sm font-bold text-white outline-none" /></div>
+        <div><label className="mb-2 block text-sm font-bold text-white">Contraintes particulières</label><textarea value={formData.contraintes || ""} onChange={(e) => setFormData({ ...formData, contraintes: e.target.value })} placeholder="Ex: Saison des pluies, accès limité, etc." rows={3} className="w-full rounded-[18px] bg-white/20 px-4 text-sm font-bold text-white outline-none" /></div>
       </div>
     </motion.div>
   );
 }
 
-// Step 8: Récapitulatif + Plans payants
-function Step8({ 
-  formData, 
-  selectedPlan, 
-  onPlanSelect,
-  showRdvForm,
-  rdvData,
-  setRdvData
-}: { 
-  formData: FormData; 
-  selectedPlan: string | null;
-  onPlanSelect: (plan: string) => void;
-  showRdvForm: boolean;
-  rdvData: any;
-  setRdvData: (data: any) => void;
-}) {
+function Step8({ formData, selectedPlan, onPlanSelect, showRdvForm, rdvData, setRdvData, prefilledData }: { formData: FormData; selectedPlan: string | null; onPlanSelect: (plan: string) => void; showRdvForm: boolean; rdvData: any; setRdvData: (data: any) => void; prefilledData: FormData | null }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      className="space-y-6"
-    >
-      {/* Récapitulatif */}
-      <div className="rounded-[24px] bg-white/80 backdrop-blur-xl p-6 shadow-lg border border-white/20">
-        <h2 className="text-xl font-black text-[#0D2B6B] mb-4">📋 Récapitulatif</h2>
+    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+      <div className="rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20">
+        <h2 className="text-xl font-black text-white mb-4">📋 Récapitulatif</h2>
         <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-[#6B7280]">Nom du projet</span>
-            <span className="font-bold text-[#0D2B6B]">{formData.nom || '—'}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-[#6B7280]">Type</span>
-            <span className="font-bold text-[#0D2B6B]">{formData.type || '—'}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-[#6B7280]">Surface</span>
-            <span className="font-bold text-[#0D2B6B]">{formData.surfaceConstruite || 0} m²</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-[#6B7280]">Localisation</span>
-            <span className="font-bold text-[#0D2B6B]">{formData.ville || '—'}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-[#6B7280]">Budget</span>
-            <span className="font-bold text-[#0D2B6B]">{formatFcfa(formData.budget || 0)}</span>
-          </div>
+          <div className="flex justify-between"><span className="text-white/60">Nom du projet</span><span className="font-bold text-white">{formData.nom || '—'}</span></div>
+          <div className="flex justify-between"><span className="text-white/60">Type</span><span className="font-bold text-white">{formData.type || '—'}</span></div>
+          <div className="flex justify-between"><span className="text-white/60">Surface</span><span className="font-bold text-white">{formData.surfaceConstruite || 0} m²</span></div>
+          <div className="flex justify-between"><span className="text-white/60">Localisation</span><span className="font-bold text-white">{formData.ville || '—'}</span></div>
+          <div className="flex justify-between"><span className="text-white/60">Budget</span><span className="font-bold text-white">{formatFcfa(formData.budget || 0)}</span></div>
         </div>
       </div>
 
-      {/* Plans payants */}
-      <div className="rounded-[24px] bg-white/80 backdrop-blur-xl p-6 shadow-lg border border-white/20">
-        <h2 className="text-xl font-black text-[#0D2B6B] mb-4">🎯 Choisissez votre plan professionnel</h2>
+      {/* Plan gratuit depuis simulation */}
+      {prefilledData && (
+        <div className="rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20">
+          <h2 className="text-xl font-black text-white mb-4">🎨 VOTRE PLAN GRATUIT</h2>
+          <div className="bg-white/10 rounded-xl p-4 mb-4">
+            <p className="text-xs italic text-white/60 mb-2">⚠️ Ceci est juste une maquette de base générée selon vos renseignements. Nos experts vous fourniront un plan professionnel détaillé lors du rendez-vous.</p>
+          </div>
+          <button className="w-full h-[48px] rounded-[18px] bg-gradient-to-r from-[#FF6B00] to-[#FF8C00] text-white font-bold">📥 Télécharger le plan (PNG)</button>
+        </div>
+      )}
+
+      <div className="rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20">
+        <h2 className="text-xl font-black text-white mb-4">🎯 Choisissez votre plan professionnel</h2>
         <div className="space-y-4">
           {[
             { id: 'standard', name: 'PLAN STANDARD', price: '100 000 FCFA', features: ['Plan 2D détaillé', 'Plan 3D', 'Liste des matériaux', 'Devis estimatif'] },
             { id: 'premium', name: 'PLAN PREMIUM', price: '200 000 FCFA', features: ['Tout le Standard +', 'Plans électriques', 'Plans plomberie', 'Coupe et façades', 'Suivi technique (1 visite)'], recommended: true },
             { id: 'expert', name: 'PLAN EXPERT', price: '350 000 FCFA', features: ['Tout le Premium +', 'Plans structure complets', 'Étude de sol', 'Suivi de chantier (3 visites)', 'Assistance administrative'] }
           ].map(plan => (
-            <div
-              key={plan.id}
-              onClick={() => onPlanSelect(plan.id)}
-              className={`rounded-[20px] border-2 p-6 cursor-pointer transition-all ${
-                selectedPlan === plan.id 
-                  ? 'border-[#FF6B00] bg-[#FF6B00]/5' 
-                  : 'border-white/30 bg-white/60'
-              } ${plan.recommended ? 'relative' : ''}`}
-            >
-              {plan.recommended && (
-                <span className="absolute -top-3 right-4 rounded-full bg-[#FF6B00] px-3 py-1 text-xs font-bold text-white">
-                  Recommandé
-                </span>
-              )}
-              <div className="flex items-start justify-between mb-3">
-                <h3 className="text-lg font-black text-[#0D2B6B]">{plan.name}</h3>
-                <p className="text-2xl font-black text-[#FF6B00]">{plan.price}</p>
-              </div>
-              <ul className="space-y-2 mb-4">
-                {plan.features.map((feature, i) => (
-                  <li key={i} className="text-sm text-[#6B7280] flex items-start gap-2">
-                    <CheckCircle2 size={16} className="text-[#22C55E] mt-0.5" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-              <button className="w-full bg-[#FF6B00] text-white font-bold py-3 rounded-xl">
-                {selectedPlan === plan.id ? '✓ Sélectionné' : 'SÉLECTIONNER'}
-              </button>
+            <div key={plan.id} onClick={() => onPlanSelect(plan.id)} className={`rounded-[20px] border-2 p-6 cursor-pointer transition-all ${selectedPlan === plan.id ? 'border-white bg-white/20' : 'border-white/20 bg-white/10'} ${plan.recommended ? 'relative' : ''}`}>
+              {plan.recommended && <span className="absolute -top-3 right-4 rounded-full bg-[#FF6B00] px-3 py-1 text-xs font-bold text-white">Recommandé</span>}
+              <div className="flex items-start justify-between mb-3"><h3 className="text-lg font-black text-white">{plan.name}</h3><p className="text-2xl font-black text-white">{plan.price}</p></div>
+              <ul className="space-y-2 mb-4">{plan.features.map((feature, i) => <li key={i} className="text-sm text-white/60 flex items-start gap-2"><CheckCircle2 size={16} className="text-[#22C55E] mt-0.5" />{feature}</li>)}</ul>
+              <button className="w-full bg-white/20 text-white font-bold py-3 rounded-xl">{selectedPlan === plan.id ? '✓ Sélectionné' : 'SÉLECTIONNER'}</button>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Formulaire de rendez-vous */}
       {showRdvForm && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-[24px] bg-white/80 backdrop-blur-xl p-6 shadow-lg border border-white/20"
-        >
-          <h2 className="text-xl font-black text-[#0D2B6B] mb-4">📅 Prendre rendez-vous avec un expert</h2>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20">
+          <h2 className="text-xl font-black text-white mb-4">📅 Prendre rendez-vous avec un expert</h2>
           <div className="space-y-4">
-            <div>
-              <label className="mb-2 block text-sm font-bold text-[#6B7280]">Lieu du rendez-vous</label>
-              <div className="flex gap-4">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="lieu"
-                    value="bureau"
-                    checked={rdvData.lieu === 'bureau'}
-                    onChange={(e) => setRdvData({ ...rdvData, lieu: e.target.value })}
-                    className="accent-[#FF6B00]"
-                  />
-                  <span className="text-sm">Dans nos bureaux (Abidjan, Cocody)</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="lieu"
-                    value="terrain"
-                    checked={rdvData.lieu === 'terrain'}
-                    onChange={(e) => setRdvData({ ...rdvData, lieu: e.target.value })}
-                    className="accent-[#FF6B00]"
-                  />
-                  <span className="text-sm">Sur votre terrain</span>
-                </label>
-              </div>
-            </div>
-
+            <div><label className="mb-2 block text-sm font-bold text-white">Lieu du rendez-vous</label><div className="flex gap-4"><label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="lieu" value="bureau" checked={rdvData.lieu === 'bureau'} onChange={(e) => setRdvData({ ...rdvData, lieu: e.target.value })} className="accent-[#FF6B00]" /><span className="text-sm text-white">Dans nos bureaux</span></label><label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="lieu" value="terrain" checked={rdvData.lieu === 'terrain'} onChange={(e) => setRdvData({ ...rdvData, lieu: e.target.value })} className="accent-[#FF6B00]" /><span className="text-sm text-white">Sur votre terrain</span></label></div></div>
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="mb-2 block text-sm font-bold text-[#6B7280]">Date souhaitée</label>
-                <input
-                  type="date"
-                  value={rdvData.date}
-                  onChange={(e) => setRdvData({ ...rdvData, date: e.target.value })}
-                  className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
-                />
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-bold text-[#6B7280]">Heure souhaitée</label>
-                <select
-                  value={rdvData.heure}
-                  onChange={(e) => setRdvData({ ...rdvData, heure: e.target.value })}
-                  className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
-                >
-                  <option value="09:00">09:00</option>
-                  <option value="10:00">10:00</option>
-                  <option value="11:00">11:00</option>
-                  <option value="14:00">14:00</option>
-                  <option value="15:00">15:00</option>
-                  <option value="16:00">16:00</option>
-                </select>
-              </div>
+              <div><label className="mb-2 block text-sm font-bold text-white">Date souhaitée</label><input type="date" value={rdvData.date} onChange={(e) => setRdvData({ ...rdvData, date: e.target.value })} className="h-[54px] w-full rounded-[18px] bg-white/20 px-4 text-sm font-bold text-white outline-none" /></div>
+              <div><label className="mb-2 block text-sm font-bold text-white">Heure souhaitée</label><select value={rdvData.heure} onChange={(e) => setRdvData({ ...rdvData, heure: e.target.value })} className="h-[54px] w-full rounded-[18px] bg-white/20 px-4 text-sm font-bold text-white outline-none"><option value="09:00">09:00</option><option value="10:00">10:00</option><option value="11:00">11:00</option><option value="14:00">14:00</option><option value="15:00">15:00</option><option value="16:00">16:00</option></select></div>
             </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-bold text-[#6B7280]">Nom complet</label>
-              <input
-                type="text"
-                value={rdvData.nom}
-                onChange={(e) => setRdvData({ ...rdvData, nom: e.target.value })}
-                className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
-              />
-            </div>
-
+            <div><label className="mb-2 block text-sm font-bold text-white">Nom complet</label><input type="text" value={rdvData.nom} onChange={(e) => setRdvData({ ...rdvData, nom: e.target.value })} className="h-[54px] w-full rounded-[18px] bg-white/20 px-4 text-sm font-bold text-white outline-none" /></div>
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="mb-2 block text-sm font-bold text-[#6B7280]">Téléphone</label>
-                <input
-                  type="tel"
-                  value={rdvData.telephone}
-                  onChange={(e) => setRdvData({ ...rdvData, telephone: e.target.value })}
-                  className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
-                />
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-bold text-[#6B7280]">Email</label>
-                <input
-                  type="email"
-                  value={rdvData.email}
-                  onChange={(e) => setRdvData({ ...rdvData, email: e.target.value })}
-                  className="h-[54px] w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
-                />
-              </div>
+              <div><label className="mb-2 block text-sm font-bold text-white">Téléphone</label><input type="tel" value={rdvData.telephone} onChange={(e) => setRdvData({ ...rdvData, telephone: e.target.value })} className="h-[54px] w-full rounded-[18px] bg-white/20 px-4 text-sm font-bold text-white outline-none" /></div>
+              <div><label className="mb-2 block text-sm font-bold text-white">Email</label><input type="email" value={rdvData.email} onChange={(e) => setRdvData({ ...rdvData, email: e.target.value })} className="h-[54px] w-full rounded-[18px] bg-white/20 px-4 text-sm font-bold text-white outline-none" /></div>
             </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-bold text-[#6B7280]">Commentaire</label>
-              <textarea
-                value={rdvData.commentaire}
-                onChange={(e) => setRdvData({ ...rdvData, commentaire: e.target.value })}
-                rows={3}
-                className="w-full rounded-[18px] bg-[#F7F9FC] px-4 text-sm font-bold outline-none"
-              />
-            </div>
+            <div><label className="mb-2 block text-sm font-bold text-white">Commentaire</label><textarea value={rdvData.commentaire} onChange={(e) => setRdvData({ ...rdvData, commentaire: e.target.value })} rows={3} className="w-full rounded-[18px] bg-white/20 px-4 text-sm font-bold text-white outline-none" /></div>
           </div>
         </motion.div>
       )}
-    </motion.div>
-  );
-}
-
-// Loading screen
-function LoadingScreen() {
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
-    >
-      <div className="text-center">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-          className="mx-auto mb-6 size-24"
-        >
-          <HardHat size={96} className="text-[#FF6B00]" />
-        </motion.div>
-        <h2 className="text-2xl font-black text-white mb-2">🏗️ Votre projet est en cours de création...</h2>
-        <p className="text-sm text-white/70">Veuillez patienter pendant que nous enregistrons vos informations</p>
-      </div>
     </motion.div>
   );
 }
