@@ -234,6 +234,22 @@ export default function RenovationPage() {
             <div className="rounded-[18px] bg-[#FFF7ED] border border-[#FFD6AE] p-4">
               <p className="text-xs font-bold text-[#FF7A00]">💡 Un expert BÂTIZEN vous contactera sous 2h pour une visite technique gratuite et un devis personnalisé.</p>
             </div>
+
+            {/* Section Prendre rendez-vous */}
+            <div className="mt-6 p-6 bg-white rounded-2xl shadow-lg border border-[#E7EBF5]">
+              <h3 className="text-xl font-bold text-[#0D2B6B] mb-4">📅 Prendre rendez-vous</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Un expert vous contactera sous 2h pour programmer une visite technique gratuite.
+              </p>
+              <button 
+                onClick={() => {
+                  alert("Rendez-vous demandé ! Un expert vous contactera bientôt.");
+                }}
+                className="w-full bg-[#22C55E] text-white font-bold py-3 rounded-xl"
+              >
+                Confirmer le rendez-vous
+              </button>
+            </div>
           </>
         )}
 
