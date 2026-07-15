@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, X, Bell, User, Construction } from "lucide-react";
+import { Menu, X, User, Construction } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
+import NotificationBell from "@/components/ui/NotificationBell";
 
 export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -49,17 +50,7 @@ export function Header() {
 
         {/* Droite : Notifications + Avatar */}
         <div className="flex items-center gap-2">
-          {isAuthenticated && (
-            <button
-              onClick={() => router.push("/notifications")}
-              className="relative grid size-10 place-items-center rounded-full bg-white/50 transition-all active:scale-95"
-              aria-label="Notifications"
-            >
-              <Bell size={18} className="text-[#FF6B00]" />
-              {/* Badge notification - pulse si nouvelles */}
-              <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-[#FF6B00] animate-pulse" />
-            </button>
-          )}
+          {isAuthenticated && <NotificationBell />}
           
           {isAuthenticated && user ? (
             <Link

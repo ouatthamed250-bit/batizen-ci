@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState, type ReactNode, type FormEvent } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import {
   Search,
   Eye,
@@ -31,6 +32,7 @@ import {
   Legend,
 } from "recharts";
 import { rtdbGetList } from "@/lib/rtdb";
+import { subscribeToAdminNotifications, markAsRead, getNotificationIcon, getNotificationColor, formatNotificationDate, type Notification } from "@/lib/notifications";
 
 type Client = {
   id: string;
@@ -118,6 +120,7 @@ function AdminContent() {
   const [rdvs, setRdvs] = useState<RDV[]>([]);
   const [materiaux, setMateriaux] = useState<Materiau[]>([]);
   const [promos, setPromos] = useState<Promo[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [vueClient, setVueClient] = useState<string | null>(null);
@@ -143,8 +146,15 @@ function AdminContent() {
       setLoading(false);
     }
     load();
+
+    // Charger les notifications admin en temps réel
+    const unsubNotifs = subscribeToAdminNotifications((notifs) => {
+      setNotifications(notifs);
+    });
+
     return () => {
       cancelled = true;
+      if (unsubNotifs) unsubNotifs();
     };
   }, []);
 
@@ -190,6 +200,7 @@ function AdminContent() {
             {section === "promotions" && <PromosSection data={promos} onAdd={setPromos} />}
             {section === "statistiques" && <StatsSection chantiers={chantiers} clients={clients} materiaux={materiaux} />}
             {section === "parametres" && <SettingsSection />}
+            {section === "notifications" && <AdminNotificationsSection data={notifications} onMarkRead={async (id) => { await markAsRead("admin", id); }} />}
           </>
         )}
       </div>
@@ -731,6 +742,45 @@ function StatsSection({ chantiers, clients, materiaux }: { chantiers: Chantier[]
           </ResponsiveContainer>
         </ChartCard>
       </div>
+    </div>
+  );
+}
+
+/* ---------- Notifications Admin ---------- */
+function AdminNotificationsSection({ data, onMarkRead }: { data: Notification[]; onMarkRead: (id: string) => void }) {
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {data.map((n) => (
+          <div key={n.id} className={`rounded-[16px] border border-white/10 bg-white/5 p-4 ${!n.lu ? "border-l-4 border-l-[#FF7A00]" : ""}`}>
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">{getNotificationIcon(n.type)}</span>
+                <div>
+                  <h3 className="font-black text-sm">{n.message}</h3>
+                  <p className="text-xs text-white/40">{formatNotificationDate(n.dateCreation)}</p>
+                </div>
+              </div>
+              {!n.lu && <span className="size-2 rounded-full bg-[#FF7A00]" />}
+            </div>
+            {n.userName && <p className="mt-2 text-xs text-white/60">Client: {n.userName}</p>}
+            {n.planChoisi && <p className="text-xs text-white/60">Plan: {n.planChoisi}</p>}
+            <div className="mt-3 flex gap-2">
+              {n.chantierId && (
+                <button onClick={() => window.location.href = `/admin/chantier/${n.chantierId}`} className="rounded-[10px] bg-[#0B5FFF] px-3 py-1.5 text-xs font-black">Voir chantier</button>
+              )}
+              {!n.lu && (
+                <button onClick={() => onMarkRead(n.id)} className="rounded-[10px] bg-white/10 px-3 py-1.5 text-xs font-bold">Marquer lu</button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+      {data.length === 0 && (
+        <div className="rounded-[16px] border border-white/10 bg-white/5 p-8 text-center">
+          <p className="text-white/50">Aucune notification pour le moment.</p>
+        </div>
+      )}
     </div>
   );
 }

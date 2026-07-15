@@ -18,6 +18,7 @@ export type AuthUser = {
   displayName: string | null;
   photoURL: string | null;
   phoneNumber: string | null;
+  role?: "client" | "admin";
 };
 
 interface AuthContextType {

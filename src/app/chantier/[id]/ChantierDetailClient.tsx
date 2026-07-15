@@ -60,6 +60,7 @@ type Chantier = {
   photo?: string;
   image_url?: string;
   chef_id?: string;
+  userId?: string;
   statut?: string; // "en_attente" | "en_cours" | "termine"
   type?: string;
   budget?: number;
@@ -354,10 +355,21 @@ export default function ChantierDetailClient() {
         role: "client",
       });
       setNewMessage("");
+
+      // Envoyer notification à l'équipe/admin
+      const { sendNotification } = await import("@/lib/notifications");
+      if (chantier?.userId && chantier.userId !== user?.uid) {
+        await sendNotification(chantier.userId, {
+          type: "nouveau_message",
+          chantierId: id,
+          chantierNom: nom,
+          message: `Nouveau message dans votre chantier "${nom}"`,
+        });
+      }
     } catch (err) {
       console.error("Erreur envoi message", err);
     }
-  }, [newMessage, id, user]);
+  }, [newMessage, id, user, chantier, nom]);
 
   // Filtrer les onglets à afficher selon le statut
   const visibleTabs = (): TabKey[] => {
