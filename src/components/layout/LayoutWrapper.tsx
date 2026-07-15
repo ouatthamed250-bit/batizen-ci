@@ -14,7 +14,7 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
   const pathname = usePathname();
   const { user } = useAuthContext();
 
-  const publicPages = ["/", "/login", "/register", "/forgot-password", "/splash"];
+  const publicPages = ["/", "/login", "/register", "/forgot-password"];
   const isPublicPage = publicPages.includes(pathname);
   const showLayout = !isPublicPage && user;
 

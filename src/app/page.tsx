@@ -4,24 +4,36 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { PageBackground } from "@/components/layout/PageBackground";
+import { useAuthContext } from "@/contexts/AuthContext";
 
-export default function SplashPage() {
+export default function HomePage() {
   const router = useRouter();
+  const { isAuthenticated, loading } = useAuthContext();
 
   useEffect(() => {
-    const timer = setTimeout(() => {
+    if (!loading && isAuthenticated) {
       router.replace("/dashboard");
-    }, 3200);
-    return () => clearTimeout(timer);
-  }, [router]);
+    } else if (!loading && !isAuthenticated) {
+      router.replace("/login");
+    }
+  }, [isAuthenticated, loading, router]);
+
+  if (loading) {
+    return (
+      <PageBackground src="/images/villa-bg.jpg" overlayOpacity={0.3}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#0B5FFF] border-t-transparent" />
+        </div>
+      </PageBackground>
+    );
+  }
 
   return (
     <PageBackground src="/images/villa-bg.jpg" overlayOpacity={0.3}>
-      <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center overflow-hidden">
+      <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center overflow-hidden px-6">
         {/* Cercles lumineux background */}
         <div className="absolute -top-32 -right-32 size-96 rounded-full bg-[#0B5FFF] opacity-[0.06] blur-[100px]" />
         <div className="absolute -bottom-40 -left-40 size-[500px] rounded-full bg-[#FF7A00] opacity-[0.06] blur-[120px]" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-72 rounded-full" style={{ animation: "splashGlow 2s ease-in-out infinite" }} />
 
         {/* Logo animé */}
         <div className="relative" style={{ animation: "splashLogoScale 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) both" }}>
