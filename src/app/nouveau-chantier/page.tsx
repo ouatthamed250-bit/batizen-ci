@@ -15,6 +15,7 @@ import { BackButton } from "@/components/ui/BackButton";
 import { formatFcfa } from "@/utils/currency";
 import PlanGenerator2D from "@/components/simulation/PlanGenerator2D";
 import PlanGenerator3D from "@/components/simulation/PlanGenerator3D";
+import SuperCalculateur from "@/components/btp/SuperCalculateur";
 
 type FormData = {
   nom?: string;
@@ -357,6 +358,28 @@ function Step7({ formData, setFormData }: { formData: FormData; setFormData: (da
 function Step8({ formData, selectedPlan, onPlanSelect, showRdvForm, rdvData, setRdvData, prefilledData, viewMode, setViewMode }: { formData: FormData; selectedPlan: string | null; onPlanSelect: (plan: string) => void; showRdvForm: boolean; rdvData: any; setRdvData: (data: any) => void; prefilledData: any; viewMode: "2d" | "3d"; setViewMode: (mode: "2d" | "3d") => void }) {
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+      {/* Calculateur BTP - Estimation */}
+      {prefilledData && (
+        <SuperCalculateur
+          surface={prefilledData.terrain?.surface || formData.surfaceConstruite || 150}
+          largeur={prefilledData.terrain?.largeur || 15}
+          longueur={prefilledData.terrain?.longueur || 20}
+          chambres={prefilledData.preferences?.chambres || formData.chambres || 3}
+          sallesDeBain={prefilledData.preferences?.sallesDeBain || formData.sallesDeBain || 2}
+          etages={prefilledData.preferences?.etages || formData.niveaux || 1}
+          garage={prefilledData.preferences?.garage || false}
+          piscine={prefilledData.preferences?.piscine || false}
+          jardin={false}
+          standing="moyen"
+          style={prefilledData.preferences?.style || "Moderne"}
+          mode="complet"
+        />
+      )}
+      
+      <p className="text-center text-sm text-white/60">
+        💡 Comparez cette estimation avec les plans professionnels ci-dessous pour choisir la formule adaptée à votre budget.
+      </p>
+
       <div className="rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20">
         <h2 className="text-xl font-black text-white mb-4">📋 Récapitulatif</h2>
         <div className="space-y-2 text-sm">

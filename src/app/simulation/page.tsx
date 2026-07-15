@@ -10,6 +10,7 @@ import { BackButton } from "@/components/ui/BackButton";
 import { PremiumButton } from "@/components/ui/PremiumButton";
 import { formatFcfa } from "@/utils/currency";
 import BtpBackground from "@/components/btp/BtpBackground";
+import SuperCalculateur from "@/components/btp/SuperCalculateur";
 
 type Etape = "formulaire" | "loading" | "propositions";
 
@@ -326,6 +327,23 @@ export default function SimulationPage() {
               {/* Propositions - 3 cartes AVEC plans 2D/3D et bouton Continuer */}
               {etape === "propositions" && (
                 <motion.div key="propositions" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-6">
+                  {/* Calculateur BTP au-dessus des propositions */}
+                  <SuperCalculateur
+                    surface={preferences.terrain.surface}
+                    largeur={preferences.terrain.largeur}
+                    longueur={preferences.terrain.longueur}
+                    chambres={preferences.batiment.chambres}
+                    sallesDeBain={preferences.batiment.sallesDeBain}
+                    etages={preferences.batiment.etages}
+                    garage={preferences.batiment.garage}
+                    placesGarage={preferences.batiment.garagePlaces}
+                    piscine={preferences.batiment.piscine}
+                    jardin={preferences.batiment.jardin}
+                    surfaceJardin={preferences.batiment.jardinSurface}
+                    standing={preferences.budget >= 40000000 ? 'luxe' : preferences.budget >= 25000000 ? 'haut_standing' : preferences.budget >= 15000000 ? 'moyen' : 'economique'}
+                    style={preferences.style.architectural}
+                  />
+
                   <div className="text-center">
                     <h2 className="text-2xl font-black text-white mb-2">🎯 VOS 3 PROPOSITIONS</h2>
                     <p className="text-sm text-white/60">Chaque proposition inclut un plan 2D/3D gratuit</p>
