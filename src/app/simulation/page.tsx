@@ -10,8 +10,6 @@ import { BackButton } from "@/components/ui/BackButton";
 import { PremiumButton } from "@/components/ui/PremiumButton";
 import { formatFcfa } from "@/utils/currency";
 import BtpBackground from "@/components/btp/BtpBackground";
-import PlanGenerator2D from "@/components/simulation/PlanGenerator2D";
-import PlanGenerator3D from "@/components/simulation/PlanGenerator3D";
 
 type Etape = "formulaire" | "loading" | "propositions";
 
@@ -63,10 +61,6 @@ export default function SimulationPage() {
   const router = useRouter();
   const [etape, setEtape] = useState<Etape>("formulaire");
   const [formStep, setFormStep] = useState(1);
-  const [showPlan, setShowPlan] = useState(false);
-  const [selectedProposition, setSelectedProposition] = useState<Proposition | null>(null);
-  const [showPaidPlans, setShowPaidPlans] = useState(false);
-  const [mapView, setMapView] = useState<"2d" | "3d">("2d");
 
   const [preferences, setPreferences] = useState<Preferences>({
     budget: 45000000,
@@ -88,8 +82,6 @@ export default function SimulationPage() {
   };
 
   const handleGenerate = () => { setEtape("loading"); setTimeout(() => { setPropositions(generatePropositions()); setEtape("propositions"); }, 3000); };
-  const handleCreateChantier = (prop: Proposition) => { setSelectedProposition(prop); setShowPlan(true); };
-  const handleViewPaidPlans = () => { setShowPlan(false); setShowPaidPlans(true); };
 
   const updateTerrain = (field: string, value: any) => setPreferences({ ...preferences, terrain: { ...preferences.terrain, [field]: value } });
   const updateBatiment = (field: string, value: any) => setPreferences({ ...preferences, batiment: { ...preferences.batiment, [field]: value } });
@@ -98,7 +90,7 @@ export default function SimulationPage() {
 
   const progressPercent = (formStep / 5) * 100;
 
-  const handleCreateFromSimulation = (propId: string) => {
+  const handleContinueProposition = (propId: string) => {
     const simulationData = {
       budget: preferences.budget,
       terrain: preferences.terrain,
@@ -132,7 +124,7 @@ export default function SimulationPage() {
           <div className="mx-auto max-w-4xl px-4">
             <div className="text-center mb-6">
               <h1 className="text-3xl font-black text-white drop-shadow-lg">🏠 Simulateur IA</h1>
-              <p className="mt-2 text-sm text-white/80">Générez 3 propositions avec plans 2D/3D</p>
+              <p className="mt-2 text-sm text-white/80">Générez 3 propositions pour votre projet</p>
             </div>
 
             <AnimatePresence mode="wait">
@@ -331,89 +323,35 @@ export default function SimulationPage() {
                 </motion.div>
               )}
 
-              {/* Propositions */}
+              {/* Propositions - 3 cartes AVEC plans 2D/3D et bouton Continuer */}
               {etape === "propositions" && (
                 <motion.div key="propositions" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-6">
                   <div className="text-center">
-                    <h2 className="text-2xl font-black text-white mb-2">3 propositions pour votre projet</h2>
-                    <p className="text-sm text-white/60">Choisissez celle qui correspond à vos besoins</p>
+                    <h2 className="text-2xl font-black text-white mb-2">🎯 VOS 3 PROPOSITIONS</h2>
+                    <p className="text-sm text-white/60">Chaque proposition inclut un plan 2D/3D gratuit</p>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {propositions.map((prop, index) => (
-                      <motion.div key={prop.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.1 }} className="rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20 hover:shadow-xl transition-all">
+                      <motion.div key={prop.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.1 }} className="rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20">
                         <div className="flex items-center justify-between mb-4">
-                          <span className="text-2xl font-black text-white">MAISON {prop.id}</span>
+                          <span className="text-xl font-black text-white">🏠 PROPOSITION {prop.id}</span>
                           <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-bold text-white">{prop.type}</span>
                         </div>
                         <div className="mt-4 space-y-2">
                           <div className="flex justify-between text-sm"><span className="text-white/60">Surface</span><span className="font-bold text-white">{prop.surface} m²</span></div>
                           <div className="flex justify-between text-sm"><span className="text-white/60">Chambres</span><span className="font-bold text-white">{prop.chambres}</span></div>
-                          <div className="flex justify-between text-sm"><span className="text-white/60">Style</span><span className="font-bold text-white">{prop.style}</span></div>
+                          <div className="flex justify-between text-sm"><span className="text-white/60">Étages</span><span className="font-bold text-white">{preferences.batiment.etages}</span></div>
                           <div className="h-px bg-white/20 my-3" />
-                          <div className="flex justify-between"><span className="text-sm font-bold text-white/60">Coût estimé</span><span className="text-lg font-black text-[#22C55E]">{formatFcfa(prop.cout)}</span></div>
+                          <div className="flex justify-between"><span className="text-sm font-bold text-white/60">Coût estimé</span><span className="text-lg font-black text-[#22C55E]">~{formatFcfa(prop.cout)}</span></div>
                         </div>
                         <div className="mt-4 rounded-[16px] bg-white/10 p-3">
-                          <p className="text-xs font-bold text-white/60 mb-2">✅ Avantages</p>
-                          <ul className="space-y-1">{prop.avantages.map((av, i) => <li key={i} className="text-xs text-white flex items-start gap-2"><CheckCircle2 size={14} className="text-[#22C55E] mt-0.5" />{av}</li>)}</ul>
+                          <p className="text-xs font-bold text-white/60 mb-2">✅ Points forts</p>
+                          <ul className="space-y-1">{prop.avantages.map((av, i) => <li key={i} className="text-xs text-white flex items-center gap-2"><CheckCircle2 size={14} className="text-[#22C55E]" />{av}</li>)}</ul>
                         </div>
-                        {selectedProposition?.id === prop.id && showPlan && (
-                          <div className="mt-4 p-4 bg-white/10 rounded-xl border border-white/20">
-                            <p className="text-xs italic text-white/60 mb-3">
-                              ⚠️ Ceci est juste une maquette de base générée selon vos renseignements.
-                            </p>
-                            <div className="flex gap-2 mb-3">
-                              <button 
-                                onClick={() => setMapView("2d")}
-                                className={`px-3 py-1 rounded text-xs ${mapView === "2d" ? "bg-[#FF6B00] text-white" : "bg-white/20 text-white"}`}
-                              >
-                                Vue 2D
-                              </button>
-                              <button 
-                                onClick={() => setMapView("3d")}
-                                className={`px-3 py-1 rounded text-xs ${mapView === "3d" ? "bg-[#FF6B00] text-white" : "bg-white/20 text-white"}`}
-                              >
-                                Vue 3D
-                              </button>
-                            </div>
-                            <div className="bg-white rounded-lg p-2">
-                              {mapView === "2d" ? (
-                                <PlanGenerator2D
-                                  surface={prop.surface}
-                                  largeur={preferences.terrain.largeur || 15}
-                                  longueur={preferences.terrain.longueur || 20}
-                                  chambres={prop.chambres}
-                                  sallesDeBain={preferences.batiment.sallesDeBain || 2}
-                                  etages={preferences.batiment.etages || 1}
-                                  garage={preferences.batiment.garage || false}
-                                  piscine={preferences.batiment.piscine || false}
-                                  style={preferences.style.architectural || "Moderne"}
-                                />
-                              ) : (
-                                <PlanGenerator3D
-                                  surface={prop.surface}
-                                  largeur={preferences.terrain.largeur || 15}
-                                  longueur={preferences.terrain.longueur || 20}
-                                  chambres={prop.chambres}
-                                  sallesDeBain={preferences.batiment.sallesDeBain || 2}
-                                  etages={preferences.batiment.etages || 1}
-                                  garage={preferences.batiment.garage || false}
-                                  piscine={preferences.batiment.piscine || false}
-                                  style={preferences.style.architectural || "Moderne"}
-                                />
-                              )}
-                            </div>
-                          </div>
-                        )}
-                        
-                        <div className="flex gap-2 mt-2">
-                          <PremiumButton onClick={() => handleCreateChantier(prop)} className="flex-1" variant="success">
-                            Voir le plan
-                          </PremiumButton>
-                          <button onClick={() => handleCreateFromSimulation(prop.id)} className="flex-1 h-[48px] rounded-[18px] bg-gradient-to-r from-[#FF6B00] to-[#FF8C00] text-white font-bold">
-                            Créer ce chantier
-                          </button>
-                        </div>
+                        <PremiumButton onClick={() => handleContinueProposition(prop.id)} className="w-full mt-4" variant="primary">
+                          👁️ Voir mon chantier
+                        </PremiumButton>
                       </motion.div>
                     ))}
                   </div>

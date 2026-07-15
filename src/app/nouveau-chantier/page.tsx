@@ -3,13 +3,14 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, ArrowLeft, CheckCircle2, HardHat, MapPin, Wallet, Calendar, Building2, Home, Store, Warehouse, Paintbrush, Hammer } from "lucide-react";
+import { ArrowRight, ArrowLeft, CheckCircle2, HardHat, MapPin, Wallet, Calendar, Building2, Home, Paintbrush } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { ref, set } from "firebase/database";
 import { getFirebaseServices } from "@/lib/firebase";
 import { PHOTOS_CHANTIER } from "@/data/photos-chantier";
 import BtpPageBackground from "@/components/btp/BtpPageBackground";
 import { PremiumHeader } from "@/components/layout/PremiumHeader";
+import { PremiumButton } from "@/components/ui/PremiumButton";
 import { BackButton } from "@/components/ui/BackButton";
 import { formatFcfa } from "@/utils/currency";
 import PlanGenerator2D from "@/components/simulation/PlanGenerator2D";
@@ -154,6 +155,7 @@ export default function NouveauChantierPage() {
           <div className="rounded-[24px] bg-white/10 backdrop-blur-xl p-8 border border-white/20 max-w-md w-full mx-4 text-center">
             <CheckCircle2 size={64} className="text-[#22C55E] mx-auto mb-4" />
             <h2 className="text-2xl font-black text-white mb-4">✅ Projet soumis avec succès !</h2>
+            <p className="text-white/80 mb-4">📞 Nous vous contacterons bientôt pour confirmer votre rendez-vous.</p>
             <div className="space-y-3 text-left mb-6">
               <p className="text-white"><span className="text-white/60">🏗️ Projet :</span> {formData.nom || '—'}</p>
               <p className="text-white"><span className="text-white/60">📅 RDV :</span> {rdvData.date || 'À définir'} à {rdvData.heure}</p>
@@ -161,8 +163,12 @@ export default function NouveauChantierPage() {
               <p className="text-white/80">⏳ Statut : En attente de validation</p>
             </div>
             <div className="flex gap-3">
-              <button onClick={() => router.push('/dashboard')} className="flex-1 h-[56px] rounded-[18px] bg-white/20 font-bold text-white">Retour au Dashboard</button>
-              <button onClick={() => router.push(`/chantier/${chantierId}`)} className="flex-1 h-[56px] rounded-[18px] bg-gradient-to-r from-[#FF6B00] to-[#FF8C00] font-bold text-white">Voir mon chantier</button>
+              <PremiumButton onClick={() => router.push('/dashboard')} variant="secondary" className="flex-1">
+                Retour au Dashboard
+              </PremiumButton>
+              <PremiumButton onClick={() => router.push(`/chantier/${chantierId}`)} variant="primary" className="flex-1">
+                Voir mon chantier
+              </PremiumButton>
             </div>
           </div>
         </div>
@@ -206,7 +212,7 @@ export default function NouveauChantierPage() {
               {step === 5 && <Step5 formData={formData} setFormData={setFormData} />}
               {step === 6 && <Step6 formData={formData} setFormData={setFormData} />}
               {step === 7 && <Step7 formData={formData} setFormData={setFormData} />}
-{step === 8 && <Step8 formData={formData} selectedPlan={selectedPlan} onPlanSelect={handlePlanSelect} showRdvForm={showRdvForm} rdvData={rdvData} setRdvData={setRdvData} prefilledData={prefilledData} viewMode={viewMode} setViewMode={setViewMode} />}
+              {step === 8 && <Step8 formData={formData} selectedPlan={selectedPlan} onPlanSelect={handlePlanSelect} showRdvForm={showRdvForm} rdvData={rdvData} setRdvData={setRdvData} prefilledData={prefilledData} viewMode={viewMode} setViewMode={setViewMode} />}
             </AnimatePresence>
 
             {!loading && (

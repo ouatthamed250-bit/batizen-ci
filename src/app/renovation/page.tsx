@@ -89,7 +89,7 @@ export default function RenovationPage() {
         </div>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-6 pb-32">
         {/* STEP 1 — Maison */}
         {step === 1 && (
           <>
@@ -260,18 +260,19 @@ export default function RenovationPage() {
             <p className="mt-2 text-sm text-[#6B7280]">Retournez à l'étape 2 pour choisir vos travaux.</p>
           </div>
         )}
-      </div>
 
-      <div className="fixed bottom-0 left-0 right-0 z-50 flex items-center gap-4 bg-white/90 p-5 backdrop-blur-xl border-t border-[#E7EBF5]">
-        {step > 1 && (
-          <button onClick={back} aria-label="Retour" className="grid size-[56px] place-items-center rounded-[18px] bg-[#F7F9FC] text-[#0D2B6B] transition hover:bg-[#E7EBF5] active:scale-95">
-            <ArrowLeft size={22} />
+        {/* Navigation buttons - position sticky au-dessus de BottomNav */}
+        <div className="sticky bottom-24 left-0 right-0 z-30 flex items-center gap-4 bg-white/90 p-5 backdrop-blur-xl border-t border-[#E7EBF5]">
+          {step > 1 && (
+            <button onClick={back} aria-label="Retour" className="grid size-[56px] place-items-center rounded-[18px] bg-[#F7F9FC] text-[#0D2B6B] transition hover:bg-[#E7EBF5] active:scale-95">
+              <ArrowLeft size={22} />
+            </button>
+          )}
+          <button onClick={next} aria-label={step === 4 ? "Envoyer" : "Continuer"}
+            className="flex h-[56px] flex-1 items-center justify-center gap-2 rounded-[18px] bg-[linear-gradient(135deg,#22C55E,#15803D)] text-white font-black shadow-[0_12px_28px_rgba(34,197,94,0.3)] transition-all active:scale-[0.97]">
+            {step === 4 ? <><Send size={18} /> Envoyer ma demande</> : <><ArrowRight size={18} /> Continuer</>}
           </button>
-        )}
-        <button onClick={next} aria-label={step === 4 ? "Envoyer" : "Continuer"}
-          className="flex h-[56px] flex-1 items-center justify-center gap-2 rounded-[18px] bg-[linear-gradient(135deg,#22C55E,#15803D)] text-white font-black shadow-[0_12px_28px_rgba(34,197,94,0.3)] transition-all active:scale-[0.97]">
-          {step === 4 ? <><Send size={18} /> Envoyer ma demande</> : <><ArrowRight size={18} /> Continuer</>}
-        </button>
+        </div>
       </div>
 
       <BottomNav />
