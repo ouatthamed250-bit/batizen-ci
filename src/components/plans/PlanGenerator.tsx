@@ -330,11 +330,11 @@ function Maison3DScene({ config, walls }: { config: PlanConfig; walls: PlanWall[
   const { longueur: l, largeur: L, etages } = config;
 
   const hauteurMur = 3;
-  const hauteurTotale = hauteurMur * etages;
-
-  // Calculer les murs depuis le format walls
-  const buildingWidth = Math.max(8, l);
-  const buildingLength = Math.max(8, L);
+  
+  // Si pas de walls définis, utiliser les dimensions config
+  const wallsToUse = walls.length > 0 ? walls : [];
+  const buildingWidth = wallsToUse.length > 0 ? Math.max(...wallsToUse.map(w => Math.max(w.start.x, w.end.x))) : Math.max(8, l);
+  const buildingLength = wallsToUse.length > 0 ? Math.max(...wallsToUse.map(w => Math.max(w.start.y, w.end.y))) : Math.max(8, L);
 
   return (
     <>
