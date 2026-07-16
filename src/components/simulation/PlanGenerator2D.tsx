@@ -26,6 +26,43 @@ const COLORS = {
   window: "#87CEEB",
 };
 
+// Loader professionnel
+function Loader2D() {
+  return (
+    <div className="w-full h-[400px] flex flex-col items-center justify-center bg-gradient-to-br from-white/90 to-white/70 backdrop-blur-lg rounded-2xl border border-white/30 shadow-lg">
+      {/* Spinner animé */}
+      <div className="relative mb-6">
+        <div className="w-20 h-20 border-4 border-[#FF6B00]/20 border-t-[#FF6B00] rounded-full animate-spin"></div>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-3xl">📐</span>
+        </div>
+      </div>
+      
+      {/* Message principal */}
+      <h3 className="text-lg font-bold text-[var(--navy)] mb-2 text-center px-4">
+        Votre plan gratuit est en préparation
+      </h3>
+      
+      {/* Message secondaire */}
+      <p className="text-sm text-gray-600 text-center px-6 mb-4">
+        Merci de patienter pendant que nos experts génèrent votre plan personnalisé...
+      </p>
+      
+      {/* Message de confiance */}
+      <div className="bg-[#FF6B00]/10 border border-[#FF6B00]/30 rounded-xl px-4 py-2">
+        <p className="text-xs text-[#FF6B00] font-semibold text-center">
+          🏗️ Faites confiance à BATIZEN.CI - Votre partenaire BTP
+        </p>
+      </div>
+      
+      {/* Barre de progression simulée */}
+      <div className="w-48 h-2 bg-gray-200 rounded-full mt-6 overflow-hidden">
+        <div className="h-full bg-gradient-to-r from-[#FF6B00] to-[#FF8C00] rounded-full animate-pulse" style={{width: '60%'}}></div>
+      </div>
+    </div>
+  );
+}
+
 export default function PlanGenerator2D({
   surface,
   largeur,
@@ -39,8 +76,20 @@ export default function PlanGenerator2D({
 }: Plan2DProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [viewMode, setViewMode] = useState<"2d" | "3d">("2d");
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Loader de 10 secondes minimum
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 10000);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
+    if (isLoading) return;
+    
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -209,7 +258,7 @@ export default function PlanGenerator2D({
     ctx.fillStyle = "var(--navy)";
     ctx.font = "10px sans-serif";
     ctx.fillText("─── 5m", offsetX + houseWidth / 2, offsetY + houseLength + 25);
-  }, [surface, largeur, longueur, chambres, sallesDeBain, etages, garage, piscine, style]);
+  }, [surface, largeur, longueur, chambres, sallesDeBain, etages, garage, piscine, style, isLoading]);
 
   const downloadPNG = () => {
     const canvas = canvasRef.current;
@@ -221,57 +270,63 @@ export default function PlanGenerator2D({
   };
 
   return (
-    <div className="space-y-4">
-      <canvas
-        ref={canvasRef}
-        width={400}
-        height={400}
-        className="border-2 border-white/20 rounded-xl bg-white/10 w-full max-w-[400px]"
-      />
+    <div className="w-full">
+      {isLoading ? (
+        <Loader2D />
+      ) : (
+        <>
+          <canvas
+            ref={canvasRef}
+            width={400}
+            height={400}
+            className="border-2 border-white/20 rounded-xl bg-white/10 w-full max-w-[400px]"
+          />
 
-      <div className="flex gap-2 justify-center">
-        <button
-          className={`px-4 py-2 rounded-xl font-semibold text-sm transition ${
-            viewMode === "2d"
-              ? "bg-gradient-to-b from-[#FF8C00] to-[#CC5500] text-white"
-              : "bg-white/20 text-white"
-          }`}
-          onClick={() => setViewMode("2d")}
-        >
-          📐 Vue 2D
-        </button>
-        <button
-          className={`px-4 py-2 rounded-xl font-semibold text-sm transition ${
-            viewMode === "3d"
-              ? "bg-gradient-to-b from-[#FF8C00] to-[#CC5500] text-white"
-              : "bg-white/20 text-white"
-          }`}
-          onClick={() => setViewMode("3d")}
-        >
-          🏠 Vue 3D
-        </button>
-        <button
-          onClick={downloadPNG}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl border border-white/20 bg-white/10 font-semibold text-white transition hover:bg-white/20"
-        >
-          📥 Télécharger PNG
-        </button>
-      </div>
+          <div className="flex gap-2 justify-center">
+            <button
+              className={`px-4 py-2 rounded-xl font-semibold text-sm transition ${
+                viewMode === "2d"
+                  ? "bg-gradient-to-b from-[#FF8C00] to-[#CC5500] text-white"
+                  : "bg-white/20 text-white"
+              }`}
+              onClick={() => setViewMode("2d")}
+            >
+              📐 Vue 2D
+            </button>
+            <button
+              className={`px-4 py-2 rounded-xl font-semibold text-sm transition ${
+                viewMode === "3d"
+                  ? "bg-gradient-to-b from-[#FF8C00] to-[#CC5500] text-white"
+                  : "bg-white/20 text-white"
+              }`}
+              onClick={() => setViewMode("3d")}
+            >
+              🏠 Vue 3D
+            </button>
+            <button
+              onClick={downloadPNG}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl border border-white/20 bg-white/10 font-semibold text-white transition hover:bg-white/20"
+            >
+              📥 Télécharger PNG
+            </button>
+          </div>
 
-      <div className="flex flex-wrap gap-3 justify-center text-xs">
-        <div className="flex items-center gap-1"><div className="w-4 h-4 bg-[#F5E6D3] rounded"></div> Salon ({Math.floor(surface * 0.3)}m²)</div>
-        <div className="flex items-center gap-1"><div className="w-4 h-4 bg-[#D3E4F5] rounded"></div> Chambres ({Math.floor((surface - Math.floor(surface*0.3) - Math.floor(surface*0.15))/chambres)}m²)</div>
-        <div className="flex items-center gap-1"><div className="w-4 h-4 bg-[#F5F5D3] rounded"></div> Cuisine ({Math.floor(surface * 0.15)}m²)</div>
-        {sallesDeBain > 0 && (
-          <div className="flex items-center gap-1"><div className="w-4 h-4 bg-[#D3F5E6] rounded"></div> SdB ({sallesDeBain}x)</div>
-        )}
-        {garage && <div className="flex items-center gap-1"><div className="w-4 h-4 bg-[#E6E6E6] rounded"></div> Garage</div>}
-        {piscine && <div className="flex items-center gap-1"><div className="w-4 h-4 bg-[#4FC3F7] rounded"></div> Piscine</div>}
-      </div>
+          <div className="flex flex-wrap gap-3 justify-center text-xs">
+            <div className="flex items-center gap-1"><div className="w-4 h-4 bg-[#F5E6D3] rounded"></div> Salon ({Math.floor(surface * 0.3)}m²)</div>
+            <div className="flex items-center gap-1"><div className="w-4 h-4 bg-[#D3E4F5] rounded"></div> Chambres ({Math.floor((surface - Math.floor(surface*0.3) - Math.floor(surface*0.15))/chambres)}m²)</div>
+            <div className="flex items-center gap-1"><div className="w-4 h-4 bg-[#F5F5D3] rounded"></div> Cuisine ({Math.floor(surface * 0.15)}m²)</div>
+            {sallesDeBain > 0 && (
+              <div className="flex items-center gap-1"><div className="w-4 h-4 bg-[#D3F5E6] rounded"></div> SdB ({sallesDeBain}x)</div>
+            )}
+            {garage && <div className="flex items-center gap-1"><div className="w-4 h-4 bg-[#E6E6E6] rounded"></div> Garage</div>}
+            {piscine && <div className="flex items-center gap-1"><div className="w-4 h-4 bg-[#4FC3F7] rounded"></div> Piscine</div>}
+          </div>
 
-      <p className="text-center text-sm text-white/60">
-        Surface totale: {surface}m² | {chambres + sallesDeBain + 2 + (garage ? 1 : 0) + (piscine ? 1 : 0)} pièces
-      </p>
+          <p className="text-center text-sm text-white/60">
+            Surface totale: {surface}m² | {chambres + sallesDeBain + 2 + (garage ? 1 : 0) + (piscine ? 1 : 0)} pièces
+          </p>
+        </>
+      )}
     </div>
   );
 }

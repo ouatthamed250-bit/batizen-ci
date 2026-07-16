@@ -2,8 +2,8 @@
 
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
-import { useRef, useState } from "react";
-import { Mesh, MathUtils } from "three";
+import { useRef, useState, useEffect } from "react";
+import { Mesh } from "three";
 
 interface Plan3DProps {
   surface: number;
@@ -28,6 +28,43 @@ const getHouseColor = (style: string) => {
     default: return "#FFFFFF";
   }
 };
+
+// Loader professionnel
+function Loader3D() {
+  return (
+    <div className="w-full h-[400px] flex flex-col items-center justify-center bg-gradient-to-br from-white/90 to-white/70 backdrop-blur-lg rounded-2xl border border-white/30 shadow-lg">
+      {/* Spinner animé */}
+      <div className="relative mb-6">
+        <div className="w-20 h-20 border-4 border-[#FF6B00]/20 border-t-[#FF6B00] rounded-full animate-spin"></div>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-3xl">🏠</span>
+        </div>
+      </div>
+      
+      {/* Message principal */}
+      <h3 className="text-lg font-bold text-[var(--navy)] mb-2 text-center px-4">
+        Votre plan 3D est en préparation
+      </h3>
+      
+      {/* Message secondaire */}
+      <p className="text-sm text-gray-600 text-center px-6 mb-4">
+        Nos architectes génèrent votre maquette 3D personnalisée...
+      </p>
+      
+      {/* Message de confiance */}
+      <div className="bg-[#FF6B00]/10 border border-[#FF6B00]/30 rounded-xl px-4 py-2">
+        <p className="text-xs text-[#FF6B00] font-semibold text-center">
+          🏗️ Faites confiance à BATIZEN.CI - Votre partenaire BTP
+        </p>
+      </div>
+      
+      {/* Barre de progression simulée */}
+      <div className="w-48 h-2 bg-gray-200 rounded-full mt-6 overflow-hidden">
+        <div className="h-full bg-gradient-to-r from-[#FF6B00] to-[#FF8C00] rounded-full animate-pulse" style={{width: '70%'}}></div>
+      </div>
+    </div>
+  );
+}
 
 // Composant Maison
 function House({
@@ -158,85 +195,101 @@ export default function PlanGenerator3D({
   style,
 }: Plan3DProps) {
   const [viewMode, setViewMode] = useState<"2d" | "3d">("3d");
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Loader de 10 secondes minimum
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 10000);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   const downloadPNG = () => {
     // La capture d'écran est gérée par le composant parent via ref
   };
 
   return (
-    <div className="space-y-4">
-      {/* Canvas 3D */}
-      <div className="w-full max-w-[400px] h-[400px] mx-auto border-2 border-white/20 rounded-xl overflow-hidden">
-        <Canvas
-          camera={{ position: [15, 12, 15], fov: 50 }}
-          shadows
-        >
-          <ambientLight intensity={0.6} />
-          <directionalLight
-            position={[10, 10, 5]}
-            intensity={1}
-            castShadow
-            shadow-mapSize-width={1024}
-            shadow-mapSize-height={1024}
-          />
-          
-          <House
-            largeur={largeur}
-            longueur={longueur}
-            etages={etages}
-            chambres={chambres}
-            sallesDeBain={sallesDeBain}
-            garage={garage}
-            piscine={piscine}
-            style={style}
-          />
-          
-          <OrbitControls
-            enableZoom={true}
-            enablePan={false}
-            autoRotate
-            autoRotateSpeed={0.5}
-          />
-        </Canvas>
-      </div>
+    <div className="w-full">
+      {isLoading ? (
+        <Loader3D />
+      ) : (
+        <>
+          {/* Canvas 3D */}
+          <div className="w-full max-w-[400px] h-[400px] mx-auto border-2 border-white/20 rounded-xl overflow-hidden">
+            <Canvas
+              camera={{ position: [15, 12, 15], fov: 50 }}
+              shadows
+            >
+              <ambientLight intensity={0.6} />
+              <directionalLight
+                position={[10, 10, 5]}
+                intensity={1}
+                castShadow
+                shadow-mapSize-width={1024}
+                shadow-mapSize-height={1024}
+              />
+              
+              <House
+                largeur={largeur}
+                longueur={longueur}
+                etages={etages}
+                chambres={chambres}
+                sallesDeBain={sallesDeBain}
+                garage={garage}
+                piscine={piscine}
+                style={style}
+              />
+              
+              <OrbitControls
+                enableZoom={true}
+                enablePan={false}
+                autoRotate
+                autoRotateSpeed={0.5}
+              />
+            </Canvas>
+          </div>
 
-      {/* Boutons */}
-      <div className="flex gap-2 justify-center">
-        <button
-          className={`px-4 py-2 rounded-xl font-semibold text-sm transition ${
-            viewMode === "2d"
-              ? "bg-gradient-to-b from-[#FF8C00] to-[#CC5500] text-white"
-              : "bg-white/20 text-white"
-          }`}
-          onClick={() => setViewMode("2d")}
-        >
-          📐 Vue 2D
-        </button>
-        <button
-          className={`px-4 py-2 rounded-xl font-semibold text-sm transition ${
-            viewMode === "3d"
-              ? "bg-gradient-to-b from-[#FF8C00] to-[#CC5500] text-white"
-              : "bg-white/20 text-white"
-          }`}
-          onClick={() => setViewMode("3d")}
-        >
-          🏠 Vue 3D
-        </button>
-        <button
-          onClick={downloadPNG}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl border border-white/20 bg-white/10 font-semibold text-white transition hover:bg-white/20"
-        >
-          📥 Télécharger PNG
-        </button>
-      </div>
+          {/* Boutons */}
+          <div className="flex gap-2 justify-center">
+            <button
+              className={`px-4 py-2 rounded-xl font-semibold text-sm transition ${
+                viewMode === "2d"
+                  ? "bg-gradient-to-b from-[#FF8C00] to-[#CC5500] text-white"
+                  : "bg-white/20 text-white"
+              }`}
+              onClick={() => setViewMode("2d")}
+            >
+              📐 Vue 2D
+            </button>
+            <button
+              className={`px-4 py-2 rounded-xl font-semibold text-sm transition ${
+                viewMode === "3d"
+                  ? "bg-gradient-to-b from-[#FF8C00] to-[#CC5500] text-white"
+                  : "bg-white/20 text-white"
+              }`}
+              onClick={() => setViewMode("3d")}
+            >
+              🏠 Vue 3D
+            </button>
+            <button
+              onClick={downloadPNG}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl border border-white/20 bg-white/10 font-semibold text-white transition hover:bg-white/20"
+            >
+              📥 Télécharger PNG
+            </button>
+          </div>
 
-      {/* Infos */}
-      <div className="text-center text-sm text-white/60">
-        <p>Surface: {surface}m² | {etages} étage{ etages > 1 ? 's' : ''}</p>
-        <p>{chambres} chambre{chambres > 1 ? 's' : ''} • {sallesDeBain} salle{ sallesDeBain > 1 ? 's' : ''} de bain</p>
-        {garage && <p>Garage: Oui</p>}
-        {piscine && <p>Piscine: Oui</p>}
-      </div>
+          {/* Infos */}
+          <div className="text-center text-sm text-white/60">
+            <p>Surface: {surface}m² | {etages} étage{ etages > 1 ? 's' : ''}</p>
+            <p>{chambres} chambre{chambres > 1 ? 's' : ''} • {sallesDeBain} salle{ sallesDeBain > 1 ? 's' : ''} de bain</p>
+            {garage && <p>Garage: Oui</p>}
+            {piscine && <p>Piscine: Oui</p>}
+          </div>
+        </>
+      )}
     </div>
   );
 }
