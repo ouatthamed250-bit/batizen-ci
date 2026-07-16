@@ -8,26 +8,16 @@ import * as THREE from "three";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface PlanConfig {
-  longueur: number;
-  largeur: number;
-  chambres: number;
-  sdb: number;
-  cuisineOuverte: boolean;
-  etages: number;
-  orientation: "N" | "S" | "E" | "O";
-  style: "moderne" | "traditionnel" | "colonial";
+import type { HousePlan, PlanWall, PlanOpening, PlanRoom, PlanConfig, PieceData } from "@/types/plan";
+
+// Structure pour interaction 2D
+interface InteractionState {
+  isDrawing: boolean;
+  startPoint: { x: number; y: number } | null;
+  tempEndPoint: { x: number; y: number } | null;
 }
 
-interface PieceData {
-  nom: string;
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-  couleur: string;
-}
-
+// Couleurs des pièces
 const PIECE_COLORS: Record<string, string> = {
   Salon: "#FFF3E0",
   Cuisine: "#E8F5E9",
@@ -47,6 +37,7 @@ const PIECE_COLORS: Record<string, string> = {
 const MUR_EPAISSEUR = 0.2;
 const PORTE_LARGEUR = 0.9;
 const FENETRE_LARGEUR = 1.2;
+const GRID_SIZE = 20; // 1 case = 20px
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -61,7 +52,6 @@ function genererPieces(config: PlanConfig): PieceData[] {
 
   // Cuisine
   if (cuisineOuverte) {
-    // Cuisine ouverte sur le salon
     pieces.push({ nom: "Cuisine", x: l * 0.45, y: 0, w: l * 0.25, h: L * 0.55, couleur: PIECE_COLORS["Cuisine"] });
   } else {
     pieces.push({ nom: "Cuisine", x: l * 0.45, y: 0, w: l * 0.2, h: L * 0.45, couleur: PIECE_COLORS["Cuisine"] });
@@ -127,13 +117,18 @@ function getCouleurStyle(style: string): { mur: string; toit: string; sol: strin
   }
 }
 
-// ─── Composant Plan 2D ────────────────────────────────────────────────────────
+// ─── Composant Plan 2D Interactif ─────────────────────────────────────────────
 
-function Plan2DRender({ pieces, longueur, largeur }: { pieces: PieceData[]; longueur: number; largeur: number }) {
+function Plan2DInteractive({
+  walls,
+  scale,
+  onCanvasClick,
+}: {
+  walls: PlanWall[];
+  scale: number;
+  onCanvasClick: (e: React.MouseEvent<HTMLCanvasElement>) => void;
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const scale = Math.min(600 / Math.max(longueur, largeur), 80);
-  const offsetX = 40;
-  const offsetY = 40;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -141,106 +136,49 @@ function Plan2DRender({ pieces, longueur, largeur }: { pieces: PieceData[]; long
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const w = Math.max(longueur * scale + 80, 400);
-    const h = Math.max(largeur * scale + 80, 500);
-    canvas.width = w;
-    canvas.height = h;
-
-    // Fond blanc
+    // Fond blanc avec grid
     ctx.fillStyle = "#FFFFFF";
-    ctx.fillRect(0, 0, w, h);
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // Grille
     ctx.strokeStyle = "#E0E0E0";
     ctx.lineWidth = 0.5;
-    for (let i = 0; i <= longueur + 1; i++) {
+    for (let i = 0; i <= canvas.width; i += GRID_SIZE) {
       ctx.beginPath();
-      ctx.moveTo(offsetX + i * scale, offsetY);
-      ctx.lineTo(offsetX + i * scale, offsetY + largeur * scale);
+      ctx.moveTo(i, 0);
+      ctx.lineTo(i, canvas.height);
       ctx.stroke();
     }
-    for (let i = 0; i <= largeur + 1; i++) {
+    for (let i = 0; i <= canvas.height; i += GRID_SIZE) {
       ctx.beginPath();
-      ctx.moveTo(offsetX, offsetY + i * scale);
-      ctx.lineTo(offsetX + longueur * scale, offsetY + i * scale);
+      ctx.moveTo(0, i);
+      ctx.lineTo(canvas.width, i);
       ctx.stroke();
     }
 
-    // Pièces
-    pieces.forEach((piece) => {
-      const x = offsetX + piece.x * scale;
-      const y = offsetY + piece.y * scale;
-      const pw = piece.w * scale;
-      const ph = piece.h * scale;
-
-      // Fond de la pièce
-      ctx.fillStyle = piece.couleur;
-      ctx.fillRect(x, y, pw, ph);
-
-      // Bordure (mur)
-      ctx.strokeStyle = "#333333";
-      ctx.lineWidth = 3;
-      ctx.strokeRect(x, y, pw, ph);
-
-      // Nom de la pièce
-      ctx.fillStyle = "#1a1a1a";
-      ctx.font = "bold 11px Arial";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(piece.nom, x + pw / 2, y + ph / 2 - 7);
-      ctx.font = "9px Arial";
-      ctx.fillStyle = "#666666";
-      ctx.fillText(`${piece.w.toFixed(1)} × ${piece.h.toFixed(1)} m`, x + pw / 2, y + ph / 2 + 10);
-
-      // Porte (triangle sur le bord)
-      ctx.fillStyle = "#8B4513";
+    // Murs
+    ctx.strokeStyle = "#0D2B6B";
+    ctx.lineWidth = 3;
+    walls.forEach((wall) => {
       ctx.beginPath();
-      ctx.moveTo(x + pw / 2, y);
-      ctx.lineTo(x + pw / 2 + 8, y - 8);
-      ctx.lineTo(x + pw / 2 - 8, y - 8);
-      ctx.closePath();
-      ctx.fill();
+      ctx.moveTo(wall.start.x * scale, wall.start.y * scale);
+      ctx.lineTo(wall.end.x * scale, wall.end.y * scale);
+      ctx.stroke();
     });
+  }, [walls, scale]);
 
-    // Échelle graphique
-    const echelleX = offsetX;
-    const echelleY = offsetY + largeur * scale + 25;
-    const echelleLongueur = scale * 2;
-    ctx.strokeStyle = "#333";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(echelleX, echelleY);
-    ctx.lineTo(echelleX + echelleLongueur, echelleY);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(echelleX, echelleY - 5);
-    ctx.lineTo(echelleX, echelleY + 5);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(echelleX + echelleLongueur, echelleY - 5);
-    ctx.lineTo(echelleX + echelleLongueur, echelleY + 5);
-    ctx.stroke();
-    ctx.fillStyle = "#333";
-    ctx.font = "9px Arial";
-    ctx.textAlign = "center";
-    ctx.fillText("2 m", echelleX + echelleLongueur / 2, echelleY + 15);
-
-    // Dimensions globales
-    ctx.fillStyle = "#FF6B00";
-    ctx.font = "bold 12px Arial";
-    ctx.textAlign = "center";
-    ctx.fillText(`${longueur} m`, offsetX + (longueur * scale) / 2, offsetY - 10);
-    ctx.save();
-    ctx.translate(offsetX - 15, offsetY + (largeur * scale) / 2);
-    ctx.rotate(-Math.PI / 2);
-    ctx.fillText(`${largeur} m`, 0, 0);
-    ctx.restore();
-  }, [pieces, longueur, largeur, scale]);
-
-  return <canvas ref={canvasRef} className="w-full rounded-xl border-2 border-[#FF6B00]/20" style={{ maxHeight: "500px" }} />;
+  return (
+    <canvas
+      ref={canvasRef}
+      width={600}
+      height={500}
+      className="w-full rounded-xl border-2 border-[#FF6B00]/20 bg-white cursor-crosshair"
+      onClick={onCanvasClick}
+    />
+  );
 }
 
-// ─── Composant Maison 3D ─────────────────────────────────────────────────────
+// ─── Composant Mur 3D ────────────────────────────────────────────────────────
 
 function Mur3D({ position, args, color }: { position: [number, number, number]; args: [number, number, number]; color: string }) {
   return (
@@ -278,12 +216,16 @@ function Fenetre3D({ position }: { position: [number, number, number] }) {
   );
 }
 
-function Maison3DScene({ config, pieces }: { config: PlanConfig; pieces: PieceData[] }) {
+function Maison3DScene({ config, walls }: { config: PlanConfig; walls: PlanWall[] }) {
   const couleurs = getCouleurStyle(config.style);
   const { longueur: l, largeur: L, etages } = config;
 
   const hauteurMur = 3;
   const hauteurTotale = hauteurMur * etages;
+
+  // Calculer les murs depuis le format walls
+  const buildingWidth = Math.max(8, l);
+  const buildingLength = Math.max(8, L);
 
   return (
     <>
@@ -317,7 +259,7 @@ function Maison3DScene({ config, pieces }: { config: PlanConfig; pieces: PieceDa
         <meshStandardMaterial color={couleurs.sol} roughness={1} />
       </mesh>
 
-      {/* Murs extérieurs */}
+      {/* Murs extérieurs depuis walls */}
       {Array.from({ length: etages }).map((_, etage) => (
         <group key={etage} position={[0, etage * hauteurMur, 0]}>
           {/* Mur avant */}
@@ -383,14 +325,88 @@ export default function PlanGenerator() {
 
   const [vue, setVue] = useState<"form" | "2d" | "3d">("form");
   const [planGenere, setPlanGenere] = useState(false);
+  const [walls, setWalls] = useState<PlanWall[]>([]);
+  const [openings, setOpenings] = useState<PlanOpening[]>([]);
+  const [rooms, setRooms] = useState<PlanRoom[]>([]);
+  const [history, setHistory] = useState<PlanWall[][]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const [show3D, setShow3D] = useState(false);
+  
   const plan2dRef = useRef<HTMLDivElement>(null);
+  const scale = 40; // pixels per meter
 
-  const pieces = useMemo(() => genererPieces(config), [config]);
+  // Conversion PieceData vers walls
+  const convertPiecesToWalls = useCallback((pieces: PieceData[]): PlanWall[] => {
+    const newWalls: PlanWall[] = [];
+    pieces.forEach((piece) => {
+      const { x, y, w, h } = piece;
+      // Mur bas
+      newWalls.push({ id: `w-${piece.nom}-bottom`, start: { x, y }, end: { x: x + w, y }, height: 270, thickness: 20 });
+      // Mur droit
+      newWalls.push({ id: `w-${piece.nom}-right`, start: { x: x + w, y }, end: { x: x + w, y: y + h }, height: 270, thickness: 20 });
+      // Mur haut
+      newWalls.push({ id: `w-${piece.nom}-top`, start: { x: x + w, y: y + h }, end: { x, y: y + h }, height: 270, thickness: 20 });
+      // Mur gauche
+      newWalls.push({ id: `w-${piece.nom}-left`, start: { x, y: y + h }, end: { x, y }, height: 270, thickness: 20 });
+    });
+    return newWalls;
+  }, []);
+
+  // Save state to history
+  const saveToHistory = useCallback((newWalls: PlanWall[]) => {
+    setHistory(prev => {
+      const newHistory = prev.slice(0, historyIndex + 1);
+      return [...newHistory, newWalls];
+    });
+    setHistoryIndex(prev => prev + 1);
+  }, [historyIndex]);
 
   const genererPlan = useCallback(() => {
+    const pieces = genererPieces(config);
+    const newWalls = convertPiecesToWalls(pieces);
+    setWalls(newWalls);
+    saveToHistory(newWalls);
+    
+    // Créer les pièces
+    const newRooms: PlanRoom[] = pieces.map((piece, i) => ({
+      id: `r-${i}`,
+      name: piece.nom,
+      polygon: [
+        { x: piece.x, y: piece.y },
+        { x: piece.x + piece.w, y: piece.y },
+        { x: piece.x + piece.w, y: piece.y + piece.h },
+        { x: piece.x, y: piece.y + piece.h },
+      ],
+    }));
+    setRooms(newRooms);
+    
     setPlanGenere(true);
     setVue("2d");
-  }, []);
+  }, [config, convertPiecesToWalls, saveToHistory]);
+
+  const undo = useCallback(() => {
+    if (historyIndex > 0) {
+      setHistoryIndex(prev => prev - 1);
+      setWalls(history[historyIndex - 1]);
+    }
+  }, [historyIndex, history]);
+
+  const redo = useCallback(() => {
+    if (historyIndex < history.length - 1) {
+      setHistoryIndex(prev => prev + 1);
+      setWalls(history[historyIndex + 1]);
+    }
+  }, [historyIndex, history]);
+
+  // Interaction sur le canvas
+  const handleCanvasClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = Math.round((e.clientX - rect.left) / scale * 100) / 100;
+    const y = Math.round((e.clientY - rect.top) / scale * 100) / 100;
+    
+    // Pour l'instant, on ajoute un mur simple
+    // À étendre pour support drag/click complet
+  }, [scale]);
 
   const handleChange = useCallback((field: keyof PlanConfig, value: number | boolean | string) => {
     setConfig((prev) => ({ ...prev, [field]: value }));
@@ -425,6 +441,12 @@ export default function PlanGenerator() {
     } catch {
       // fallback
     }
+  }, []);
+
+  // Sauvegarder dans Firestore
+  const sauvegarderPlan = useCallback(async () => {
+    // À implémenter avec saveHousePlan
+    alert("Fonctionnalité de sauvegarde en développement");
   }, []);
 
   // ─── Render formulaire ─────────────────────────────────────────────────────
@@ -618,7 +640,7 @@ export default function PlanGenerator() {
           </button>
           <button
             type="button"
-            onClick={() => setVue("3d")}
+            onClick={() => { setVue("3d"); setShow3D(true); }}
             className={`rounded-[10px] px-4 py-2 text-sm font-bold transition-all ${
               vue === "3d" ? "bg-white text-[#FF6B00] shadow-sm" : "text-[#6B7280] hover:text-[#FF6B00]"
             }`}
@@ -632,7 +654,8 @@ export default function PlanGenerator() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={telechargerPNG}
-            className="rounded-[12px] bg-[#F7F9FC] px-4 py-2 text-sm font-bold text-[#6B7280] transition-all hover:bg-[#FF6B00] hover:text-white"
+            disabled={historyIndex < 0}
+            className="rounded-[12px] bg-[#F7F9FC] px-4 py-2 text-sm font-bold text-[#6B7280] transition-all hover:bg-[#FF6B00] hover:text-white disabled:opacity-50"
           >
             📥 PNG
           </motion.button>
@@ -640,9 +663,27 @@ export default function PlanGenerator() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={telechargerPDF}
-            className="rounded-[12px] bg-[#F7F9FC] px-4 py-2 text-sm font-bold text-[#6B7280] transition-all hover:bg-[#FF6B00] hover:text-white"
+            disabled={historyIndex < 0}
+            className="rounded-[12px] bg-[#F7F9FC] px-4 py-2 text-sm font-bold text-[#6B7280] transition-all hover:bg-[#FF6B00] hover:text-white disabled:opacity-50"
           >
             📄 PDF
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={undo}
+            disabled={historyIndex <= 0}
+            className="rounded-[12px] bg-[#F7F9FC] px-4 py-2 text-sm font-bold text-[#6B7280] transition-all hover:bg-[#FF6B00] hover:text-white disabled:opacity-50"
+          >
+            ↶ Annuler
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={sauvegarderPlan}
+            className="rounded-[12px] bg-[#FFF7ED] px-4 py-2 text-sm font-bold text-[#FF6B00] transition-all hover:bg-[#FF6B00] hover:text-white"
+          >
+            💾 Sauvegarder
           </motion.button>
           <motion.button
             whileHover={{ scale: 1.05 }}
@@ -683,15 +724,15 @@ export default function PlanGenerator() {
           ref={plan2dRef}
           className="overflow-hidden rounded-[20px] bg-white p-4 shadow-[0_10px_40px_rgba(0,0,0,0.1)]"
         >
-          <Plan2DRender pieces={pieces} longueur={config.longueur} largeur={config.largeur} />
+          <Plan2DInteractive walls={walls} scale={scale} onCanvasClick={handleCanvasClick} />
           <p className="mt-2 text-center text-[10px] text-[#6B7280]">
-            Plan généré automatiquement · Les dimensions sont approximatives
+            Cliquez pour ajouter des murs · Les dimensions sont approximatives
           </p>
         </motion.div>
       )}
 
-      {/* Vue 3D */}
-      {vue === "3d" && (
+      {/* Vue 3D - Lazy loaded */}
+      {vue === "3d" && show3D && (
         <motion.div
           key="plan3d"
           initial={{ opacity: 0, scale: 0.95 }}
@@ -700,7 +741,7 @@ export default function PlanGenerator() {
           style={{ height: "500px" }}
         >
           <Canvas shadows camera={{ position: [15, 10, 15], fov: 50 }}>
-            <Maison3DScene config={config} pieces={pieces} />
+            <Maison3DScene config={config} walls={walls} />
           </Canvas>
           <div className="flex items-center justify-between bg-[#1a1a1a] px-4 py-2 text-[10px] text-white/60">
             <span>🖱️ Glisser pour tourner · Molette pour zoomer</span>
