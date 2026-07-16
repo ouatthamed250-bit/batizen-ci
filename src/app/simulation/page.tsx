@@ -11,6 +11,8 @@ import { PremiumButton } from "@/components/ui/PremiumButton";
 import { formatFcfa } from "@/utils/currency";
 import BtpBackground from "@/components/btp/BtpBackground";
 import SuperCalculateur from "@/components/btp/SuperCalculateur";
+import PlanGenerator2D from "@/components/simulation/PlanGenerator2D";
+import PlanGenerator3D from "@/components/simulation/PlanGenerator3D";
 
 type Etape = "formulaire" | "loading" | "propositions";
 
@@ -62,6 +64,7 @@ export default function SimulationPage() {
   const router = useRouter();
   const [etape, setEtape] = useState<Etape>("formulaire");
   const [formStep, setFormStep] = useState(1);
+  const [viewMode, setViewMode] = useState<"2d" | "3d">("2d");
 
   const [preferences, setPreferences] = useState<Preferences>({
     budget: 45000000,
@@ -112,6 +115,33 @@ export default function SimulationPage() {
         utilisation: preferences.priorites.utilisation
       },
       propositionChoisie: propId
+    };
+    localStorage.setItem('simulationData', JSON.stringify(simulationData));
+    router.push('/nouveau-chantier');
+  };
+
+  const handleContinueGratuit = () => {
+    const simulationData = {
+      budget: preferences.budget,
+      terrain: preferences.terrain,
+      preferences: {
+        type: preferences.batiment.type,
+        etages: preferences.batiment.etages,
+        chambres: preferences.batiment.chambres,
+        sallesDeBain: preferences.batiment.sallesDeBain,
+        garage: preferences.batiment.garage,
+        piscine: preferences.batiment.piscine,
+        jardin: preferences.batiment.jardin,
+        style: preferences.style.architectural,
+        couleur: preferences.style.couleur,
+        materiaux: preferences.style.materiaux,
+        ambiance: preferences.style.ambiance,
+        priorite: preferences.priorites.priorite1,
+        contraintes: preferences.priorites.contraintes,
+        utilisation: preferences.priorites.utilisation
+      },
+      planType: 'gratuit',
+      propositionChoisie: null
     };
     localStorage.setItem('simulationData', JSON.stringify(simulationData));
     router.push('/nouveau-chantier');
@@ -324,7 +354,7 @@ export default function SimulationPage() {
                 </motion.div>
               )}
 
-              {/* Propositions - 3 cartes AVEC plans 2D/3D et bouton Continuer */}
+              {/* Propositions - PLAN GRATUIT + 3 propositions payantes */}
               {etape === "propositions" && (
                 <motion.div key="propositions" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-6">
                   {/* Calculateur BTP au-dessus des propositions */}
@@ -344,9 +374,73 @@ export default function SimulationPage() {
                     style={preferences.style.architectural}
                   />
 
+                  {/* PLAN GRATUIT - Visible en premier */}
+                  <div className="rounded-[24px] bg-gradient-to-br from-[#FF6B00]/20 to-[#FF8C00]/10 backdrop-blur-lg p-6 shadow-lg border-2 border-[#FF6B00]/50">
+                    <div className="flex items-center gap-3 mb-4">
+                      <span className="text-3xl">🎁</span>
+                      <h3 className="text-2xl font-black text-white">VOTRE PLAN GRATUIT</h3>
+                    </div>
+                    <p className="text-sm text-white/90 mb-4">
+                      ⚠️ Ceci est une maquette de base générée selon vos renseignements. 
+                      Nos experts vous fourniront un plan professionnel détaillé lors du rendez-vous.
+                    </p>
+                    
+                    {/* Générateur 2D/3D avec bascule */}
+                    <div className="bg-white rounded-xl p-4 mb-4">
+                      <div className="flex gap-2 mb-3">
+                        <button 
+                          onClick={() => setViewMode("2d")}
+                          className={`px-4 py-2 rounded-lg text-sm font-semibold ${viewMode === "2d" ? "bg-[#FF6B00] text-white" : "bg-gray-200 text-gray-700"}`}
+                        >
+                          📐 Vue 2D
+                        </button>
+                        <button 
+                          onClick={() => setViewMode("3d")}
+                          className={`px-4 py-2 rounded-lg text-sm font-semibold ${viewMode === "3d" ? "bg-[#FF6B00] text-white" : "bg-gray-200 text-gray-700"}`}
+                        >
+                          🏠 Vue 3D
+                        </button>
+                      </div>
+                      
+                      {viewMode === "2d" ? (
+                        <PlanGenerator2D
+                          surface={preferences.terrain.surface}
+                          largeur={preferences.terrain.largeur}
+                          longueur={preferences.terrain.longueur}
+                          chambres={preferences.batiment.chambres}
+                          sallesDeBain={preferences.batiment.sallesDeBain}
+                          etages={preferences.batiment.etages}
+                          garage={preferences.batiment.garage}
+                          piscine={preferences.batiment.piscine}
+                          style={preferences.style.architectural}
+                        />
+                      ) : (
+                        <PlanGenerator3D
+                          surface={preferences.terrain.surface}
+                          largeur={preferences.terrain.largeur}
+                          longueur={preferences.terrain.longueur}
+                          chambres={preferences.batiment.chambres}
+                          sallesDeBain={preferences.batiment.sallesDeBain}
+                          etages={preferences.batiment.etages}
+                          garage={preferences.batiment.garage}
+                          piscine={preferences.batiment.piscine}
+                          style={preferences.style.architectural}
+                        />
+                      )}
+                    </div>
+                    
+                    <PremiumButton 
+                      variant="primary"
+                      onClick={handleContinueGratuit}
+                      className="w-full"
+                    >
+                      ✅ Continuer avec ce plan gratuit
+                    </PremiumButton>
+                  </div>
+
                   <div className="text-center">
-                    <h2 className="text-2xl font-black text-white mb-2">🎯 VOS 3 PROPOSITIONS</h2>
-                    <p className="text-sm text-white/60">Chaque proposition inclut un plan 2D/3D gratuit</p>
+                    <h2 className="text-2xl font-black text-white mb-2">💼 PROPOSITIONS PROFESSIONNELLES</h2>
+                    <p className="text-sm text-white/60">Plans détaillés par nos architectes partenaires</p>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -367,8 +461,12 @@ export default function SimulationPage() {
                           <p className="text-xs font-bold text-white/60 mb-2">✅ Points forts</p>
                           <ul className="space-y-1">{prop.avantages.map((av, i) => <li key={i} className="text-xs text-white flex items-center gap-2"><CheckCircle2 size={14} className="text-[#22C55E]" />{av}</li>)}</ul>
                         </div>
-                        <PremiumButton onClick={() => handleContinueProposition(prop.id)} className="w-full mt-4" variant="primary">
-                          👁️ Voir mon chantier
+                        <PremiumButton 
+                          variant="secondary"
+                          onClick={() => handleContinueProposition(prop.id)} 
+                          className="w-full mt-4"
+                        >
+                          Continuer avec cette proposition →
                         </PremiumButton>
                       </motion.div>
                     ))}

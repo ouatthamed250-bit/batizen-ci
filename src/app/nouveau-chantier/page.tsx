@@ -39,6 +39,7 @@ type FormData = {
   dateDebut?: string;
   contraintes?: string;
   planChoisi?: string;
+  planType?: string;
   rendezVous?: any;
 };
 
@@ -103,7 +104,7 @@ export default function NouveauChantierPage() {
       const newId = `chantier_${Date.now()}`;
       setChantierId(newId);
       
-      // Create chantier in Firebase
+      // Create chantier in Firebase - utilise plan gratuit si aucun plan payant sélectionné
       await set(ref(database, `chantiers/${newId}`), {
         id: newId,
         userId: user.uid,
@@ -118,7 +119,7 @@ export default function NouveauChantierPage() {
         delai: formData.delai,
         dateDebut: formData.dateDebut,
         contraintes: formData.contraintes,
-        planChoisi: formData.planChoisi,
+        planChoisi: formData.planChoisi || formData.planType || "gratuit",
         rendezVous: rdvData,
         statut: "en_attente",
         dateCreation: Date.now(),
@@ -131,7 +132,7 @@ export default function NouveauChantierPage() {
         chantierId: newId,
         userId: user.uid,
         userName: user.displayName || user.email,
-        planChoisi: formData.planChoisi,
+        planChoisi: formData.planChoisi || formData.planType || "gratuit",
         rendezVous: rdvData,
         dateCreation: Date.now(),
         lu: false
@@ -160,7 +161,7 @@ export default function NouveauChantierPage() {
             <div className="space-y-3 text-left mb-6">
               <p className="text-white"><span className="text-white/60">🏗️ Projet :</span> {formData.nom || '—'}</p>
               <p className="text-white"><span className="text-white/60">📅 RDV :</span> {rdvData.date || 'À définir'} à {rdvData.heure}</p>
-              <p className="text-white"><span className="text-white/60">💼 Plan :</span> {selectedPlan || '—'}</p>
+              <p className="text-white"><span className="text-white/60">💼 Plan :</span> {selectedPlan || formData.planType || 'gratuit'}</p>
               <p className="text-white/80">⏳ Statut : En attente de validation</p>
             </div>
             <div className="flex gap-3">
@@ -213,7 +214,7 @@ export default function NouveauChantierPage() {
               {step === 5 && <Step5 formData={formData} setFormData={setFormData} />}
               {step === 6 && <Step6 formData={formData} setFormData={setFormData} />}
               {step === 7 && <Step7 formData={formData} setFormData={setFormData} />}
-              {step === 8 && <Step8 formData={formData} selectedPlan={selectedPlan} onPlanSelect={handlePlanSelect} showRdvForm={showRdvForm} rdvData={rdvData} setRdvData={setRdvData} prefilledData={prefilledData} viewMode={viewMode} setViewMode={setViewMode} />}
+              {step === 8 && <Step8 formData={formData} selectedPlan={selectedPlan} onPlanSelect={handlePlanSelect} showRdvForm={showRdvForm} rdvData={rdvData} setRdvData={setRdvData} prefilledData={prefilledData} viewMode={viewMode} setViewMode={setViewMode} onHandleSubmit={handleSubmit} />}
             </AnimatePresence>
 
             {!loading && (
@@ -355,7 +356,7 @@ function Step7({ formData, setFormData }: { formData: FormData; setFormData: (da
   );
 }
 
-function Step8({ formData, selectedPlan, onPlanSelect, showRdvForm, rdvData, setRdvData, prefilledData, viewMode, setViewMode }: { formData: FormData; selectedPlan: string | null; onPlanSelect: (plan: string) => void; showRdvForm: boolean; rdvData: any; setRdvData: (data: any) => void; prefilledData: any; viewMode: "2d" | "3d"; setViewMode: (mode: "2d" | "3d") => void }) {
+function Step8({ formData, selectedPlan, onPlanSelect, showRdvForm, rdvData, setRdvData, prefilledData, viewMode, setViewMode, onHandleSubmit }: { formData: FormData; selectedPlan: string | null; onPlanSelect: (plan: string) => void; showRdvForm: boolean; rdvData: any; setRdvData: (data: any) => void; prefilledData: any; viewMode: "2d" | "3d"; setViewMode: (mode: "2d" | "3d") => void; onHandleSubmit: () => void }) {
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
       {/* Calculateur BTP - Estimation */}
@@ -442,6 +443,31 @@ function Step8({ formData, selectedPlan, onPlanSelect, showRdvForm, rdvData, set
         </div>
       )}
 
+      {/* BOUTON PRINCIPAL - Continuer avec le plan gratuit */}
+      {prefilledData && (
+        <div className="mt-6 space-y-3">
+          {/* BOUTON PRINCIPAL */}
+          <PremiumButton 
+            variant="primary"
+            onClick={onHandleSubmit}
+            className="w-full"
+          >
+            ✅ Continuer avec le plan gratuit
+          </PremiumButton>
+          
+          <p className="text-xs text-white/60 text-center">
+            Nos experts vous contacteront pour discuter des options professionnelles
+          </p>
+          
+          {/* Séparateur */}
+          <div className="flex items-center gap-3 my-4">
+            <div className="flex-1 h-px bg-white/20"></div>
+            <span className="text-xs text-white/60">OU</span>
+            <div className="flex-1 h-px bg-white/20"></div>
+          </div>
+        </div>
+      )}
+
       <div className="rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20">
         <h2 className="text-xl font-black text-white mb-4">🎯 Choisissez votre plan professionnel</h2>
         <div className="space-y-4">
@@ -459,6 +485,17 @@ function Step8({ formData, selectedPlan, onPlanSelect, showRdvForm, rdvData, set
           ))}
         </div>
       </div>
+
+      {/* Bouton soumettre avec plan payant */}
+      {selectedPlan && (
+        <PremiumButton 
+          variant="secondary"
+          onClick={onHandleSubmit}
+          className="w-full mt-4"
+        >
+          💼 Soumettre avec le plan {selectedPlan}
+        </PremiumButton>
+      )}
 
       {showRdvForm && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20">
