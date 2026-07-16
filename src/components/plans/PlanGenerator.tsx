@@ -122,21 +122,47 @@ function getCouleurStyle(style: string): { mur: string; toit: string; sol: strin
 function Plan2DInteractive({
   walls,
   scale,
-  onCanvasClick,
+  onWallsChange,
 }: {
   walls: PlanWall[];
   scale: number;
-  onCanvasClick: (e: React.MouseEvent<HTMLCanvasElement>) => void;
+  onWallsChange: (walls: PlanWall[]) => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [startPoint, setStartPoint] = useState<{ x: number; y: number } | null>(null);
+  const [tempEndPoint, setTempEndPoint] = useState<{ x: number; y: number } | null>(null);
+  const [snapPoints, setSnapPoints] = useState<{ x: number; y: number }[]>([]);
 
-  useEffect(() => {
+  // Convertit les coordonnées écran en coordonnées grille
+  const screenToGrid = useCallback((clientX: number, clientY: number, canvas: HTMLCanvasElement) => {
+    const rect = canvas.getBoundingClientRect();
+    const x = Math.round((clientX - rect.left) / scale * 100) / 100;
+    const y = Math.round((clientY - rect.top) / scale * 100) / 100;
+    return { x, y };
+  }, [scale]);
+
+  // Trouve le point de snap le plus proche
+  const findSnapPoint = useCallback((x: number, y: number) => {
+    const threshold = 0.5; // 50cm
+    for (const point of snapPoints) {
+      if (Math.abs(point.x - x) <= threshold && Math.abs(point.y - y) <= threshold) {
+        return point;
+      }
+    }
+    return { x, y };
+  }, [snapPoints]);
+
+  // Dessine le plan
+  const redraw = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Fond blanc avec grid
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Fond blanc
     ctx.fillStyle = "#FFFFFF";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -165,7 +191,88 @@ function Plan2DInteractive({
       ctx.lineTo(wall.end.x * scale, wall.end.y * scale);
       ctx.stroke();
     });
-  }, [walls, scale]);
+
+    // Points de snap
+    snapPoints.forEach(point => {
+      ctx.fillStyle = "#FF6B00";
+      ctx.beginPath();
+      ctx.arc(point.x * scale, point.y * scale, 4, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // Mur en cours de dessin
+    if (isDrawing && startPoint && tempEndPoint) {
+      ctx.strokeStyle = "#FF6B00";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      ctx.moveTo(startPoint.x * scale, startPoint.y * scale);
+      ctx.lineTo(tempEndPoint.x * scale, tempEndPoint.y * scale);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }, [walls, scale, isDrawing, startPoint, tempEndPoint, snapPoints]);
+
+  useEffect(() => {
+    redraw();
+  }, [redraw]);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = e.currentTarget;
+    const point = findSnapPoint(screenToGrid(e.clientX, e.clientY, canvas));
+    setStartPoint(point);
+    setTempEndPoint(point);
+    setIsDrawing(true);
+    
+    // Ajouter le point de snap s'il n'existe pas
+    setSnapPoints((prev) => {
+      if (!prev.some((p) => p.x === point.x && p.y === point.y)) {
+        return [...prev, point];
+      }
+      return prev;
+    });
+  }, [screenToGrid, findSnapPoint]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!isDrawing) return;
+    const canvas = e.currentTarget;
+    const point = findSnapPoint(screenToGrid(e.clientX, e.clientY, canvas));
+    setTempEndPoint(point);
+    redraw();
+  }, [isDrawing, redraw, screenToGrid, findSnapPoint]);
+
+  const handleMouseUp = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!isDrawing || !startPoint) return;
+    
+    const canvas = e.currentTarget;
+    const endPoint = findSnapPoint(screenToGrid(e.clientX, e.clientY, canvas));
+    
+    // Ajouter le mur si longueur > 0
+    if (endPoint.x !== startPoint.x || endPoint.y !== startPoint.y) {
+      const newWall: PlanWall = {
+        id: `w-${Date.now()}`,
+        start: startPoint,
+        end: endPoint,
+        height: 270,
+        thickness: 20,
+      };
+      
+      const newWalls = [...walls, newWall];
+      onWallsChange(newWalls);
+      
+      // Ajouter le point d'arrivée aux snap points
+      setSnapPoints((prev) => {
+        if (!prev.some((p) => p.x === endPoint.x && p.y === endPoint.y)) {
+          return [...prev, endPoint];
+        }
+        return prev;
+      });
+    }
+    
+    setIsDrawing(false);
+    setStartPoint(null);
+    setTempEndPoint(null);
+  }, [isDrawing, startPoint, walls, screenToGrid, findSnapPoint, onWallsChange]);
 
   return (
     <canvas
@@ -173,7 +280,9 @@ function Plan2DInteractive({
       width={600}
       height={500}
       className="w-full rounded-xl border-2 border-[#FF6B00]/20 bg-white cursor-crosshair"
-      onClick={onCanvasClick}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
     />
   );
 }
@@ -724,9 +833,9 @@ export default function PlanGenerator() {
           ref={plan2dRef}
           className="overflow-hidden rounded-[20px] bg-white p-4 shadow-[0_10px_40px_rgba(0,0,0,0.1)]"
         >
-          <Plan2DInteractive walls={walls} scale={scale} onCanvasClick={handleCanvasClick} />
+          <Plan2DInteractive walls={walls} scale={scale} onWallsChange={setWalls} />
           <p className="mt-2 text-center text-[10px] text-[#6B7280]">
-            Cliquez pour ajouter des murs · Les dimensions sont approximatives
+            Cliquez-glissez pour dessiner des murs · Les dimensions sont approximatives
           </p>
         </motion.div>
       )}
