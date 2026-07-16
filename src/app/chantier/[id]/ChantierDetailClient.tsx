@@ -69,7 +69,12 @@ type Chantier = {
   date_creation?: string;
   dateActivation?: number;
   rdv_date?: string;
-  localisation?: string;
+  localisation?: {
+    ville?: string;
+    commune?: string;
+    quartier?: string;
+    adresse?: string;
+  };
   materiaux?: Record<string, unknown>;
   superficie?: number;
   description?: string;
@@ -241,6 +246,23 @@ const TABS = [
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];
+
+/* ------------------------------------------------------------------ */
+/* Helper to format localisation safely                                */
+/* ------------------------------------------------------------------ */
+
+function formatLocalisation(loc: Chantier["localisation"], fallbackAdresse?: string): string {
+  if (!loc) return fallbackAdresse || "—";
+  const parts: string[] = [];
+  if (loc.ville) parts.push(loc.ville);
+  if (loc.commune) parts.push(loc.commune);
+  if (loc.quartier) parts.push(loc.quartier);
+  const base = parts.join(", ");
+  if (loc.adresse) {
+    return base ? `${base} - ${loc.adresse}` : loc.adresse;
+  }
+  return base || fallbackAdresse || "—";
+}
 
 /* ------------------------------------------------------------------ */
 /* Page                                                               */
@@ -519,7 +541,7 @@ export default function ChantierDetailClient() {
                       </div>
                       <div>
                         <p className="text-xs font-bold text-[#6B7280]">Localisation</p>
-                        <p className="text-sm font-black text-[#0D2B6B]">{chantier?.localisation || chantier?.adresse || "—"}</p>
+                        <p className="text-sm font-black text-[#0D2B6B]">{formatLocalisation(chantier?.localisation, chantier?.adresse)}</p>
                       </div>
                       <div>
                         <p className="text-xs font-bold text-[#6B7280]">Budget total</p>
@@ -956,7 +978,7 @@ export default function ChantierDetailClient() {
                         </div>
                         <div>
                           <p className="text-xs font-bold text-[#6B7280]">Localisation</p>
-                          <p className="text-sm font-black text-[#0D2B6B]">{chantier?.localisation || chantier?.adresse || "—"}</p>
+                          <p className="text-sm font-black text-[#0D2B6B]">{formatLocalisation(chantier?.localisation, chantier?.adresse)}</p>
                         </div>
                         <div>
                           <p className="text-xs font-bold text-[#6B7280]">Budget</p>
