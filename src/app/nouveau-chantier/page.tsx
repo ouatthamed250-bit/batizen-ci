@@ -88,6 +88,19 @@ export default function NouveauChantierPage() {
     if (step > 1) setStep((step - 1) as Step);
   };
 
+  // Fonction récursive pour remplacer tous les 'undefined' par '' ou null
+  const sanitizeData = (obj: any): any => {
+    if (obj === undefined) return "";
+    if (obj === null) return null;
+    if (Array.isArray(obj)) return obj.map(sanitizeData);
+    if (typeof obj === "object") {
+      return Object.fromEntries(
+        Object.entries(obj).map(([key, value]) => [key, sanitizeData(value)])
+      );
+    }
+    return obj;
+  };
+
   const handlePlanSelect = (plan: string) => {
     setSelectedPlan(plan);
     setFormData({ ...formData, planChoisi: plan });
@@ -104,6 +117,7 @@ export default function NouveauChantierPage() {
     
     if (!user) {
       console.error("❌ ERREUR : Utilisateur non connecté !");
+      setLoading(false);
       return;
     }
     
@@ -118,27 +132,42 @@ export default function NouveauChantierPage() {
       setChantierId(newId);
       console.log("🟡 chantierId stocké dans le state:", newId);
 
-      // Create chantier in Firebase - utilise plan gratuit si aucun plan payant sélectionné
-      await set(ref(database, `chantiers/${newId}`), {
+      // Données brutes avec valeurs par défaut
+      const rawChantierData = {
         id: newId,
         userId: user.uid,
-        nom: formData.nom,
-        type: formData.type,
-        surface: formData.surfaceConstruite,
-        localisation: { ville: formData.ville, commune: formData.commune, quartier: formData.quartier, adresse: formData.adresse },
-        materiaux: { grosOeuvre: formData.materiauxGrosOeuvre, finitions: formData.materiauxFinitions },
-        budget: formData.budget,
-        apport: formData.apport,
-        financement: formData.financement,
-        delai: formData.delai,
-        dateDebut: formData.dateDebut,
-        contraintes: formData.contraintes,
+        nom: formData.nom || "Chantier sans nom",
+        type: formData.type || "construction",
+        surface: formData.surfaceConstruite || 150,
+        localisation: {
+          ville: formData.ville || "—",
+          commune: formData.commune || "—",
+          quartier: formData.quartier || "—",
+          adresse: formData.adresse || "Adresse non spécifiée"
+        },
+        materiaux: {
+          grosOeuvre: formData.materiauxGrosOeuvre || {},
+          finitions: formData.materiauxFinitions || {}
+        },
+        budget: formData.budget || 0,
+        apport: formData.apport || 0,
+        financement: formData.financement || [],
+        delai: formData.delai || "6mois",
+        dateDebut: formData.dateDebut || "",
+        contraintes: formData.contraintes || "",
         planChoisi: formData.planChoisi || formData.planType || "gratuit",
         rendezVous: rdvData,
         statut: "en_attente",
         dateCreation: Date.now(),
         dateMiseAJour: Date.now()
-      });
+      };
+
+      // Nettoie l'objet pour supprimer TOUS les undefined avant l'envoi Firebase
+      const chantierData = sanitizeData(rawChantierData);
+      console.log("📦 Données nettoyées prêtes pour Firebase:", chantierData);
+
+      // Create chantier in Firebase - utilise plan gratuit si aucun plan payant sélectionné
+      await set(ref(database, `chantiers/${newId}`), chantierData);
 
       console.log("📦 Données écrites dans Firebase");
 
@@ -149,7 +178,7 @@ export default function NouveauChantierPage() {
         userId: user.uid,
         userName: user.displayName || user.email,
         planChoisi: formData.planChoisi || formData.planType || "gratuit",
-        rendezVous: rdvData,
+        rendezVous: sanitizeData(rdvData),
         dateCreation: Date.now(),
         lu: false
       });
