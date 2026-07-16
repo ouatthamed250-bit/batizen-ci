@@ -420,6 +420,8 @@ function Maison3DScene({ config, walls }: { config: PlanConfig; walls: PlanWall[
 
 // ─── Composant principal PlanGenerator ─────────────────────────────────────────
 
+type ToolMode = "wall" | "door" | "window" | "room";
+
 export default function PlanGenerator() {
   const [config, setConfig] = useState<PlanConfig>({
     longueur: 12,
@@ -437,6 +439,8 @@ export default function PlanGenerator() {
   const [walls, setWalls] = useState<PlanWall[]>([]);
   const [openings, setOpenings] = useState<PlanOpening[]>([]);
   const [rooms, setRooms] = useState<PlanRoom[]>([]);
+  const [toolMode, setToolMode] = useState<ToolMode>("wall");
+  const [selectedWallId, setSelectedWallId] = useState<string | null>(null);
   const [history, setHistory] = useState<PlanWall[][]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [show3D, setShow3D] = useState(false);
@@ -729,6 +733,41 @@ export default function PlanGenerator() {
 
   // ─── Render plans 2D / 3D ──────────────────────────────────────────────────
 
+  // Toolbar d'outils pour le plan 2D
+  const renderToolbar = () => (
+    vue === "2d" ? (
+      <div className="flex rounded-[12px] bg-[#F7F9FC] p-1">
+        {(["wall", "door", "window", "room"] as const).map((tool) => (
+          <button
+            key={tool}
+            type="button"
+            onClick={() => setToolMode(tool)}
+            className={`rounded-[10px] px-3 py-2 text-xs font-bold transition-all ${
+              toolMode === tool
+                ? "bg-white text-[#FF6B00] shadow-sm"
+                : "text-[#6B7280] hover:text-[#FF6B00]"
+            }`}
+          >
+            {tool === "wall" ? "🧱 Mur" : tool === "door" ? "🚪 Porte" : tool === "window" ? "🪟 Fenêtre" : "🏠 Pièce"}
+          </button>
+        ))}
+      </div>
+    ) : null
+  );
+
+  // Sauvegarde du plan dans Firestore
+  const handleSauvegarder = useCallback(async () => {
+    // Pour l'instant, on simule - à brancher avec useAuth
+    const housePlan: HousePlan = {
+      planId: `plan-${Date.now()}`,
+      unit: "cm",
+      walls,
+      openings,
+      rooms,
+    };
+    alert(`Plan sauvegardé : ${housePlan.planId}`);
+  }, [walls, openings, rooms]);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -757,6 +796,8 @@ export default function PlanGenerator() {
             🏠 Vue 3D
           </button>
         </div>
+        
+        {renderToolbar()}
 
         <div className="flex gap-2">
           <motion.button
