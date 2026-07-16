@@ -33,6 +33,7 @@ import {
 } from "recharts";
 import { rtdbGetList } from "@/lib/rtdb";
 import { subscribeToAdminNotifications, markAsRead, getNotificationIcon, getNotificationColor, formatNotificationDate, type Notification } from "@/lib/notifications";
+import { useAuthContext } from "@/contexts/AuthContext";
 
 type Client = {
   id: string;
@@ -120,21 +121,43 @@ const PARTNER_STATUTS: Array<"actif" | "bientot_disponible"> = ["actif", "biento
 
 const COLORS = ["#FF7A00", "#0B5FFF", "#22C55E", "#8B5CF6", "#EC4899", "#F59E0B"];
 
-function AdminContent() {
-  const params = useSearchParams();
-  const section = params.get("section") || "clients";
-
-const [clients, setClients] = useState<Client[]>([]);
-  const [chantiers, setChantiers] = useState<Chantier[]>([]);
-  const [ouvriers, setOuvriers] = useState<Ouvrier[]>([]);
-  const [rdvs, setRdvs] = useState<RDV[]>([]);
-  const [materiaux, setMateriaux] = useState<Materiau[]>([]);
-  const [promos, setPromos] = useState<Promo[]>([]);
-  const [partenaires, setPartenaires] = useState<Partenaire[]>([]);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [query, setQuery] = useState("");
-  const [vueClient, setVueClient] = useState<string | null>(null);
+ function AdminContent() {
+   const params = useSearchParams();
+   const section = params.get("section") || "clients";
+   const { user, loading: authLoading } = useAuthContext();
+   
+   // Hooks DOIVENT être déclarés AVANT tout return
+   const [clients, setClients] = useState<Client[]>([]);
+   const [chantiers, setChantiers] = useState<Chantier[]>([]);
+   const [ouvriers, setOuvriers] = useState<Ouvrier[]>([]);
+   const [rdvs, setRdvs] = useState<RDV[]>([]);
+   const [materiaux, setMateriaux] = useState<Materiau[]>([]);
+   const [promos, setPromos] = useState<Promo[]>([]);
+   const [partenaires, setPartenaires] = useState<Partenaire[]>([]);
+   const [notifications, setNotifications] = useState<Notification[]>([]);
+   const [loading, setLoading] = useState(true);
+   const [query, setQuery] = useState("");
+   const [vueClient, setVueClient] = useState<string | null>(null);
+   
+   // Protection: vérifier que l'utilisateur est admin
+   if (authLoading) {
+     return (
+       <div className="min-h-screen bg-[#111827] flex items-center justify-center">
+         <p className="text-white">Chargement...</p>
+       </div>
+     );
+   }
+   
+   if (!user || user.role !== "admin") {
+     return (
+       <div className="min-h-screen bg-[#111827] flex items-center justify-center px-4">
+         <div className="text-center">
+           <h1 className="text-2xl font-bold text-red-600">Accès refusé</h1>
+           <p className="mt-4 text-white/60">Vous devez être administrateur pour accéder à cette page.</p>
+         </div>
+       </div>
+     );
+   }
 
   useEffect(() => {
     let cancelled = false;

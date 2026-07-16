@@ -74,13 +74,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         
         const authUser: AuthUser = {
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          displayName: firebaseUser.displayName || userData?.displayName || null,
-          photoURL: firebaseUser.photoURL || userData?.photoURL || null,
-          phoneNumber: userData?.phoneNumber || firebaseUser.phoneNumber || null,
-          role: userData?.role,
-        };
+           uid: firebaseUser.uid,
+           email: firebaseUser.email,
+           displayName: firebaseUser.displayName || userData?.displayName || null,
+           photoURL: firebaseUser.photoURL || userData?.photoURL || null,
+           phoneNumber: userData?.phoneNumber || firebaseUser.phoneNumber || null,
+           role: userData?.role || "client",
+         };
         setUser(authUser);
         setIsAuthenticated(true);
         localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ user: authUser }));
