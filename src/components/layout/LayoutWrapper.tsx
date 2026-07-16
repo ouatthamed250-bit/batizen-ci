@@ -14,7 +14,7 @@ import { InfoTicker } from "../ui/InfoTicker";
 export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user } = useAuthContext();
+  const { user, loading } = useAuthContext();
 
   const publicPages = ["/", "/login", "/register", "/forgot-password"];
   const isPublicPage = publicPages.includes(pathname);
@@ -23,12 +23,24 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
   const isAdminPage = pathname.startsWith("/admin");
   const showLayout = !isPublicPage && !isAdminPage && !!user;
 
-  // Redirige les admins connectés depuis /dashboard vers le dashboard admin dédié
+  // Redirige selon le rôle de l'utilisateur
   useEffect(() => {
-    if (user && user.role === "admin" && pathname === "/dashboard") {
-      router.replace("/admin");
+    if (!loading && user) {
+      // Admin sur une page client → dashboard admin dédié
+      if (
+        user.role === "admin" &&
+        (pathname === "/dashboard" ||
+          pathname === "/projets" ||
+          pathname === "/simulation")
+      ) {
+        router.replace("/admin");
+      }
+      // Client qui tente d'accéder à /admin → dashboard client
+      if (user.role !== "admin" && pathname === "/admin") {
+        router.replace("/dashboard");
+      }
     }
-  }, [user, pathname, router]);
+  }, [user, loading, pathname, router]);
 
   return (
     <>

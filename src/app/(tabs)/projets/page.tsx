@@ -40,9 +40,8 @@ export default function ProjectsPage() {
       const data = snapshot.val();
       if (data) {
         // Filtrer uniquement les chantiers de cet utilisateur
-        const entries = Object.entries(data as Record<string, any>);
-        const userChantiers = entries
-          .filter(([id, chantier]) => chantier.userId === user.uid)
+        const userChantiers = Object.entries(data as Record<string, any>)
+          .filter(([id, chantier]) => chantier.userId === user?.uid)
           .map(([id, chantier]) => ({ id, ...(chantier as object) })) as Chantier[];
 
         setChantiers(userChantiers);
@@ -50,7 +49,7 @@ export default function ProjectsPage() {
         setChantiers([]);
       }
       setLoading(false);
-      console.log("📦 Chantiers récupérés pour user", user?.uid, ":", chantiers);
+      console.log("📦 Chantiers trouvés pour l'utilisateur", user?.uid, ":", chantiers);
     });
 
     return () => unsubscribe();

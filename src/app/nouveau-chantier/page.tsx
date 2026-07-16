@@ -136,19 +136,19 @@ export default function NouveauChantierPage() {
     try {
       const { database } = getFirebaseServices();
       const newId = `chantier_${Date.now()}`;
-      
+
       console.log("✅ ID du chantier créé:", newId);
-      
+
       setChantierId(newId);
       console.log("🟡 chantierId stocké dans le state:", newId);
 
-      // Données brutes avec valeurs par défaut
-      const rawChantierData = {
+      // Données du chantier — userId explicitement à la racine (OBLIGATOIRE)
+      const chantierData = {
         id: newId,
-        userId: user?.uid || "inconnu",
+        userId: user?.uid || "inconnu", // ⚠️ OBLIGATOIRE : doit être à la racine de l'objet
         nom: formData.nom || "Chantier sans nom",
         type: formData.type || "construction",
-        surface: formData.surfaceConstruite || 150,
+        surface: Number(formData.surfaceConstruite) || 150,
         localisation: {
           ville: formData.ville || "—",
           commune: formData.commune || "—",
@@ -172,12 +172,11 @@ export default function NouveauChantierPage() {
         dateMiseAJour: Date.now()
       };
 
-      // Nettoie l'objet pour supprimer TOUS les undefined avant l'envoi Firebase
-      const chantierData = sanitizeData(rawChantierData);
-      console.log("📦 Données nettoyées prêtes pour Firebase:", chantierData);
+      // Vérifie que userId est bien présent avant l'envoi
+      console.log("🔍 VÉRIFICATION userId AVANT ENVOI:", chantierData.userId);
 
-      // Create chantier in Firebase - utilise plan gratuit si aucun plan payant sélectionné
-      await set(ref(database, `chantiers/${newId}`), chantierData);
+      const newChantierRef = ref(database, `chantiers/${newId}`);
+      await set(newChantierRef, chantierData);
 
       console.log("📦 Données écrites dans Firebase");
 
