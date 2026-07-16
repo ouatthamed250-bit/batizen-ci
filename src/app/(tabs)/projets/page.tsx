@@ -1,13 +1,54 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { PremiumHeader } from "@/components/layout/PremiumHeader";
 import { ScreenWrapper } from "@/components/layout/ScreenWrapper";
-import { ProjectCard } from "@/components/cards/ProjectCard";
 import { PremiumButton } from "@/components/ui/PremiumButton";
-import { getProjects } from "@/services/batizen";
-import { FolderKanban } from "lucide-react";
+import { FolderKanban, HardHat } from "lucide-react";
+import { useAuthContext } from "@/contexts/AuthContext";
+import { getDatabase, ref, onValue } from "firebase/database";
+import Link from "next/link";
 
-export default async function ProjectsPage() {
-  const projects = await getProjects();
+type Chantier = {
+  id: string;
+  nom?: string;
+  nom_projet?: string;
+  type?: string;
+  localisation?: string;
+  statut?: string;
+  status?: string;
+  progression?: number;
+  progress?: number;
+};
+
+export default function ProjectsPage() {
+  const { user } = useAuthContext();
+  const [chantiers, setChantiers] = useState<Chantier[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    const db = getDatabase();
+    const chantiersRef = ref(db, 'chantiers');
+    
+    onValue(chantiersRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const chantiersList = Object.values(data).filter(
+          (c: any) => c.userId === user.uid || c.client_id === user.uid
+        ) as Chantier[];
+        setChantiers(chantiersList);
+      } else {
+        setChantiers([]);
+      }
+      setLoading(false);
+    });
+  }, [user]);
 
   return (
     <ScreenWrapper>
@@ -24,38 +65,49 @@ export default async function ProjectsPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <span className="rounded-full bg-[#EAF2FF] px-4 py-2 text-sm font-black text-[#0B5FFF]">
-            {projects.length} projet{projects.length !== 1 ? "s" : ""}
+      <span className="rounded-full bg-[#EAF2FF] px-4 py-2 text-sm font-black text-[#0B5FFF]">
+            {chantiers.length} projet{chantiers.length !== 1 ? "s" : ""}
           </span>
-          <PremiumButton href="/gestion-complete" className="shrink-0">
+          <PremiumButton href="/nouveau-chantier" className="shrink-0">
             + Nouveau
           </PremiumButton>
         </div>
       </div>
 
-      {projects.length === 0 ? (
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="animate-pulse">Chargement...</div>
+        </div>
+      ) : chantiers.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <div className="grid size-20 place-items-center rounded-[28px] bg-[#F7F9FC] text-[#6B7280]">
-            <FolderKanban size={36} aria-hidden />
+            <HardHat size={36} aria-hidden />
           </div>
-          <h2 className="mt-5 text-xl font-black text-[#0D2B6B]">Aucun projet pour l&apos;instant</h2>
+          <h2 className="mt-5 text-xl font-black text-[#0D2B6B]">Aucun projet pour l'instant</h2>
           <p className="mt-2 max-w-xs text-sm text-[#6B7280]">
             Lancez votre premier projet de construction ou de rénovation.
           </p>
-          <PremiumButton href="/gestion-complete" className="mt-6 max-w-xs">
+          <PremiumButton href="/nouveau-chantier" className="mt-6 max-w-xs">
             Créer mon premier projet
           </PremiumButton>
         </div>
       ) : (
         <div className="grid gap-6 lg:grid-cols-2">
-          {projects.map((project, i) => (
-            <div
-              key={project.id}
-              className="animate-fadeInUp"
-              style={{ animationDelay: `${i * 0.08}s` }}
-            >
-              <ProjectCard project={project} />
-            </div>
+          {chantiers.map((chantier, i) => (
+            <Link key={chantier.id} href={`/chantier/${chantier.id}`}>
+              <div className="rounded-[20px] border border-white/50 bg-white/90 p-5 shadow-lg backdrop-blur-sm hover:shadow-xl transition cursor-pointer">
+                <h3 className="font-black text-[var(--navy)]">{chantier.nom_projet || chantier.nom || 'Chantier'}</h3>
+                <p className="text-xs text-[var(--muted)] mt-1">{chantier.type || '—'}</p>
+                <p className="text-xs text-[var(--muted)] mt-1">{chantier.localisation || '—'}</p>
+                <span className={`inline-block mt-3 px-3 py-1 rounded-full text-xs font-bold ${
+                  chantier.statut === 'en_cours' ? 'bg-green-100 text-green-700' :
+                  chantier.statut === 'en_attente' ? 'bg-orange-100 text-orange-700' :
+                  'bg-blue-100 text-blue-700'
+                }`}>
+                  {chantier.statut || 'en_attente'}
+                </span>
+              </div>
+            </Link>
           ))}
         </div>
       )}

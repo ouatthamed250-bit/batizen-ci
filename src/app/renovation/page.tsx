@@ -63,7 +63,7 @@ export default function RenovationPage() {
           <CheckCircle2 size={48} />
         </div>
         <h1 className="mt-8 text-2xl font-black text-[#0D2B6B]">Demande envoyée !</h1>
-        <p className="mt-3 max-w-[280px] text-sm text-[#6B7280]">Un expert BÂTIZEN vous contacte sous 2h pour programmer une visite technique gratuite.</p>
+        <p className="mt-3 max-w-[280px] text-sm text-[#6B7280]">Un expert BÂTIZEN vous contacte sous 2h pour programmer une visite technique.</p>
         {result && (
           <div className="mt-6 rounded-[20px] bg-[#EAF2FF] px-6 py-4 text-center">
             <p className="text-xs font-black uppercase text-[#6B7280]">Budget estimé</p>
