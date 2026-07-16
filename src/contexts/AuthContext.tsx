@@ -50,9 +50,20 @@ function getStoredAuth(): { user: AuthUser } | null {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(() => getStoredAuth()?.user ?? null);
+  // Initialisation identique serveur/client (null/false) pour éviter le mismatch d'hydratation (#418).
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(() => hasFirebaseConfig());
-  const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(getStoredAuth()?.user));
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Hydratation depuis localStorage UNIQUEMENT après le montage côté client.
+  // Cela empêche le rendu serveur (user=null) de diverger du premier rendu client.
+  useEffect(() => {
+    const stored = getStoredAuth();
+    if (stored?.user) {
+      setUser(stored.user);
+      setIsAuthenticated(true);
+    }
+  }, []);
 
   // Initialiser l'auth au démarrage
   useEffect(() => {

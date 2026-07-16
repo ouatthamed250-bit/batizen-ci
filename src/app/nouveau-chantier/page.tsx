@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, ArrowLeft, CheckCircle2, HardHat, MapPin, Wallet, Calendar, Building2, Home, Paintbrush } from "lucide-react";
@@ -56,6 +56,8 @@ export default function NouveauChantierPage() {
   const [showRdvForm, setShowRdvForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [chantierId, setChantierId] = useState<string | null>(null);
+  // Garde-fou anti-réentrance : empêche handleSubmit de tourner en boucle
+  const submittingRef = useRef(false);
   const [rdvData, setRdvData] = useState({
     lieu: "bureau",
     date: "",
@@ -108,19 +110,27 @@ export default function NouveauChantierPage() {
   };
 
   const handleSubmit = async () => {
+    // ⛔ Garde-fou : si une soumission est déjà en cours (ou déjà créée), on bloque.
+    // Empêche la boucle de création de chantiers (clics répétés, remontage, ou tout re-déclenchement auto).
+    if (submittingRef.current || chantierId) {
+      console.warn("⛔ handleSubmit ignoré : création de chantier déjà en cours / déjà effectuée");
+      return;
+    }
     console.log("═══════════════════════════════════════");
     console.log("🔵 DÉBUT DE LA SOUMISSION");
     console.log("═══════════════════════════════════════");
     console.log("Données du formulaire:", formData);
     console.log("Plan choisi:", selectedPlan || formData.planType || "gratuit");
     console.log("User UID:", user?.uid);
-    
+
     if (!user) {
       console.error("❌ ERREUR : Utilisateur non connecté !");
       setLoading(false);
       return;
     }
-    
+
+    // Verrouille immédiatement pour bloquer toute réentrance
+    submittingRef.current = true;
     setLoading(true);
     
     try {
@@ -143,7 +153,7 @@ export default function NouveauChantierPage() {
           ville: formData.ville || "—",
           commune: formData.commune || "—",
           quartier: formData.quartier || "—",
-          adresse: formData.adresse || "Adresse non spécifiée"
+          adresse: formData.adresse ?? ""
         },
         materiaux: {
           grosOeuvre: formData.materiauxGrosOeuvre || {},
@@ -193,6 +203,7 @@ export default function NouveauChantierPage() {
       // L'utilisateur peut cliquer sur "Voir mon chantier" ou "Retour au Dashboard"
     } catch (error) {
       console.error("❌ ERREUR lors de la soumission:", error);
+      submittingRef.current = false; // autorise une nouvelle tentative après échec
       setLoading(false);
       alert("Erreur lors de la soumission. Veuillez réessayer.");
     }
