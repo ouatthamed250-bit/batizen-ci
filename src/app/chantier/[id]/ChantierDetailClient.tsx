@@ -251,8 +251,10 @@ type TabKey = (typeof TABS)[number]["key"];
 /* Helper to format localisation safely                                */
 /* ------------------------------------------------------------------ */
 
-function formatLocalisation(loc: Chantier["localisation"], fallbackAdresse?: string): string {
+function formatLocalisation(loc: Chantier["localisation"] | string | undefined | null, fallbackAdresse?: string): string {
   if (!loc) return fallbackAdresse || "—";
+  // Si localisation est déjà une chaîne (ex: "Cotonou, Cadjehoun")
+  if (typeof loc === "string") return loc;
   const parts: string[] = [];
   if (loc.ville) parts.push(loc.ville);
   if (loc.commune) parts.push(loc.commune);
