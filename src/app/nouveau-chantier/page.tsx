@@ -95,15 +95,29 @@ export default function NouveauChantierPage() {
   };
 
   const handleSubmit = async () => {
-    if (!user) return;
+    console.log("═══════════════════════════════════════");
+    console.log("🔵 DÉBUT DE LA SOUMISSION");
+    console.log("═══════════════════════════════════════");
+    console.log("Données du formulaire:", formData);
+    console.log("Plan choisi:", selectedPlan || formData.planType || "gratuit");
+    console.log("User UID:", user?.uid);
+    
+    if (!user) {
+      console.error("❌ ERREUR : Utilisateur non connecté !");
+      return;
+    }
     
     setLoading(true);
     
     try {
       const { database } = getFirebaseServices();
       const newId = `chantier_${Date.now()}`;
-      setChantierId(newId);
       
+      console.log("✅ ID du chantier créé:", newId);
+      
+      setChantierId(newId);
+      console.log("🟡 chantierId stocké dans le state:", newId);
+
       // Create chantier in Firebase - utilise plan gratuit si aucun plan payant sélectionné
       await set(ref(database, `chantiers/${newId}`), {
         id: newId,
@@ -126,6 +140,8 @@ export default function NouveauChantierPage() {
         dateMiseAJour: Date.now()
       });
 
+      console.log("📦 Données écrites dans Firebase");
+
       // Send notification to admin
       await set(ref(database, `notifications/admin/nouveau_chantier_${newId}`), {
         type: "nouveau_chantier",
@@ -141,11 +157,15 @@ export default function NouveauChantierPage() {
       // Clear simulation data
       localStorage.removeItem('simulationData');
 
-      // Redirect after 5 seconds
-      setTimeout(() => { router.replace('/dashboard'); }, 5000);
+      console.log("🟢 Soumission terminée avec succès");
+      console.log("═══════════════════════════════════════");
+      
+      // Loading reste true pour afficher l'écran de succès
+      // L'utilisateur peut cliquer sur "Voir mon chantier" ou "Retour au Dashboard"
     } catch (error) {
-      console.error("Error creating chantier:", error);
+      console.error("❌ ERREUR lors de la soumission:", error);
       setLoading(false);
+      alert("Erreur lors de la soumission. Veuillez réessayer.");
     }
   };
 
@@ -163,13 +183,43 @@ export default function NouveauChantierPage() {
               <p className="text-white"><span className="text-white/60">📅 RDV :</span> {rdvData.date || 'À définir'} à {rdvData.heure}</p>
               <p className="text-white"><span className="text-white/60">💼 Plan :</span> {selectedPlan || formData.planType || 'gratuit'}</p>
               <p className="text-white/80">⏳ Statut : En attente de validation</p>
+              <div className="bg-white/20 rounded-xl p-3 mt-4">
+                <p className="text-sm font-bold text-white">
+                  <strong>ID du chantier :</strong> {chantierId}
+                </p>
+              </div>
             </div>
-            <div className="flex gap-3">
-              <PremiumButton onClick={() => router.push('/dashboard')} variant="secondary" className="flex-1">
-                Retour au Dashboard
+            <div className="flex flex-col gap-3">
+              <PremiumButton 
+                onClick={() => {
+                  console.log("🏠 Clic sur Retour Dashboard");
+                  router.push('/dashboard');
+                }} 
+                variant="secondary" 
+                className="w-full"
+              >
+                🏠 Retour au Dashboard
               </PremiumButton>
-              <PremiumButton onClick={() => router.push(`/chantier/${chantierId}`)} variant="primary" className="flex-1">
-                Voir mon chantier
+              <PremiumButton 
+                onClick={() => {
+                  console.log("═══════════════════════════════════════");
+                  console.log("👁️ CLIC SUR VOIR MON CHANTIER");
+                  console.log("chantierId actuel:", chantierId);
+                  console.log("URL de redirection:", `/chantier/${chantierId}`);
+                  console.log("═══════════════════════════════════════");
+                  
+                  if (chantierId) {
+                    console.log("✅ Redirection en cours...");
+                    router.push(`/chantier/${chantierId}`);
+                  } else {
+                    console.error("❌ ERREUR : chantierId est null ou undefined !");
+                    alert("Erreur : impossible de retrouver votre chantier. Veuillez retourner au dashboard.");
+                  }
+                }} 
+                variant="primary" 
+                className="w-full"
+              >
+                👁️ Voir mon chantier
               </PremiumButton>
             </div>
           </div>

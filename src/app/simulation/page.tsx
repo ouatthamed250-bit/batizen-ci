@@ -95,6 +95,10 @@ export default function SimulationPage() {
   const progressPercent = (formStep / 5) * 100;
 
   const handleContinueProposition = (propId: string) => {
+    console.log("═══════════════════════════════════════");
+    console.log("💼 CLIC SUR CONTINUER AVEC PROPOSITION", propId);
+    console.log("═══════════════════════════════════════");
+    
     const simulationData = {
       budget: preferences.budget,
       terrain: preferences.terrain,
@@ -116,11 +120,18 @@ export default function SimulationPage() {
       },
       propositionChoisie: propId
     };
+    console.log("Données à stocker:", simulationData);
     localStorage.setItem('simulationData', JSON.stringify(simulationData));
+    console.log("📦 Données stockées dans localStorage");
+    console.log("🚀 Redirection vers /nouveau-chantier");
     router.push('/nouveau-chantier');
   };
 
   const handleContinueGratuit = () => {
+    console.log("═══════════════════════════════════════");
+    console.log("✅ CLIC SUR CONTINUER AVEC PLAN GRATUIT");
+    console.log("═══════════════════════════════════════");
+    
     const simulationData = {
       budget: preferences.budget,
       terrain: preferences.terrain,
@@ -143,7 +154,10 @@ export default function SimulationPage() {
       planType: 'gratuit',
       propositionChoisie: null
     };
+    console.log("Données à stocker:", simulationData);
     localStorage.setItem('simulationData', JSON.stringify(simulationData));
+    console.log("📦 Données stockées dans localStorage");
+    console.log("🚀 Redirection vers /nouveau-chantier");
     router.push('/nouveau-chantier');
   };
 
