@@ -21,6 +21,7 @@ import {
 import { useAuthContext } from "@/contexts/AuthContext";
 import { WeatherWidget } from "@/components/btp/WeatherWidget";
 import { ProgressBar } from "@/components/ui/ProgressBar";
+import SuperCalculateur from "@/components/btp/SuperCalculateur";
 import { rtdbGetList, rtdbGetListByChild } from "@/lib/rtdb";
 import { formatFcfa } from "@/utils/currency";
 
@@ -484,10 +485,32 @@ export default function DashboardClientPage() {
                   </Link>
                 </motion.div>
               ))}
-            </div>
-          </motion.section>
+              </div>
+            </motion.section>
 
-          {/* SECTION C - Résumé rapide */}
+            {/* Super Calculateur Widget - Estimation rapide */}
+            <motion.section
+              aria-label="Estimation rapide"
+              variants={fadeUp}
+              initial="hidden"
+              animate="show"
+              className="mt-3"
+            >
+              <SuperCalculateur
+                surface={150}
+                chambres={3}
+                sallesDeBain={2}
+                etages={1}
+                garage={false}
+                piscine={false}
+                jardin={false}
+                standing="moyen"
+                style="moderne"
+                mode="widget"
+              />
+            </motion.section>
+
+            {/* SECTION C - Résumé rapide */}
           <motion.section
             aria-label="Résumé rapide"
             variants={containerVariants}

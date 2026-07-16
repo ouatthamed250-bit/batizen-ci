@@ -43,6 +43,7 @@ import { rtdbGet, rtdbGetList, rtdbSubscribeList } from "@/lib/rtdb";
 import { formatFcfa } from "@/utils/currency";
 import { ref, push, onValue, type Unsubscribe } from "firebase/database";
 import { getFirebaseServices } from "@/lib/firebase";
+import SuperCalculateur from "@/components/btp/SuperCalculateur";
 
 /* ------------------------------------------------------------------ */
 /* Types                                                              */
@@ -566,6 +567,23 @@ export default function ChantierDetailClient() {
                       </a>
                     </div>
                   </div>
+
+                  {/* Super Calculateur - Suivi du budget */}
+                  {chantier?.budget && (
+                    <SuperCalculateur
+                      surface={Number(chantier.superficie) || 150}
+                      chambres={3}
+                      sallesDeBain={2}
+                      etages={1}
+                      garage={false}
+                      piscine={false}
+                      jardin={false}
+                      standing="moyen"
+                      style="moderne"
+                      mode="suivi"
+                      budgetDepense={totalPaye}
+                    />
+                  )}
                 </section>
               )}
 
