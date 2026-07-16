@@ -219,7 +219,8 @@ function Plan2DInteractive({
 
   const handleMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = e.currentTarget;
-    const point = findSnapPoint(screenToGrid(e.clientX, e.clientY, canvas));
+    const gridPoint = screenToGrid(e.clientX, e.clientY, canvas);
+    const point = findSnapPoint(gridPoint.x, gridPoint.y);
     setStartPoint(point);
     setTempEndPoint(point);
     setIsDrawing(true);
@@ -236,7 +237,8 @@ function Plan2DInteractive({
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!isDrawing) return;
     const canvas = e.currentTarget;
-    const point = findSnapPoint(screenToGrid(e.clientX, e.clientY, canvas));
+    const gridPoint = screenToGrid(e.clientX, e.clientY, canvas);
+    const point = findSnapPoint(gridPoint.x, gridPoint.y);
     setTempEndPoint(point);
     redraw();
   }, [isDrawing, redraw, screenToGrid, findSnapPoint]);
@@ -245,7 +247,8 @@ function Plan2DInteractive({
     if (!isDrawing || !startPoint) return;
     
     const canvas = e.currentTarget;
-    const endPoint = findSnapPoint(screenToGrid(e.clientX, e.clientY, canvas));
+    const gridPoint = screenToGrid(e.clientX, e.clientY, canvas);
+    const endPoint = findSnapPoint(gridPoint.x, gridPoint.y);
     
     // Ajouter le mur si longueur > 0
     if (endPoint.x !== startPoint.x || endPoint.y !== startPoint.y) {
