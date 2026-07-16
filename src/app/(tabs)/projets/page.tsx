@@ -28,27 +28,33 @@ export default function ProjectsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) {
+    if (!user?.uid) {
       setLoading(false);
       return;
     }
 
     const db = getDatabase();
     const chantiersRef = ref(db, 'chantiers');
-    
-    onValue(chantiersRef, (snapshot) => {
+
+    const unsubscribe = onValue(chantiersRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        const chantiersList = Object.values(data).filter(
-          (c: any) => c.userId === user.uid || c.client_id === user.uid
-        ) as Chantier[];
-        setChantiers(chantiersList);
+        // Filtrer uniquement les chantiers de cet utilisateur
+        const entries = Object.entries(data as Record<string, any>);
+        const userChantiers = entries
+          .filter(([id, chantier]) => chantier.userId === user.uid)
+          .map(([id, chantier]) => ({ id, ...(chantier as object) })) as Chantier[];
+
+        setChantiers(userChantiers);
       } else {
         setChantiers([]);
       }
       setLoading(false);
+      console.log("📦 Chantiers récupérés pour user", user?.uid, ":", chantiers);
     });
-  }, [user]);
+
+    return () => unsubscribe();
+  }, [user?.uid]);
 
   return (
     <ScreenWrapper>

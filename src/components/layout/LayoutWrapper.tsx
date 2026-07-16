@@ -1,6 +1,7 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { Header } from "./Header";
 import { BottomNav } from "./BottomNav";
@@ -12,11 +13,22 @@ import { InfoTicker } from "../ui/InfoTicker";
 
 export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { user } = useAuthContext();
 
   const publicPages = ["/", "/login", "/register", "/forgot-password"];
   const isPublicPage = publicPages.includes(pathname);
-  const showLayout = !isPublicPage && user;
+  // Les pages /admin utilisent leur propre layout (admin layout) : on n'affiche
+  // PAS le chrome client (Header/Sidebar/BottomNav) dessus.
+  const isAdminPage = pathname.startsWith("/admin");
+  const showLayout = !isPublicPage && !isAdminPage && !!user;
+
+  // Redirige les admins connectés depuis /dashboard vers le dashboard admin dédié
+  useEffect(() => {
+    if (user && user.role === "admin" && pathname === "/dashboard") {
+      router.replace("/admin");
+    }
+  }, [user, pathname, router]);
 
   return (
     <>

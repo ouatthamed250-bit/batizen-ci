@@ -145,7 +145,7 @@ export default function NouveauChantierPage() {
       // Données brutes avec valeurs par défaut
       const rawChantierData = {
         id: newId,
-        userId: user.uid,
+        userId: user?.uid || "inconnu",
         nom: formData.nom || "Chantier sans nom",
         type: formData.type || "construction",
         surface: formData.surfaceConstruite || 150,

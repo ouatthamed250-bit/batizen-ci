@@ -40,7 +40,9 @@ export default function AdminSecretModal({ isOpen, onClose }: AdminSecretModalPr
       const userData = userSnapshot.val();
 
       if (userData && userData.role === "admin") {
-        // Succès : redirige vers /admin
+        // Succès : ouvre la session admin (cookie requis par le middleware)
+        // et redirige vers /admin
+        document.cookie = "batizen_admin=1; path=/; max-age=604800; SameSite=Strict";
         window.location.href = "/admin";
         onClose();
       } else {
