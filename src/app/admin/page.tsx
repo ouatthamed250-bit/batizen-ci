@@ -175,12 +175,12 @@ function AdminContent() {
         rtdbGet<{ ticker_text?: string }>("global_settings/ticker"),
       ]);
       if (cancelled) return;
-      setClients(c.length ? c : DEMO_CLIENTS);
-      setChantiers(ch.length ? ch : DEMO_CHANTIERS);
-      setOuvriers(o.length ? o : DEMO_OUVRIERS);
-      setRdvs(r.length ? r : DEMO_RDVS);
-      setMateriaux(m.length ? m : DEMO_MATERIAUX);
-      setPromos(p.length ? p : DEMO_PROMOS);
+      setClients(c);
+      setChantiers(ch);
+      setOuvriers(o);
+      setRdvs(r);
+      setMateriaux(m);
+      setPromos(p);
       setTickerText(ticker?.ticker_text || "");
       setLoading(false);
     }
@@ -654,17 +654,38 @@ function PromosSection({ data, onAdd }: { data: Promo[]; onAdd: (updater: (prev:
   const [reduction, setReduction] = useState(0);
   const [deb, setDeb] = useState("");
   const [fin, setFin] = useState("");
+  const [editId, setEditId] = useState<string | null>(null);
 
   function submit(e: FormEvent) {
     e.preventDefault();
-    onAdd((prev) => [...prev, { id: `p${Date.now()}`, titre, description: desc, reduction, date_debut: deb, date_fin: fin, active: true }]);
+    if (editId) {
+      onAdd((prev) => prev.map((p) => (p.id === editId ? { ...p, titre, description: desc, reduction, date_debut: deb, date_fin: fin } : p)));
+      setEditId(null);
+    } else {
+      onAdd((prev) => [...prev, { id: `p${Date.now()}`, titre, description: desc, reduction, date_debut: deb, date_fin: fin, active: true }]);
+    }
     setTitre(""); setDesc(""); setReduction(0); setDeb(""); setFin(""); setOpen(false);
   }
 
+  const startEdit = (p: Promo) => {
+    setEditId(p.id);
+    setTitre(p.titre || "");
+    setDesc(p.description || "");
+    setReduction(p.reduction || 0);
+    setDeb(p.date_debut || "");
+    setFin(p.date_fin || "");
+    setOpen(true);
+  };
+
+  const remove = (id: string) => {
+    if (!confirm("Supprimer cette promotion ?")) return;
+    onAdd((prev) => prev.filter((p) => p.id !== id));
+  };
+
   return (
     <div className="space-y-4">
-      <button onClick={() => setOpen((o) => !o)} className="flex items-center gap-2 rounded-[12px] bg-[#FF7A00] px-4 py-2.5 text-sm font-black">
-        <Plus size={18} /> Créer une promo
+      <button onClick={() => { setEditId(null); setOpen((o) => !o); }} className="flex items-center gap-2 rounded-[12px] bg-[#FF7A00] px-4 py-2.5 text-sm font-black">
+        <Plus size={18} /> {editId ? "Modifier la promo" : "Créer une promo"}
       </button>
       {open && (
         <form onSubmit={submit} className="space-y-3 rounded-[16px] border border-white/10 bg-white/5 p-4">
@@ -678,7 +699,7 @@ function PromosSection({ data, onAdd }: { data: Promo[]; onAdd: (updater: (prev:
             <Input label="Début" value={deb} set={setDeb} />
             <Input label="Fin" value={fin} set={setFin} />
           </div>
-          <button className="h-11 w-full rounded-[12px] bg-[#0B5FFF] font-black">Publier</button>
+          <button className="h-11 w-full rounded-[12px] bg-[#0B5FFF] font-black">{editId ? "Mettre à jour" : "Publier"}</button>
         </form>
       )}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -693,6 +714,10 @@ function PromosSection({ data, onAdd }: { data: Promo[]; onAdd: (updater: (prev:
             <p className="mt-1 text-sm text-white/60">{p.description}</p>
             <p className="mt-2 text-[#FF7A00] font-black">-{p.reduction}%</p>
             <p className="text-xs text-white/40">{p.date_debut} → {p.date_fin}</p>
+            <div className="mt-3 flex gap-2">
+              <button onClick={() => startEdit(p)} className="flex-1 rounded-[10px] bg-white/10 py-1.5 text-xs font-bold">Modifier</button>
+              <button onClick={() => remove(p.id)} className="flex-1 rounded-[10px] bg-red-500/15 py-1.5 text-xs font-bold text-red-400">Supprimer</button>
+            </div>
           </div>
         ))}
       </div>
@@ -1102,30 +1127,73 @@ function ContenuSection({ tickerText, setTickerText }: { tickerText: string; set
 }
 
 function SettingsSection() {
+  const [profile, setProfile] = useState<{ nom?: string; email?: string; telephone?: string; adresse?: string; logo_url?: string }>({});
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  useEffect(() => {
+    async function load() {
+      const data = await rtdbGet<{ nom?: string; email?: string; telephone?: string; adresse?: string; logo_url?: string }>("global_settings/admin_profile");
+      setProfile(data || {});
+    }
+    load();
+  }, []);
+
+  const save = async (e: FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setMessage(null);
+    try {
+      await rtdbSet("global_settings/admin_profile", profile);
+      setMessage({ type: "success", text: "Paramètres sauvegardés avec succès" });
+    } catch {
+      setMessage({ type: "error", text: "Erreur lors de la sauvegarde" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const uploadLogo = async (e: FormEvent) => {
+    e.preventDefault();
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      try {
+        const storage = getStorage();
+        const storageRef = ref(storage, `admin/profile_${Date.now()}_${file.name}`);
+        await uploadBytes(storageRef, file);
+        const url = await getDownloadURL(storageRef);
+        setProfile((prev) => ({ ...prev, logo_url: url }));
+      } catch (err) {
+        console.error("Upload logo erreur", err);
+      }
+    };
+    input.click();
+  };
+
   return (
     <div className="space-y-4 rounded-[16px] border border-white/10 bg-white/5 p-6">
       <h3 className="text-lg font-black text-[#FF7A00]">Paramètres généraux</h3>
-      <p className="text-sm text-white/60">Options de base de la plateforme BATIZEN.</p>
-      <div className="space-y-3">
-        <div className="flex items-center justify-between rounded-[12px] bg-white/5 px-4 py-3 text-sm">
-          <span>Code secret admin</span><span className="font-black text-[#FF7A00]">••••••••</span>
+      <p className="text-sm text-white/60">Modifiez les informations de l'entreprise et de l'administrateur.</p>
+      {message && (
+        <p className={`text-sm font-bold ${message.type === "success" ? "text-green-400" : "text-red-400"}`}>{message.text}</p>
+      )}
+      <form onSubmit={save} className="space-y-3">
+        <Input label="Nom administrateur" value={profile.nom || ""} set={(v) => setProfile((prev) => ({ ...prev, nom: v }))} />
+        <Input label="Email contact" value={profile.email || ""} set={(v) => setProfile((prev) => ({ ...prev, email: v }))} />
+        <Input label="Téléphone" value={profile.telephone || ""} set={(v) => setProfile((prev) => ({ ...prev, telephone: v }))} />
+        <Input label="Adresse entreprise" value={profile.adresse || ""} set={(v) => setProfile((prev) => ({ ...prev, adresse: v }))} />
+        <div className="flex items-center gap-3">
+          {profile.logo_url && <img src={profile.logo_url} alt="Logo" className="h-10 w-10 rounded-lg object-cover" />}
+          <button type="button" onClick={uploadLogo} className="rounded-[10px] bg-white/10 px-3 py-2 text-xs font-bold">Changer le logo</button>
         </div>
-        <div className="flex items-center justify-between rounded-[12px] bg-white/5 px-4 py-3 text-sm">
-          <span>Notifications push</span><span className="text-green-400">Activées</span>
-        </div>
-        <div className="flex items-center justify-between rounded-[12px] bg-white/5 px-4 py-3 text-sm">
-          <span>Mode maintenance</span><span className="text-white/50">Désactivé</span>
-        </div>
-        <div className="flex items-center justify-between rounded-[12px] bg-white/5 px-4 py-3 text-sm">
-          <span>Sécurité tentatives</span><span className="text-green-400">Activée (max 5)</span>
-        </div>
-        <div className="flex items-center justify-between rounded-[12px] bg-white/5 px-4 py-3 text-sm">
-          <span>Langue</span><span className="text-white/70">Français (France)</span>
-        </div>
-        <div className="flex items-center justify-between rounded-[12px] bg-white/5 px-4 py-3 text-sm">
-          <span>Devise</span><span className="text-white/70">FCFA</span>
-        </div>
-      </div>
+        <button type="submit" disabled={saving} className="h-11 w-full rounded-[12px] bg-[#0B5FFF] font-black disabled:opacity-50">
+          {saving ? "Sauvegarde..." : "💾 Sauvegarder"}
+        </button>
+      </form>
     </div>
   );
 }
@@ -1172,27 +1240,3 @@ function ChartCard({ title, icon, children }: { title: string; icon?: ReactNode;
   );
 }
 
-/* ---------- Demo data (fallback si RTDB vide) ---------- */
-const DEMO_CLIENTS: Client[] = [
-  { id: "cl1", nom: "Awa Koné", email: "awa@exemple.ci", telephone: "+225 07 00 00 00", date_inscription: "2026-01-12", statut: "actif" },
-  { id: "cl2", nom: "Marc Traoré", email: "marc@exemple.ci", telephone: "+225 05 00 00 00", date_inscription: "2026-03-05", statut: "actif" },
-];
-const DEMO_CHANTIERS: Chantier[] = [
-  { id: "ch1", client_id: "cl1", nom_projet: "Villa Riviera", adresse: "Abidjan", progression: 64, statut: "en_cours", date_fin: "2026-09-30" },
-  { id: "ch2", client_id: "cl2", nom_projet: "Duplex Prestige", adresse: "Yamoussoukro", progression: 28, statut: "en_cours", date_fin: "2026-12-15" },
-];
-const DEMO_OUVRIERS: Ouvrier[] = [
-  { id: "o1", nom: "Kouamé B.", role: "Maçon", telephone: "+225 01 00 00 00", chantier_affecte: "ch1" },
-  { id: "o2", nom: "Fatou D.", role: "Électricien", telephone: "+225 02 00 00 00", chantier_affecte: "ch2" },
-];
-const DEMO_RDVS: RDV[] = [
-  { id: "r1", client: "Awa Koné", type: "Visite chantier", date: "2026-07-20", lieu: "Abidjan", statut: "en attente" },
-];
-const DEMO_MATERIAUX: Materiau[] = [
-  { id: "m1", nom: "Ciment CPJ 42.5", categorie: "Gros œuvre", prix: 5200, stock: 340 },
-  { id: "m2", nom: "Fer HA12", categorie: "Structure", prix: 4200, stock: 180 },
-  { id: "m3", nom: "Carrelage premium", categorie: "Finition", prix: 12500, stock: 95 },
-];
-const DEMO_PROMOS: Promo[] = [
-  { id: "p1", titre: "Solde été", description: "10% sur les matériaux", reduction: 10, date_debut: "2026-07-01", date_fin: "2026-08-31", active: true },
-];

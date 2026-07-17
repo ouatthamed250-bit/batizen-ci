@@ -13,8 +13,13 @@ export function PremiumHeader() {
   const router = useRouter();
 
   async function handleLogout() {
-    await logout();
-    router.replace("/login");
+    try {
+      await logout();
+      document.cookie = "batizen_admin=; path=/; max-age=0";
+      window.location.href = "/login";
+    } catch (error) {
+      console.error("Erreur déconnexion:", error);
+    }
   }
 
   const initials = user?.displayName
