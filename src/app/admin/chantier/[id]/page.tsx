@@ -436,14 +436,14 @@ export default function ChantierDetailPage() {
         {/* SECTION 7: Actions admin */}
         <Section title="Actions admin" icon={Check}>
           <div className="flex flex-wrap gap-3">
-            {chantier.statut === "en_attente" && (
+            {(chantier.statut === "en_attente" || chantier.statut === "en_attente_rdv") && (
               <>
                 <button
                   onClick={handleActivate}
                   disabled={actionLoading}
                   className="flex items-center gap-2 rounded-[12px] bg-green-500 px-4 py-2.5 text-sm font-black transition hover:bg-green-500/80 disabled:opacity-50"
                 >
-                  <Check size={18} /> Activer le chantier
+                  <Check size={18} /> ✅ Activer le chantier (RDV effectué)
                 </button>
                 <button
                   onClick={handleCancel}

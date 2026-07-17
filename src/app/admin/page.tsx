@@ -494,7 +494,7 @@ function ChantiersSection({ data, onAdd }: { data: Chantier[]; onAdd: (updater: 
 
       {filteredChantiers.length === 0 && (
         <div className="rounded-[16px] border border-white/10 bg-white/5 p-8 text-center">
-          <p className="text-white/50">Aucun chantier ne correspond aux filtres sélectionnés.</p>
+          <p className="text-white/50">Aucun chantier soumis pour le moment.</p>
         </div>
       )}
     </div>

@@ -36,13 +36,12 @@ export default function ProjectsPage() {
     const db = getDatabase();
     const chantiersRef = ref(db, 'chantiers');
 
-const unsubscribe = onValue(chantiersRef, (snapshot) => {
+ const unsubscribe = onValue(chantiersRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        // Filtrer uniquement les chantiers de cet utilisateur ET exclure les simulations brouillon
+        // Afficher tous les chantiers de l'utilisateur hors simulations brouillon
         const userChantiers = Object.entries(data as Record<string, any>)
           .filter(([id, chantier]) => {
-            // Doit appartenir à l'utilisateur ET ne pas être une simple simulation brouillon
             return chantier.userId === user?.uid && chantier.statut !== 'simulation_brouillon';
           })
           .map(([id, chantier]) => ({ id, ...(chantier as object) })) as Chantier[];
@@ -109,10 +108,11 @@ const unsubscribe = onValue(chantiersRef, (snapshot) => {
                 <p className="text-xs text-[var(--muted)] mt-1">{chantier.localisation || '—'}</p>
                 <span className={`inline-block mt-3 px-3 py-1 rounded-full text-xs font-bold ${
                   chantier.statut === 'en_cours' ? 'bg-green-100 text-green-700' :
-                  chantier.statut === 'en_attente' ? 'bg-orange-100 text-orange-700' :
-                  'bg-blue-100 text-blue-700'
+                  chantier.statut === 'en_attente' || chantier.statut === 'en_attente_rdv' ? 'bg-orange-100 text-orange-700' :
+                  chantier.statut === 'termine' || chantier.statut === 'terminé' ? 'bg-blue-100 text-blue-700' :
+                  'bg-gray-100 text-gray-700'
                 }`}>
-                  {chantier.statut || 'en_attente'}
+                  {chantier.statut === 'en_attente_rdv' ? 'En attente RDV' : (chantier.statut || 'en_attente')}
                 </span>
               </div>
             </Link>

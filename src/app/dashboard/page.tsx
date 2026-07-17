@@ -22,8 +22,9 @@ import { useAuthContext } from "@/contexts/AuthContext";
 import { WeatherWidget } from "@/components/btp/WeatherWidget";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import SuperCalculateur from "@/components/btp/SuperCalculateur";
-import { rtdbGetList, rtdbGetListByChild } from "@/lib/rtdb";
+import { rtdbGetList, rtdbGetListByChild, rtdbGet } from "@/lib/rtdb";
 import { formatFcfa } from "@/utils/currency";
+import { getDatabase } from "firebase/database";
 
 /* ------------------------------------------------------------------ */
 /* Types                                                              */
@@ -338,6 +339,8 @@ export default function DashboardClientPage() {
   const [chantiersEnAttente, setChantiersEnAttente] = useState<Chantier[]>([]);
   const [chantiersTermines, setChantiersTermines] = useState<Chantier[]>([]);
   const [partenaires, setPartenaires] = useState<Partenaire[]>([]);
+  const [creationLimit, setCreationLimit] = useState<{ date: string; compteur: number } | null>(null);
+  const [limitDataState, setLimitDataState] = useState<{ date: string; compteur: number } | null>(null);
 
   const nomClient = user?.displayName || user?.email?.split("@")[0] || "Client";
 
@@ -356,12 +359,14 @@ export default function DashboardClientPage() {
         allRdv,
         allNotifs,
         mesChantiersData,
+        limitData,
       ] = await Promise.all([
         rtdbGetList<Chantier>("chantiers"),
         rtdbGetList<Paiement>("paiements"),
         rtdbGetList<RendezVous>("rendez_vous"),
         rtdbGetList<NotificationItem>("notifications"),
         uid ? rtdbGetListByChild<Chantier>("chantiers", "client_id", uid) : Promise.resolve([]),
+        uid ? rtdbGet<{ date: string; compteur: number }>(`users/${uid}/creationsDuJour`) : Promise.resolve(null),
       ]);
 
       if (cancelled) return;
@@ -396,10 +401,12 @@ export default function DashboardClientPage() {
 
       // C - Mes chantiers - Trier par statut
       setMesChantiers(mesChantiersData);
-      setChantiersEnCours(mesChantiersData.filter(c => (c.statut || c.status) === "en_cours"));
-      setChantiersEnAttente(mesChantiersData.filter(c => (c.statut || c.status) === "en_attente"));
-      setChantiersTermines(mesChantiersData.filter(c => (c.statut || c.status) === "termine" || (c.statut || c.status) === "terminé"));
+      setChantiersEnCours(mesChantiersData.filter((c) => (c.statut || c.status) === "en_cours"));
+      setChantiersEnAttente(mesChantiersData.filter((c) => (c.statut || c.status) === "en_attente" || (c.statut || c.status) === "en_attente_rdv"));
+      setChantiersTermines(mesChantiersData.filter((c) => (c.statut || c.status) === "termine" || (c.statut || c.status) === "terminé"));
 
+      setCreationLimit(limitData);
+      setLimitDataState(limitData);
       setLoading(false);
     }
 
@@ -409,9 +416,33 @@ export default function DashboardClientPage() {
     };
   }, [user?.uid]);
 
+  const [limitError, setLimitError] = useState<string | null>(null);
+
+  const handleNouveauChantier = async () => {
+    setLimitError(null);
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const current = limitDataState || { date: today, compteur: 0 };
+      let compteur = current.compteur || 0;
+      if (current.date !== today) compteur = 0;
+      if (compteur >= 3) {
+        setLimitError("Limite quotidienne atteinte (3/3). Réessayez demain.");
+        return;
+      }
+      const next = { date: today, compteur: compteur + 1 };
+      const db = getDatabase();
+      const { ref, set } = await import("firebase/database");
+      await set(ref(db, `users/${user?.uid}/creationsDuJour`), next);
+      window.location.href = "/nouveau-chantier";
+    } catch (e) {
+      console.error("Erreur limite création", e);
+      setLimitError("Erreur lors de la vérification de la limite.");
+    }
+  };
+
   const actionsRapides = [
     { icon: Calculator, label: "Simulation", href: "/simulation", color: "#FF7A00" },
-    { icon: BrickWall, label: "Nouveau chantier", href: "/nouveau-chantier", color: "#0B5FFF" },
+    { icon: BrickWall, label: "Nouveau chantier", href: "#", color: "#0B5FFF", onClick: handleNouveauChantier },
     { icon: Hammer, label: "Rénovation", href: "/renovation", color: "#22C55E" },
   ];
 
@@ -447,6 +478,9 @@ export default function DashboardClientPage() {
             <div className="mt-2 flex justify-start">
               <WeatherWidget title="Météo du jour" />
             </div>
+            {limitError && (
+              <p className="mt-2 text-xs font-semibold text-red-600">{limitError}</p>
+            )}
           </div>
         </header>
 
