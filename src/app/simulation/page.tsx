@@ -165,7 +165,7 @@ export default function SimulationPage() {
     <div className="min-h-screen">
       <PremiumHeader />
       <BtpBackground imageUrl="https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=2070&auto=format&fit=crop" overlay="medium">
-        <main className="min-h-screen pt-24 pb-32">
+        <main className="min-h-screen pt-20 pb-32">
           <div className="mx-auto max-w-4xl px-4">
             <div className="text-center mb-6">
               <h1 className="text-3xl font-black text-white drop-shadow-lg">🏠 Simulateur IA</h1>

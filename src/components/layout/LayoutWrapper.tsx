@@ -8,18 +8,26 @@ import { BottomNav } from "./BottomNav";
 export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
-  // ⚠️ RÈGLE ABSOLUE : Si on est dans l'admin, on ne rend QUE le contenu. 
-  // Pas de Header, pas de Sidebar, pas de BottomNav.
-  if (pathname?.startsWith("/admin")) {
+  // ⚠️ Routes où on n'affiche AUCUN menu client
+  const isPublicRoute = 
+    pathname === "/" || 
+    pathname === "/login" || 
+    pathname === "/register" || 
+    pathname === "/forgot-password";
+  
+  const isAdminRoute = pathname?.startsWith("/admin");
+
+  // Si page publique OU admin → juste le contenu, sans aucun menu
+  if (isPublicRoute || isAdminRoute) {
     return <>{children}</>;
   }
 
-  // Pour toutes les autres pages, on affiche l'interface client complète
+  // Pour toutes les autres pages (connectées) → interface complète
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col">
       <Header />
       <Sidebar />
-      <main className="flex-1 pb-24"> {/* pb-24 est crucial pour ne pas cacher le contenu derrière la BottomNav */}
+      <main className="flex-1 pb-24">
         {children}
       </main>
       <BottomNav />

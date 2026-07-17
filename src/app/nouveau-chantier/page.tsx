@@ -272,7 +272,7 @@ export default function NouveauChantierPage() {
       <div className="min-h-screen">
         <PremiumHeader />
         
-        <main className="min-h-screen pt-24 pb-32">
+        <main className="min-h-screen pt-20 pb-32">
           <div className="mx-auto max-w-4xl px-4">
             <div className="mb-6"><BackButton href="/dashboard" /></div>
 

@@ -11,11 +11,15 @@ export default function HomePage() {
   const { isAuthenticated, loading } = useAuthContext();
 
   useEffect(() => {
-    if (!loading && isAuthenticated) {
-      router.replace("/dashboard");
-    } else if (!loading && !isAuthenticated) {
-      router.replace("/login");
-    }
+    const timer = setTimeout(() => {
+      if (!loading && isAuthenticated) {
+        router.replace("/dashboard");
+      } else if (!loading && !isAuthenticated) {
+        router.replace("/login");
+      }
+    }, 2500); // ⚠️ 2.5 SECONDES MINIMUM - NE PAS RÉDUIRE
+
+    return () => clearTimeout(timer);
   }, [isAuthenticated, loading, router]);
 
   if (loading) {
