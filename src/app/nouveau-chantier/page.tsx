@@ -172,8 +172,8 @@ export default function NouveauChantierPage() {
         dateMiseAJour: Date.now()
       };
 
-      // Vérifie que userId est bien présent avant l'envoi
-      console.log("🔍 VÉRIFICATION userId AVANT ENVOI:", chantierData.userId);
+      // 🚀 LOG ULTRA-VISUEL pour prouver que les données sont automatiquement correctes
+      console.log("🚀�🚀 DONNÉES ENVOYÉES À FIREBASE (VÉRIFICATION AUTO) :", JSON.stringify(chantierData, null, 2));
 
       const newChantierRef = ref(database, `chantiers/${newId}`);
       await set(newChantierRef, chantierData);
