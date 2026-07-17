@@ -1,57 +1,28 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
-import { useAuthContext } from "@/contexts/AuthContext";
+import { usePathname } from "next/navigation";
 import { Header } from "./Header";
-import { BottomNav } from "./BottomNav";
 import Sidebar from "./Sidebar";
-import ChatBot from "../ChatBot";
-import { AndroidBackHandler } from "./AndroidBackHandler";
-import { BreakingNewsTicker } from "../ui/BreakingNewsTicker";
-import { InfoTicker } from "../ui/InfoTicker";
+import { BottomNav } from "./BottomNav";
 
 export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
-  const { user, loading } = useAuthContext();
 
-  const publicPages = ["/", "/login", "/register", "/forgot-password"];
-  const isPublicPage = publicPages.includes(pathname);
-  // Les pages /admin utilisent leur propre layout (admin layout) : on n'affiche
-  // PAS le chrome client (Header/Sidebar/BottomNav) dessus.
-  const isAdminPage = pathname.startsWith("/admin");
-  const showLayout = !isPublicPage && !isAdminPage && !!user;
+  // ⚠️ RÈGLE ABSOLUE : Si on est dans l'admin, on ne rend QUE le contenu. 
+  // Pas de Header, pas de Sidebar, pas de BottomNav.
+  if (pathname?.startsWith("/admin")) {
+    return <>{children}</>;
+  }
 
-  // Redirige selon le rôle de l'utilisateur
-  useEffect(() => {
-    if (!loading && user) {
-      // Admin sur une page client → dashboard admin dédié
-      if (
-        user.role === "admin" &&
-        (pathname === "/dashboard" ||
-          pathname === "/projets" ||
-          pathname === "/simulation")
-      ) {
-        router.replace("/admin");
-      }
-      // Client qui tente d'accéder à /admin → dashboard client
-      if (user.role !== "admin" && pathname === "/admin") {
-        router.replace("/dashboard");
-      }
-    }
-  }, [user, loading, pathname, router]);
-
+  // Pour toutes les autres pages, on affiche l'interface client complète
   return (
-    <>
-      {showLayout && <Header />}
-      {showLayout && <BreakingNewsTicker />}
-      {showLayout && <InfoTicker />}
-      <AndroidBackHandler />
-      {showLayout && <Sidebar />}
-      {children}
-      {showLayout && <BottomNav />}
-      {showLayout && <ChatBot />}
-    </>
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      <Header />
+      <Sidebar />
+      <main className="flex-1 pb-24"> {/* pb-24 est crucial pour ne pas cacher le contenu derrière la BottomNav */}
+        {children}
+      </main>
+      <BottomNav />
+    </div>
   );
 }

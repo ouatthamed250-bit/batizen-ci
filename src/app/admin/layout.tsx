@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Users,
   HardHat,
@@ -18,6 +18,7 @@ import {
   Handshake,
 } from "lucide-react";
 import { logoutAdmin } from "@/lib/admin";
+import { useAuthContext } from "@/contexts/AuthContext";
 
 const SIDEBAR = [
   { key: "clients", label: "Clients", icon: Users },
@@ -33,7 +34,33 @@ const SIDEBAR = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, loading } = useAuthContext();
   const [open, setOpen] = useState(false);
+
+  // ⚠️ Vérification stricte : seul un admin peut accéder à /admin
+  useEffect(() => {
+    if (!loading) {
+      if (!user || user.role !== "admin") {
+        router.replace("/login");
+      }
+    }
+  }, [user, loading, router]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#111827] text-white">
+        <div className="text-center">
+          <div className="mb-4 text-2xl font-black">BÂTIZEN Admin</div>
+          <div className="text-sm text-white/70">Chargement...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user || user.role !== "admin") {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-[#111827] text-white">
