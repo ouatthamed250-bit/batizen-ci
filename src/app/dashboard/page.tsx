@@ -423,8 +423,8 @@ export default function DashboardClientPage() {
         style={{ backgroundImage: 'url(/images/villa-bg.jpg)' }}
       ></div>
       
-      {/* Overlay blanc 70% avec effet glass */}
-      <div className="absolute inset-0 bg-white/70 backdrop-blur-[2px] z-10"></div>
+      {/* Overlay blanc 80% pour meilleure lisibilité */}
+      <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10"></div>
       
       {/* Contenu principal */}
       <main className="relative z-20 flex flex-col gap-3 px-4 py-4 pb-28">
