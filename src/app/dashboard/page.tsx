@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+console.log("🚨🚨🚨 LE FICHIER DASHBOARD A ÉTÉ MIS À JOUR ET CHARGÉ ! 🚨🚨🚨");
 import Link from "next/link";
 import Image from "next/image";
 import { motion, type Variants } from "framer-motion";
@@ -345,6 +346,7 @@ export default function DashboardClientPage() {
   const nomClient = user?.displayName || user?.email?.split("@")[0] || "Client";
 
   useEffect(() => {
+    console.log("🚨🚨🚨 LE USEEFFECT DU DASHBOARD S'EST DÉCLenché ! 🚨🚨🚨");
     if (user?.uid) {
       console.log("═══════════════════════════════════════");
       console.log("🔍 DÉBUT CHARGEMENT DASHBOARD CLIENT");
