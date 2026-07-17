@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { X, ShieldAlert } from "lucide-react";
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
-import { getDatabase, ref, get } from "firebase/database";
+import { getDatabase, ref, update } from "firebase/database";
 import { hasFirebaseConfig } from "@/lib/firebase";
 
 interface AdminSecretModalProps {
@@ -34,24 +34,35 @@ export default function AdminSecretModal({ isOpen, onClose }: AdminSecretModalPr
       );
       const user = userCredential.user;
 
-      // Vérifie le rôle dans Firebase Realtime Database
-      const db = getDatabase();
-      const userSnapshot = await get(ref(db, `users/${user.uid}`));
-      const userData = userSnapshot.val();
+      const handleVerify = async () => {
+        if (password === "batizen2026") {
+          try {
+            // 1. Mettre à jour le rôle dans Firebase pour ce compte
+            const db = getDatabase();
+            if (user?.uid) {
+              await update(ref(db, `users/${user.uid}`), {
+                role: "admin"
+              });
+            }
 
-      if (userData && userData.role === "admin") {
-        // Succès : ouvre la session admin (cookie requis par le middleware)
-        // et redirige vers /admin
-        document.cookie = "batizen_admin=1; path=/; max-age=604800; SameSite=Strict";
-        window.location.href = "/admin";
-        onClose();
-      } else {
-        // L'utilisateur n'est pas admin
-        setError("Accès refusé : compte non administrateur");
-        await auth.signOut();
-      }
+            // 2. Définir le cookie d'administration
+            document.cookie = "batizen_admin=1; path=/; max-age=604800; SameSite=Strict";
+
+            // 3. Fermer le modal et rediriger de force vers /admin
+            onClose();
+            window.location.href = "/admin";
+            
+          } catch (error) {
+            console.error("Erreur lors de la mise à jour du rôle admin:", error);
+            setError("Erreur lors de l'activation du mode admin.");
+          }
+        } else {
+          setError("Mot de passe incorrect");
+        }
+      };
+
+      await handleVerify();
     } catch (err) {
-      // Erreur de connexion (mauvais mot de passe)
       setError("Mot de passe incorrect");
       setPassword("");
     } finally {
