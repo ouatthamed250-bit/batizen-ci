@@ -36,22 +36,30 @@ export default function ProjectsPage() {
     const db = getDatabase();
     const chantiersRef = ref(db, 'chantiers');
 
- const unsubscribe = onValue(chantiersRef, (snapshot) => {
+    const unsubscribe = onValue(chantiersRef, (snapshot) => {
       const data = snapshot.val();
+      console.log("═══════════════════════════════════════");
+      console.log("🔍 DÉBUT CHARGEMENT MES PROJETS");
+      console.log("👤 User UID:", user?.uid);
+      console.log("📦 Données brutes:", data);
+
       if (data) {
-        // Afficher tous les chantiers de l'utilisateur hors simulations brouillon
         const userChantiers = Object.entries(data as Record<string, any>)
           .filter(([id, chantier]) => {
+            console.log("🔎 Vérification chantier:", id, "userId:", chantier.userId, "statut:", chantier.statut);
             return chantier.userId === user?.uid && chantier.statut !== 'simulation_brouillon';
           })
           .map(([id, chantier]) => ({ id, ...(chantier as object) })) as Chantier[];
 
+        console.log("✅ Chantiers filtrés:", userChantiers);
+        console.log("� Nombre:", userChantiers.length);
         setChantiers(userChantiers);
-        console.log("📦 Chantiers trouvés pour l'utilisateur", user?.uid, ":", userChantiers);
       } else {
+        console.log("⚠️ Aucune donnée dans Firebase");
         setChantiers([]);
       }
       setLoading(false);
+      console.log("═══════════════════════════════════════");
     });
 
     return () => unsubscribe();

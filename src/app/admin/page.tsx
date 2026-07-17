@@ -165,24 +165,25 @@ function AdminContent() {
   useEffect(() => {
     let cancelled = false;
     async function load() {
-      const [c, ch, o, r, m, p, ticker] = await Promise.all([
-        rtdbGetList<Client>("clients"),
-        rtdbGetList<Chantier>("chantiers"),
-        rtdbGetList<Ouvrier>("ouvriers"),
-        rtdbGetList<RDV>("rendez_vous"),
-        rtdbGetList<Materiau>("materiaux"),
-        rtdbGetList<Promo>("promotions"),
-        rtdbGet<{ ticker_text?: string }>("global_settings/ticker"),
-      ]);
+      console.log("═══════════════════════════════════════");
+      console.log("🔍 DÉBUT CHARGEMENT ADMIN");
+      
+      const ch = await rtdbGetList<Chantier>("chantiers");
+      
+      console.log("📦 Chantiers récupérés de Firebase:", ch);
+      console.log("📊 Nombre total:", ch.length);
+      
+      if (ch.length > 0) {
+        console.log("🔎 Premier chantier:", ch[0]);
+        console.log("🔎 Statut du premier:", ch[0].statut);
+      }
+      
       if (cancelled) return;
-      setClients(c);
       setChantiers(ch);
-      setOuvriers(o);
-      setRdvs(r);
-      setMateriaux(m);
-      setPromos(p);
-      setTickerText(ticker?.ticker_text || "");
       setLoading(false);
+      
+      console.log("✅ État chantiers mis à jour");
+      console.log("═══════════════════════════════════════");
     }
     load();
 

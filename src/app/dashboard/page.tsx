@@ -24,7 +24,7 @@ import { ProgressBar } from "@/components/ui/ProgressBar";
 import SuperCalculateur from "@/components/btp/SuperCalculateur";
 import { rtdbGetList, rtdbGetListByChild, rtdbGet } from "@/lib/rtdb";
 import { formatFcfa } from "@/utils/currency";
-import { getDatabase } from "firebase/database";
+import { getDatabase, ref, onValue } from "firebase/database";
 
 /* ------------------------------------------------------------------ */
 /* Types                                                              */
@@ -345,75 +345,46 @@ export default function DashboardClientPage() {
   const nomClient = user?.displayName || user?.email?.split("@")[0] || "Client";
 
   useEffect(() => {
-    let cancelled = false;
+    if (user?.uid) {
+      console.log("═══════════════════════════════════════");
+      console.log("🔍 DÉBUT CHARGEMENT DASHBOARD CLIENT");
+      console.log("👤 User UID:", user.uid);
 
-    async function load() {
-      const uid = user?.uid;
-      const now = new Date();
-      const moisCourant = now.getMonth() + 1;
-      const anneeCourante = now.getFullYear();
+      const db = getDatabase();
+      const chantiersRef = ref(db, 'chantiers');
 
-      const [
-        allChantiers,
-        allPaiements,
-        allRdv,
-        allNotifs,
-        mesChantiersData,
-        limitData,
-      ] = await Promise.all([
-        rtdbGetList<Chantier>("chantiers"),
-        rtdbGetList<Paiement>("paiements"),
-        rtdbGetList<RendezVous>("rendez_vous"),
-        rtdbGetList<NotificationItem>("notifications"),
-        uid ? rtdbGetListByChild<Chantier>("chantiers", "client_id", uid) : Promise.resolve([]),
-        uid ? rtdbGet<{ date: string; compteur: number }>(`users/${uid}/creationsDuJour`) : Promise.resolve(null),
-      ]);
+      const unsubscribe = onValue(chantiersRef, (snapshot) => {
+        const data = snapshot.val();
+        console.log("📦 Données brutes de Firebase:", data);
 
-      if (cancelled) return;
+        if (data) {
+          const userChantiers = Object.entries(data)
+            .filter(([id, chantier]: [string, any]) => {
+              console.log("🔎 Vérification chantier:", id, "userId:", chantier.userId, "statut:", chantier.statut);
+              return chantier.userId === user.uid && chantier.statut !== 'simulation_brouillon';
+            })
+            .map(([id, chantier]) => ({ id, ...chantier }));
 
-      // B - Chantiers actifs
-      const actifs = allChantiers.filter(
-        (c) => (c.statut || c.status) === "en_cours"
-      ).length;
-      setChantiersActifs(actifs);
+          console.log("✅ Chantiers filtrés pour ce user:", userChantiers);
+          console.log("📊 Nombre:", userChantiers.length);
 
-      // B - Dépensé ce mois
-      const depense = allPaiements.reduce((acc, p) => {
-        const dt = p.date ? new Date(p.date) : null;
-        if (dt && dt.getMonth() + 1 === moisCourant && dt.getFullYear() === anneeCourante) {
-          return acc + (Number(p.montant) || 0);
+          setMesChantiers(userChantiers);
+          setChantiersEnCours(userChantiers.filter((c: any) => (c.statut || c.status) === "en_cours"));
+          setChantiersEnAttente(userChantiers.filter((c: any) => (c.statut || c.status) === "en_attente" || (c.statut || c.status) === "en_attente_rdv"));
+          setChantiersTermines(userChantiers.filter((c: any) => (c.statut || c.status) === "termine" || (c.statut || c.status) === "terminé"));
+        } else {
+          console.log("⚠️ Aucune donnée dans Firebase");
+          setMesChantiers([]);
+          setChantiersEnCours([]);
+          setChantiersEnAttente([]);
+          setChantiersTermines([]);
         }
-        if (p.mois === `${anneeCourante}-${String(moisCourant).padStart(2, "0")}`) {
-          return acc + (Number(p.montant) || 0);
-        }
-        return acc;
-      }, 0);
-      setDepensesMois(depense);
+        setLoading(false);
+      });
 
-      // B - Prochain RDV
-      const futurs = allRdv
-        .filter((r) => r.date && new Date(r.date).getTime() > now.getTime())
-        .sort((a, b) => new Date(a.date!).getTime() - new Date(b.date!).getTime());
-      setProchainRdv(futurs[0] ?? null);
-
-      // B - Notifications non lues
-      setNotifsNonLues(allNotifs.filter((n) => n.lu === false).length);
-
-      // C - Mes chantiers - Trier par statut
-      setMesChantiers(mesChantiersData);
-      setChantiersEnCours(mesChantiersData.filter((c) => (c.statut || c.status) === "en_cours"));
-      setChantiersEnAttente(mesChantiersData.filter((c) => (c.statut || c.status) === "en_attente" || (c.statut || c.status) === "en_attente_rdv"));
-      setChantiersTermines(mesChantiersData.filter((c) => (c.statut || c.status) === "termine" || (c.statut || c.status) === "terminé"));
-
-      setCreationLimit(limitData);
-      setLimitDataState(limitData);
-      setLoading(false);
+      console.log("═══════════════════════════════════════");
+      return () => unsubscribe();
     }
-
-    load();
-    return () => {
-      cancelled = true;
-    };
   }, [user?.uid]);
 
   const [limitError, setLimitError] = useState<string | null>(null);
