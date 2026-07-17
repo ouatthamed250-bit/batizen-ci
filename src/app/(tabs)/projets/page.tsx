@@ -36,20 +36,23 @@ export default function ProjectsPage() {
     const db = getDatabase();
     const chantiersRef = ref(db, 'chantiers');
 
-    const unsubscribe = onValue(chantiersRef, (snapshot) => {
+const unsubscribe = onValue(chantiersRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        // Filtrer uniquement les chantiers de cet utilisateur
+        // Filtrer uniquement les chantiers de cet utilisateur ET exclure les simulations brouillon
         const userChantiers = Object.entries(data as Record<string, any>)
-          .filter(([id, chantier]) => chantier.userId === user?.uid)
+          .filter(([id, chantier]) => {
+            // Doit appartenir à l'utilisateur ET ne pas être une simple simulation brouillon
+            return chantier.userId === user?.uid && chantier.statut !== 'simulation_brouillon';
+          })
           .map(([id, chantier]) => ({ id, ...(chantier as object) })) as Chantier[];
 
         setChantiers(userChantiers);
+        console.log("📦 Chantiers trouvés pour l'utilisateur", user?.uid, ":", userChantiers);
       } else {
         setChantiers([]);
       }
       setLoading(false);
-      console.log("📦 Chantiers trouvés pour l'utilisateur", user?.uid, ":", chantiers);
     });
 
     return () => unsubscribe();

@@ -481,56 +481,54 @@ function Step8({ formData, selectedPlan, onPlanSelect, showRdvForm, rdvData, set
         </div>
       </div>
 
-      {/* Plan gratuit depuis simulation */}
-      {prefilledData && (
-        <div className="rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20">
-          <h2 className="text-xl font-black text-white mb-4">🎨 VOTRE PLAN GRATUIT</h2>
-          <p className="text-xs italic text-white/60 mb-4">⚠️ Ceci est juste une maquette de base générée selon vos renseignements. Nos experts vous fourniront un plan professionnel détaillé lors du rendez-vous.</p>
-          
-          <div className="flex gap-2 mb-3">
-            <button 
-              onClick={() => setViewMode("2d")}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold ${viewMode === "2d" ? "bg-[#FF6B00] text-white" : "bg-white/20 text-white"}`}
-            >
-              📐 Vue 2D
-            </button>
-            <button 
-              onClick={() => setViewMode("3d")}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold ${viewMode === "3d" ? "bg-[#FF6B00] text-white" : "bg-white/20 text-white"}`}
-            >
-              🏠 Vue 3D
-            </button>
-          </div>
-          
-          <div className="bg-white rounded-xl p-4">
-            {viewMode === "2d" ? (
-              <PlanGenerator2D
-                surface={prefilledData.terrain?.surface || 150}
-                largeur={prefilledData.terrain?.largeur || 15}
-                longueur={prefilledData.terrain?.longueur || 20}
-                chambres={prefilledData.preferences?.chambres || 3}
-                sallesDeBain={prefilledData.preferences?.sallesDeBain || 2}
-                etages={prefilledData.preferences?.etages || 1}
-                garage={prefilledData.preferences?.garage || false}
-                piscine={prefilledData.preferences?.piscine || false}
-                style={prefilledData.preferences?.style || "Moderne"}
-              />
-            ) : (
-              <PlanGenerator3D
-                surface={prefilledData.terrain?.surface || 150}
-                largeur={prefilledData.terrain?.largeur || 15}
-                longueur={prefilledData.terrain?.longueur || 20}
-                chambres={prefilledData.preferences?.chambres || 3}
-                sallesDeBain={prefilledData.preferences?.sallesDeBain || 2}
-                etages={prefilledData.preferences?.etages || 1}
-                garage={prefilledData.preferences?.garage || false}
-                piscine={prefilledData.preferences?.piscine || false}
-                style={prefilledData.preferences?.style || "Moderne"}
-              />
-            )}
-          </div>
+      {/* Plan gratuit - TOUJOURS affiché */}
+      <div className="rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20">
+        <h2 className="text-xl font-black text-white mb-4">🎨 VOTRE PLAN GRATUIT</h2>
+        <p className="text-xs italic text-white/60 mb-4">⚠️ Ceci est juste une maquette de base générée selon vos renseignements. Nos experts vous fourniront un plan professionnel détaillé lors du rendez-vous.</p>
+        
+        <div className="flex gap-2 mb-3">
+          <button 
+            onClick={() => setViewMode("2d")}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold ${viewMode === "2d" ? "bg-[#FF6B00] text-white" : "bg-white/20 text-white"}`}
+          >
+            📐 Vue 2D
+          </button>
+          <button 
+            onClick={() => setViewMode("3d")}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold ${viewMode === "3d" ? "bg-[#FF6B00] text-white" : "bg-white/20 text-white"}`}
+          >
+            🏠 Vue 3D
+          </button>
         </div>
-      )}
+        
+        <div className="bg-white rounded-xl p-4">
+          {viewMode === "2d" ? (
+            <PlanGenerator2D
+              surface={formData.surfaceConstruite || prefilledData?.terrain?.surface || 150}
+              largeur={prefilledData?.terrain?.largeur || 15}
+              longueur={prefilledData?.terrain?.longueur || 20}
+              chambres={formData.chambres || prefilledData?.preferences?.chambres || 3}
+              sallesDeBain={formData.sallesDeBain || prefilledData?.preferences?.sallesDeBain || 2}
+              etages={formData.niveaux || prefilledData?.preferences?.etages || 1}
+              garage={prefilledData?.preferences?.garage || false}
+              piscine={prefilledData?.preferences?.piscine || false}
+              style={prefilledData?.preferences?.style || "Moderne"}
+            />
+          ) : (
+            <PlanGenerator3D
+              surface={formData.surfaceConstruite || prefilledData?.terrain?.surface || 150}
+              largeur={prefilledData?.terrain?.largeur || 15}
+              longueur={prefilledData?.terrain?.longueur || 20}
+              chambres={formData.chambres || prefilledData?.preferences?.chambres || 3}
+              sallesDeBain={formData.sallesDeBain || prefilledData?.preferences?.sallesDeBain || 2}
+              etages={formData.niveaux || prefilledData?.preferences?.etages || 1}
+              garage={prefilledData?.preferences?.garage || false}
+              piscine={prefilledData?.preferences?.piscine || false}
+              style={prefilledData?.preferences?.style || "Moderne"}
+            />
+          )}
+        </div>
+      </div>
 
       {/* BOUTON PRINCIPAL - Continuer avec le plan gratuit */}
       {prefilledData && (
