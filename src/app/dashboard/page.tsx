@@ -363,7 +363,7 @@ export default function DashboardClientPage() {
               console.log("🔎 Vérification chantier:", id, "userId:", chantier.userId, "statut:", chantier.statut);
               return chantier.userId === user.uid && chantier.statut !== 'simulation_brouillon';
             })
-            .map(([id, chantier]) => ({ id, ...chantier }));
+            .map(([id, chantier]) => ({ id, ...(chantier as object) }));
 
           console.log("✅ Chantiers filtrés pour ce user:", userChantiers);
           console.log("📊 Nombre:", userChantiers.length);
