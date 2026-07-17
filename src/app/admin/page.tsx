@@ -121,43 +121,43 @@ const PARTNER_STATUTS: Array<"actif" | "bientot_disponible"> = ["actif", "biento
 
 const COLORS = ["#FF7A00", "#0B5FFF", "#22C55E", "#8B5CF6", "#EC4899", "#F59E0B"];
 
- function AdminContent() {
-   const params = useSearchParams();
-   const section = params.get("section") || "clients";
-   const { user, loading: authLoading } = useAuthContext();
-   
-   // Hooks DOIVENT être déclarés AVANT tout return
-   const [clients, setClients] = useState<Client[]>([]);
-   const [chantiers, setChantiers] = useState<Chantier[]>([]);
-   const [ouvriers, setOuvriers] = useState<Ouvrier[]>([]);
-   const [rdvs, setRdvs] = useState<RDV[]>([]);
-   const [materiaux, setMateriaux] = useState<Materiau[]>([]);
-   const [promos, setPromos] = useState<Promo[]>([]);
-   const [partenaires, setPartenaires] = useState<Partenaire[]>([]);
-   const [notifications, setNotifications] = useState<Notification[]>([]);
-   const [loading, setLoading] = useState(true);
-   const [query, setQuery] = useState("");
-   const [vueClient, setVueClient] = useState<string | null>(null);
-   
-   // Protection: vérifier que l'utilisateur est admin
-   if (authLoading) {
-     return (
-       <div className="min-h-screen bg-[#111827] flex items-center justify-center">
-         <p className="text-white">Chargement...</p>
-       </div>
-     );
-   }
-   
-   if (!user || user.role !== "admin") {
-     return (
-       <div className="min-h-screen bg-[#111827] flex items-center justify-center px-4">
-         <div className="text-center">
-           <h1 className="text-2xl font-bold text-red-600">Accès refusé</h1>
-           <p className="mt-4 text-white/60">Vous devez être administrateur pour accéder à cette page.</p>
-         </div>
-       </div>
-     );
-   }
+function AdminContent() {
+  const params = useSearchParams();
+  const section = params.get("section") || "clients";
+  const { user, loading: authLoading } = useAuthContext();
+
+  // Hooks DOIVENT être déclarés AVANT tout return
+  const [clients, setClients] = useState<Client[]>([]);
+  const [chantiers, setChantiers] = useState<Chantier[]>([]);
+  const [ouvriers, setOuvriers] = useState<Ouvrier[]>([]);
+  const [rdvs, setRdvs] = useState<RDV[]>([]);
+  const [materiaux, setMateriaux] = useState<Materiau[]>([]);
+  const [promos, setPromos] = useState<Promo[]>([]);
+  const [partenaires, setPartenaires] = useState<Partenaire[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState("");
+  const [vueClient, setVueClient] = useState<string | null>(null);
+
+  // Protection: vérifier que l'utilisateur est admin
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[#111827] flex items-center justify-center">
+        <p className="text-white">Chargement...</p>
+      </div>
+    );
+  }
+
+  if (!user || user.role !== "admin") {
+    return (
+      <div className="min-h-screen bg-[#111827] flex items-center justify-center px-4">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-600">Accès refusé</h1>
+          <p className="mt-4 text-white/60">Vous devez être administrateur pour accéder à cette page.</p>
+        </div>
+      </div>
+    );
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -181,7 +181,6 @@ const COLORS = ["#FF7A00", "#0B5FFF", "#22C55E", "#8B5CF6", "#EC4899", "#F59E0B"
     }
     load();
 
-    // Charger les notifications admin en temps réel
     const unsubNotifs = subscribeToAdminNotifications((notifs) => {
       setNotifications(notifs);
     });
@@ -198,8 +197,12 @@ const COLORS = ["#FF7A00", "#0B5FFF", "#22C55E", "#8B5CF6", "#EC4899", "#F59E0B"
       c.email?.toLowerCase().includes(query.toLowerCase())
   );
 
+  const realChantiers = chantiers.filter(
+    (c) => c.statut !== "simulation_brouillon" && c.statut !== "en_cours_de_simulation"
+  );
+
   const clientChantiers = vueClient
-    ? chantiers.filter((c) => c.client_id === vueClient)
+    ? realChantiers.filter((c) => c.client_id === vueClient)
     : [];
 
   return (
@@ -227,13 +230,13 @@ const COLORS = ["#FF7A00", "#0B5FFF", "#22C55E", "#8B5CF6", "#EC4899", "#F59E0B"
                 allClients={clients}
               />
             )}
-            {section === "chantiers" && <ChantiersSection data={chantiers} onAdd={setChantiers} />}
+            {section === "chantiers" && <ChantiersSection data={realChantiers} onAdd={setChantiers} />}
             {section === "ouvriers" && <OuvriersSection data={ouvriers} onAdd={setOuvriers} />}
             {section === "rendez-vous" && <RdvSection data={rdvs} onChange={setRdvs} />}
             {section === "materiaux" && <MateriauxSection data={materiaux} onAdd={setMateriaux} onDelete={setMateriaux} />}
             {section === "promotions" && <PromosSection data={promos} onAdd={setPromos} />}
-{section === "partenaires" && <PartenairesSection data={partenaires} onAdd={setPartenaires} />}
-            {section === "statistiques" && <StatsSection chantiers={chantiers} clients={clients} materiaux={materiaux} />}
+            {section === "partenaires" && <PartenairesSection data={partenaires} onAdd={setPartenaires} />}
+            {section === "statistiques" && <StatsSection chantiers={realChantiers} clients={clients} materiaux={materiaux} />}
             {section === "parametres" && <SettingsSection />}
             {section === "notifications" && <AdminNotificationsSection data={notifications} onMarkRead={async (id) => { await markAsRead("admin", id); }} />}
           </>
@@ -446,7 +449,7 @@ function ChantiersSection({ data, onAdd }: { data: Chantier[]; onAdd: (updater: 
               </div>
               {getStatutBadge(c.statut)}
             </div>
-            
+
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-white/50">Type:</span>
@@ -889,7 +892,8 @@ function PartenairesSection({ data, onAdd }: { data: Partenaire[]; onAdd: (updat
 function SettingsSection() {
   return (
     <div className="space-y-4 rounded-[16px] border border-white/10 bg-white/5 p-6">
-      <p className="text-sm text-white/60">Paramètres généraux de la plateforme BATIZEN.</p>
+      <h3 className="text-lg font-black text-[#FF7A00]">Paramètres généraux</h3>
+      <p className="text-sm text-white/60">Options de base de la plateforme BATIZEN.</p>
       <div className="space-y-3">
         <div className="flex items-center justify-between rounded-[12px] bg-white/5 px-4 py-3 text-sm">
           <span>Code secret admin</span><span className="font-black text-[#FF7A00]">••••••••</span>
@@ -902,6 +906,12 @@ function SettingsSection() {
         </div>
         <div className="flex items-center justify-between rounded-[12px] bg-white/5 px-4 py-3 text-sm">
           <span>Sécurité tentatives</span><span className="text-green-400">Activée (max 5)</span>
+        </div>
+        <div className="flex items-center justify-between rounded-[12px] bg-white/5 px-4 py-3 text-sm">
+          <span>Langue</span><span className="text-white/70">Français (France)</span>
+        </div>
+        <div className="flex items-center justify-between rounded-[12px] bg-white/5 px-4 py-3 text-sm">
+          <span>Devise</span><span className="text-white/70">FCFA</span>
         </div>
       </div>
     </div>
