@@ -1,0 +1,49 @@
+import { NextResponse } from "next/server";
+import { getStorage, ref, deleteObject } from "firebase/storage";
+import { database } from "@/lib/firebase";
+
+export const runtime = "edge";
+
+export async function GET(request: Request) {
+  const secret = request.headers.get("x-cron-secret");
+  if (!secret || secret !== process.env.CRON_SECRET) {
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+  }
+
+  try {
+    if (!database) {
+      return NextResponse.json({ error: "Base de données indisponible" }, { status: 500 });
+    }
+
+    const { ref: dbRef, get } = await import("firebase/database");
+    const snapshot = await get(dbRef(database, "chantiers"));
+    if (!snapshot.exists()) {
+      return NextResponse.json({ ok: true, deleted: [] });
+    }
+
+    const now = Date.now();
+    const maxAge = 7 * 24 * 60 * 60 * 1000;
+    const deleted: string[] = [];
+
+    const data = snapshot.val() as Record<string, Record<string, { type: string; url: string; nom: string; dateAjout: number }>>;
+    for (const [chantierId, medias] of Object.entries(data)) {
+      const filtered = Object.entries(medias).filter(([, m]) => now - m.dateAjout > maxAge);
+      for (const [key, m] of filtered) {
+        try {
+          const storage = getStorage();
+          const storageRef = ref(storage, m.url);
+          await deleteObject(storageRef);
+          await import("firebase/database").then(({ ref: dbRef2, remove }) => remove(dbRef2(database, `chantiers/${chantierId}/medias/${key}`)));
+          deleted.push(`${chantierId}/${key}`);
+        } catch {
+          // ignore
+        }
+      }
+    }
+
+    return NextResponse.json({ ok: true, deleted });
+  } catch (error) {
+    console.error("Erreur cron cleanup:", error);
+    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
+  }
+}

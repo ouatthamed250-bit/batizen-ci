@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -21,7 +21,8 @@ import {
   Hammer,
   Palette,
 } from "lucide-react";
-import { rtdbGet } from "@/lib/rtdb";
+import { rtdbGet, rtdbGetList, rtdbSet } from "@/lib/rtdb";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 type Chantier = {
   id: string;
@@ -69,6 +70,9 @@ export default function ChantierDetailPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [medias, setMedias] = useState<{ id: string; type: string; url: string; nom: string; dateAjout: number }[]>([]);
+  const [mediaType, setMediaType] = useState<"photo" | "video" | "pdf">("photo");
+  const [mediaLoading, setMediaLoading] = useState(false);
 
   useEffect(() => {
     async function loadChantier() {
@@ -83,6 +87,14 @@ export default function ChantierDetailPage() {
       }
     }
     loadChantier();
+  }, [chantierId]);
+
+  useEffect(() => {
+    async function loadMedias() {
+      const list = await rtdbGetList<{ type: string; url: string; nom: string; dateAjout: number }>(`chantiers/${chantierId}/medias`);
+      setMedias(list.map(m => ({ ...m, id: m.url })));
+    }
+    loadMedias();
   }, [chantierId]);
 
   const getStatutBadge = (statut?: string) => {
@@ -229,7 +241,40 @@ export default function ChantierDetailPage() {
     }
   };
 
-  const handleContactClient = () => {
+   const handleAddMedia = async (e: FormEvent) => {
+    e.preventDefault();
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = mediaType === "photo" ? "image/*" : mediaType === "video" ? "video/*" : ".pdf";
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      setMediaLoading(true);
+      try {
+        const storage = getStorage();
+        const storageRef = ref(storage, `chantiers/${chantierId}/medias/${Date.now()}_${file.name}`);
+        await uploadBytes(storageRef, file);
+        const url = await getDownloadURL(storageRef);
+        const newMedia = { type: mediaType, url, nom: file.name, dateAjout: Date.now() };
+        await rtdbSet(`chantiers/${chantierId}/medias`, [...medias, newMedia]);
+        setMedias([...medias, { ...newMedia, id: url }]);
+      } catch (err) {
+        console.error("Upload erreur", err);
+        setMessage({ type: "error", text: "Erreur lors de l'upload du média" });
+      } finally {
+        setMediaLoading(false);
+      }
+    };
+    input.click();
+  };
+
+   const handleDeleteMedia = async (mediaId: string) => {
+     if (!confirm("Supprimer ce média ?")) return;
+     setMedias(medias.filter(m => m.id !== mediaId));
+     await rtdbSet(`chantiers/${chantierId}/medias`, medias.filter(m => m.id !== mediaId));
+   };
+
+   const handleContactClient = () => {
     if (chantier?.client_telephone) {
       const phone = chantier.client_telephone.replace(/\s/g, "");
       window.open(`https://wa.me/${phone.replace("+225", "")}`, "_blank");
@@ -424,6 +469,39 @@ export default function ChantierDetailPage() {
             >
               <MessageCircle size={18} /> Contacter le client (WhatsApp)
             </button>
+          </div>
+        </Section>
+
+        {/* SECTION 8: Médias & Avancement */}
+        <Section title="📁 Médias & Avancement" icon={Building2}>
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <select value={mediaType} onChange={(e) => setMediaType(e.target.value as "photo" | "video" | "pdf")} className="h-10 rounded-[10px] bg-white/5 px-3 text-xs font-bold outline-none ring-1 ring-white/10">
+                <option value="photo">Photo</option>
+                <option value="video">Vidéo</option>
+                <option value="pdf">PDF</option>
+              </select>
+              <button onClick={handleAddMedia} disabled={mediaLoading} className="h-10 rounded-[10px] bg-[#0B5FFF] px-4 text-xs font-black disabled:opacity-50">
+                {mediaLoading ? "Upload..." : "Ajouter un média"}
+              </button>
+            </div>
+            {medias.length === 0 ? (
+              <p className="text-sm text-white/50">Aucun média pour ce chantier.</p>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {medias.map((m) => (
+                  <div key={m.id} className="rounded-[12px] border border-white/10 bg-white/5 p-3">
+                    {m.type === "photo" && <img src={m.url} alt={m.nom} className="mb-2 h-32 w-full rounded-lg object-cover" />}
+                    {m.type === "video" && <video src={m.url} className="mb-2 h-32 w-full rounded-lg object-cover" controls />}
+                    {m.type === "pdf" && <a href={m.url} target="_blank" rel="noreferrer" className="text-xs text-[#FF7A00] underline">📄 {m.nom}</a>}
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-white/60">{new Date(m.dateAjout).toLocaleDateString("fr-FR")}</span>
+                      <button onClick={() => handleDeleteMedia(m.id)} className="text-xs text-red-400">Supprimer</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </Section>
       </div>

@@ -31,9 +31,11 @@ import {
   CartesianGrid,
   Legend,
 } from "recharts";
-import { rtdbGetList } from "@/lib/rtdb";
+import { rtdbGetList, rtdbGet, rtdbSet } from "@/lib/rtdb";
 import { subscribeToAdminNotifications, markAsRead, getNotificationIcon, getNotificationColor, formatNotificationDate, type Notification } from "@/lib/notifications";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { getDatabase, ref as dbRef, push, set } from "firebase/database";
 
 type Client = {
   id: string;
@@ -135,6 +137,7 @@ function AdminContent() {
   const [promos, setPromos] = useState<Promo[]>([]);
   const [partenaires, setPartenaires] = useState<Partenaire[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [tickerText, setTickerText] = useState("");
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [vueClient, setVueClient] = useState<string | null>(null);
@@ -162,13 +165,14 @@ function AdminContent() {
   useEffect(() => {
     let cancelled = false;
     async function load() {
-      const [c, ch, o, r, m, p] = await Promise.all([
+      const [c, ch, o, r, m, p, ticker] = await Promise.all([
         rtdbGetList<Client>("clients"),
         rtdbGetList<Chantier>("chantiers"),
         rtdbGetList<Ouvrier>("ouvriers"),
         rtdbGetList<RDV>("rendez_vous"),
         rtdbGetList<Materiau>("materiaux"),
         rtdbGetList<Promo>("promotions"),
+        rtdbGet<{ ticker_text?: string }>("global_settings/ticker"),
       ]);
       if (cancelled) return;
       setClients(c.length ? c : DEMO_CLIENTS);
@@ -177,6 +181,7 @@ function AdminContent() {
       setRdvs(r.length ? r : DEMO_RDVS);
       setMateriaux(m.length ? m : DEMO_MATERIAUX);
       setPromos(p.length ? p : DEMO_PROMOS);
+      setTickerText(ticker?.ticker_text || "");
       setLoading(false);
     }
     load();
@@ -239,6 +244,8 @@ function AdminContent() {
             {section === "statistiques" && <StatsSection chantiers={realChantiers} clients={clients} materiaux={materiaux} />}
             {section === "parametres" && <SettingsSection />}
             {section === "notifications" && <AdminNotificationsSection data={notifications} onMarkRead={async (id) => { await markAsRead("admin", id); }} />}
+            {section === "contenu" && <ContenuSection tickerText={tickerText} setTickerText={setTickerText} />}
+            {section === "messagerie" && <MessagerieSection clients={clients} chantiers={realChantiers} />}
           </>
         )}
       </div>
@@ -885,6 +892,211 @@ function PartenairesSection({ data, onAdd }: { data: Partenaire[]; onAdd: (updat
           <p className="text-white/50">Aucun partenaire enregistré.</p>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ---------- Messagerie Admin ---------- */
+function MessagerieSection({ clients, chantiers }: { clients: Client[]; chantiers: Chantier[] }) {
+  const [clientId, setClientId] = useState("");
+  const [chantierId, setChantierId] = useState("");
+  const [text, setText] = useState("");
+  const [sendOpen, setSendOpen] = useState(false);
+
+  const filteredChantiers = chantiers.filter((c) => c.client_id === clientId);
+
+  const send = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!clientId || !text.trim()) return;
+    try {
+      const db = getDatabase();
+      const messagesRef = dbRef(db, "messages");
+      const newRef = push(messagesRef);
+      await set(newRef, {
+        id: newRef.key,
+        senderId: "admin",
+        receiverId: clientId,
+        chantierId: chantierId || "",
+        text: text.trim(),
+        timestamp: Date.now(),
+        read: false,
+      });
+      setText("");
+      setSendOpen(false);
+      alert("Message envoyé");
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-[16px] border border-white/10 bg-white/5 p-6">
+        <h3 className="mb-3 text-lg font-black text-[#FF7A00]">💬 Contacter un client</h3>
+        <div className="space-y-3">
+          <div>
+            <span className="mb-1 block text-xs text-white/60">Client</span>
+            <select value={clientId} onChange={(e) => setClientId(e.target.value)} className="h-11 w-full rounded-[12px] bg-white/5 px-3 outline-none ring-1 ring-white/10">
+              <option value="">Sélectionner un client</option>
+              {clients.map((c) => (
+                <option key={c.id} value={c.id}>{c.nom || c.email}</option>
+              ))}
+            </select>
+          </div>
+          {clientId && (
+            <div>
+              <span className="mb-1 block text-xs text-white/60">Chantier (optionnel)</span>
+              <select value={chantierId} onChange={(e) => setChantierId(e.target.value)} className="h-11 w-full rounded-[12px] bg-white/5 px-3 outline-none ring-1 ring-white/10">
+                <option value="">Général (aucun chantier)</option>
+                {filteredChantiers.map((c) => (
+                  <option key={c.id} value={c.id}>{c.nom_projet || c.nom}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          {!sendOpen ? (
+            <button onClick={() => setSendOpen(true)} className="h-11 w-full rounded-[12px] bg-[#0B5FFF] font-black">Nouveau message</button>
+          ) : (
+            <form onSubmit={send} className="space-y-3">
+              <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Votre message..." className="h-28 w-full rounded-[12px] bg-white/5 px-3 py-2 outline-none ring-1 ring-white/10" />
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setSendOpen(false)} className="h-11 flex-1 rounded-[12px] bg-white/10 font-bold">Annuler</button>
+                <button type="submit" className="h-11 flex-1 rounded-[12px] bg-[#0B5FFF] font-black">Envoyer</button>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Contenu (Ticker + Partenaires + Promos) ---------- */
+function ContenuSection({ tickerText, setTickerText }: { tickerText: string; setTickerText: (v: string) => void }) {
+  const [ticker, setTicker] = useState(tickerText);
+  const [partenaires, setPartenaires] = useState<Partenaire[]>([]);
+  const [promos, setPromos] = useState<Promo[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      const [pt, pr] = await Promise.all([
+        rtdbGetList<Partenaire>("partenaires"),
+        rtdbGetList<Promo>("promotions"),
+      ]);
+      if (cancelled) return;
+      setPartenaires(pt);
+      setPromos(pr);
+      setLoading(false);
+    }
+    load();
+    return () => { cancelled = true; };
+  }, []);
+
+  const saveTicker = async (e: FormEvent) => {
+    e.preventDefault();
+    await rtdbSet("global_settings/ticker", { ticker_text: ticker });
+    setTickerText(ticker);
+  };
+
+  const handleLogo = async (e: FormEvent, id: string) => {
+    e.preventDefault();
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      try {
+        const storage = getStorage();
+        const storageRef = ref(storage, `partenaires/${id}_${file.name}`);
+        await uploadBytes(storageRef, file);
+        const url = await getDownloadURL(storageRef);
+        await rtdbSet(`partenaires/${id}`, { logo: url });
+        setPartenaires((prev) => prev.map((p) => (p.id === id ? { ...p, logo: url } : p)));
+      } catch (err) {
+        console.error("Upload logo erreur", err);
+      }
+    };
+    input.click();
+  };
+
+  const handlePromoImage = async (e: FormEvent, id: string) => {
+    e.preventDefault();
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      try {
+        const storage = getStorage();
+        const storageRef = ref(storage, `promotions/${id}_${file.name}`);
+        await uploadBytes(storageRef, file);
+        const url = await getDownloadURL(storageRef);
+        await rtdbSet(`promotions/${id}`, { image: url });
+        setPromos((prev) => prev.map((p) => (p.id === id ? { ...p, image: url } : p)));
+      } catch (err) {
+        console.error("Upload promo erreur", err);
+      }
+    };
+    input.click();
+  };
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-[16px] border border-white/10 bg-white/5 p-6">
+        <h3 className="mb-3 text-lg font-black text-[#FF7A00]">Bandeau défilant (Ticker)</h3>
+        <form onSubmit={saveTicker} className="space-y-3">
+          <Input label="Texte du ticker" value={ticker} set={setTicker} />
+          <button type="submit" className="h-11 rounded-[12px] bg-[#0B5FFF] font-black">Enregistrer</button>
+        </form>
+      </div>
+
+      <div className="rounded-[16px] border border-white/10 bg-white/5 p-6">
+        <h3 className="mb-3 text-lg font-black text-[#FF7A00]">Partenaires</h3>
+        {loading ? (
+          <p className="text-white/60">Chargement...</p>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {partenaires.map((p) => (
+              <div key={p.id} className="rounded-[14px] border border-white/10 bg-white/5 p-4">
+                <div className="flex items-center gap-3">
+                  {p.logo ? (
+                    <img src={p.logo} alt={p.nom} className="h-10 w-10 rounded-lg object-cover" />
+                  ) : (
+                    <div className="grid h-10 w-10 place-items-center rounded-lg bg-white/10">🏢</div>
+                  )}
+                  <div>
+                    <h4 className="font-black text-sm">{p.nom || "—"}</h4>
+                    <span className={`text-xs font-bold ${p.statut === "actif" ? "text-green-400" : "text-yellow-400"}`}>{p.statut === "actif" ? "Actif" : "Bientôt disponible"}</span>
+                  </div>
+                </div>
+                <button onClick={(e) => handleLogo(e, p.id)} className="mt-3 w-full rounded-[10px] bg-white/10 py-2 text-xs font-bold">Changer le logo</button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="rounded-[16px] border border-white/10 bg-white/5 p-6">
+        <h3 className="mb-3 text-lg font-black text-[#FF7A00]">Promotions</h3>
+        {loading ? (
+          <p className="text-white/60">Chargement...</p>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {promos.map((p) => (
+              <div key={p.id} className="rounded-[14px] border border-white/10 bg-white/5 p-4">
+                <h4 className="font-black text-sm">{p.titre}</h4>
+                <p className="text-xs text-white/60">{p.description}</p>
+                <p className="text-[#FF7A00] font-black">-{p.reduction}%</p>
+                <button onClick={(e) => handlePromoImage(e, p.id)} className="mt-3 w-full rounded-[10px] bg-white/10 py-2 text-xs font-bold">Ajouter une image</button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import {
   getDatabase,
   ref,
   get,
+  set,
   query,
   orderByChild,
   equalTo,
@@ -59,6 +60,19 @@ export async function rtdbGetList<T = Record<string, unknown>>(
 /**
  * Récupère une collection filtrée par une propriété enfant (equalTo).
  */
+/**
+ * Écrit une valeur à un chemin Firebase Realtime Database.
+ */
+export async function rtdbSet<T = unknown>(path: string, value: T): Promise<void> {
+  const r = dbRef(path);
+  if (!r) return;
+  try {
+    await set(r, value);
+  } catch {
+    // silencieux
+  }
+}
+
 export async function rtdbGetListByChild<T = Record<string, unknown>>(
   path: string,
   childKey: string,
