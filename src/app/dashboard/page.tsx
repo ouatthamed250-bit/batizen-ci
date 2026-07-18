@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { HardHat, BrickWall, ChevronRight, Calendar, Bell, CreditCard } from "lucide-react";
+import { HardHat, BrickWall, ChevronRight, Calendar, Bell, CreditCard, Wallet, CalendarClock } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { WeatherWidget } from "@/components/btp/WeatherWidget";
 import { ProgressBar } from "@/components/ui/ProgressBar";
@@ -86,24 +86,35 @@ function formatLocalisation(loc?: Localisation): string {
   return loc.ville || loc.commune || loc.quartier || loc.adresse || "—";
 }
 
-function formatBudget(budget?: number): string {
-  if (!budget) return "—";
-  return new Intl.NumberFormat("fr-FR").format(budget) + " F";
+function formatFcfa(value: number): string {
+  if (!value) return "0 F";
+  return new Intl.NumberFormat("fr-TG", { style: "currency", currency: "XAF", currencyDisplay: "code" }).format(value).replace("XAF", "F");
 }
 
 /* ------------------------------------------------------------------ */
 /* Composants                                                         */
 /* ------------------------------------------------------------------ */
 
-function SummaryCard({ icon: Icon, label, value, bgColor = "bg-white/90" }: { 
+function SummaryCard({ icon: Icon, label, value, color = "#0B5FFF" }: { 
   icon: typeof HardHat; 
   label: string; 
   value: string | number; 
-  bgColor?: string;
+  color?: string;
 }) {
+  // Couleurs prédéfinies pour chaque carte
+  const getBgStyle = () => {
+    switch (color) {
+      case "#0B5FFF": return "bg-gradient-to-br from-[#0B5FFF] to-[#0D2B6B]";
+      case "#FF7A00": return "bg-gradient-to-br from-[#FF7A00] to-[#D97706]";
+      case "#22C55E": return "bg-gradient-to-br from-[#22C55E] to-[#16A34A]";
+      case "#EC4899": return "bg-gradient-to-br from-[#EC4899] to-[#DB2777]";
+      default: return "bg-gradient-to-br from-[#0B5FFF] to-[#0D2B6B]";
+    }
+  };
+
   return (
-    <div className={`rounded-[22px] border border-white/50 ${bgColor} backdrop-blur-sm p-4 flex items-center gap-3`}>
-      <div className="grid size-12 place-items-center rounded-[16px] bg-gradient-to-br from-[#0B5FFF] to-[#0D2B6B] text-white">
+    <div className="rounded-[22px] border border-white/50 bg-white/90 backdrop-blur-sm p-4 flex items-center gap-3">
+      <div className={`grid size-12 place-items-center rounded-[16px] text-white ${getBgStyle()}`}>
         <Icon size={24} />
       </div>
       <div>
@@ -131,7 +142,6 @@ function ChantierCard({ chantier }: { chantier: Chantier; }) {
   const photo = chantier.photo || chantier.image_url;
   const nom = chantier.nom_projet || chantier.nom || "Chantier";
   const pct = Number(chantier.progression ?? chantier.progress ?? 0);
-  const budget = chantier.budget || 0;
 
   return (
     <motion.div 
@@ -149,6 +159,9 @@ function ChantierCard({ chantier }: { chantier: Chantier; }) {
         </div>
         <p className="mt-0.5 flex items-center gap-1 text-xs text-[var(--muted)]">
           <HardHat size={12} /> {chantier.type || "—"} · {formatLocalisation(chantier.localisation)}
+        </p>
+        <p className="mt-1 text-xs text-[var(--muted)]">
+          💰 Budget : <span className="font-bold text-[var(--navy)]">{formatFcfa(chantier.budget || 0)}</span>
         </p>
         
         {/* PROGRESSION pour les chantiers en cours */}
@@ -175,7 +188,7 @@ function ChantierCard({ chantier }: { chantier: Chantier; }) {
         )}
         
         {/* DATE FIN pour les chantiers terminés */}
-        {(chantier.statut === "termine" || chantier.statut === "terminé") && chantier.date_fin && (
+        {(chantier.statut === "termine" || chantier.statut === "terminé") && (
           <p className="mt-3 text-xs text-[var(--muted)]">
             🏁 Terminé le : <span className="font-bold text-[var(--navy)]">{formatDateCourte(chantier.date_fin)}</span>
           </p>
@@ -205,6 +218,7 @@ export default function DashboardClientPage() {
 
   // Calculer les stats depuis les vrais chantiers
   const chantiersActifs = mesChantiers.filter(c => c.statut === "en_cours").length;
+  const chantiersTermines = mesChantiers.filter(c => c.statut === "termine" || c.statut === "terminé");
   const prochainRdv = mesChantiers
     .filter(c => (c.statut === "en_attente" || c.statut === "en_attente_rdv") && c.rdv_date)
     .sort((a, b) => new Date(a.rdv_date!).getTime() - new Date(b.rdv_date!).getTime())[0];
@@ -230,7 +244,7 @@ export default function DashboardClientPage() {
         console.log("📦 [6] DONNÉES BRUTES FIREBASE:", data);
 
         if (data) {
-          // Filtrer pour ne garder que les chantiers du client connecté
+          // Filtrer pour ne garder que les chantiers du client connecté (HORS simulations)
           const liste = Object.keys(data)
             .map(key => ({
               id: key,
@@ -240,7 +254,6 @@ export default function DashboardClientPage() {
 
           console.log("✅ [8] CHANTIERS LUS DEPUIS FIREBASE:", liste);
           console.log("📊 [9] NOMBRE DE CHANTIERS TROUVÉS:", liste.length);
-          console.log("🔍 [7] EXEMPLE PREMIER CHANTIER:", liste[0]);
 
           setMesChantiers(liste);
         } else {
@@ -283,6 +296,10 @@ export default function DashboardClientPage() {
     }
   }, [user?.uid]);
 
+  // Calculer les dépenses du mois (pour l'instant 0)
+  const depensesMois = 0;
+  const notifsNonLues = notifications.length;
+
   return (
     <div className="relative min-h-screen bg-[var(--bg-dashboard)]">
       {/* Background avec image et overlay */}
@@ -300,28 +317,32 @@ export default function DashboardClientPage() {
           </div>
         </header>
 
-        {/* Résumé rapide - 4 cartes */}
+        {/* Résumé rapide - 4 cartes avec couleurs distinctes */}
         {!loading && (
           <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <SummaryCard 
               icon={HardHat} 
               label="Chantiers actifs" 
-              value={chantiersActifs} 
+              value={chantiersActifs}
+              color="#0B5FFF"
             />
             <SummaryCard 
-              icon={CreditCard} 
+              icon={Wallet} 
               label="Dépensé ce mois" 
-              value="0 F" 
+              value={formatFcfa(depensesMois)}
+              color="#FF7A00"
             />
             <SummaryCard 
-              icon={Calendar} 
+              icon={CalendarClock} 
               label="Prochain RDV" 
-              value={prochainRdv ? formatDateCourte(prochainRdv.rdv_date) : "Aucun"} 
+              value={prochainRdv ? formatDateCourte(prochainRdv.rdv_date) : "Aucun"}
+              color="#22C55E"
             />
             <SummaryCard 
               icon={Bell} 
               label="Notifications" 
-              value={notifications.length} 
+              value={notifsNonLues}
+              color="#EC4899"
             />
           </section>
         )}
@@ -346,6 +367,63 @@ export default function DashboardClientPage() {
             </div>
           </div>
         )}
+        
+        {/* SECTION : À propos de BÂTIZEN.CI */}
+        <div className="mt-6 p-4 bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20">
+          <h3 className="text-lg font-bold text-[var(--navy)] mb-3">🏗️ À PROPOS DE BÂTIZEN.CI</h3>
+          <p className="text-sm text-gray-700 mb-3">
+            BÂTIZEN.CI est votre partenaire BTP de confiance en Côte d'Ivoire. 
+            Nous simplifions la construction en vous connectant avec des experts qualifiés, 
+            en vous offrant des outils de simulation avancés et en assurant un suivi transparent de vos projets.
+          </p>
+          <p className="text-sm text-gray-700">
+            Notre mission : rendre la construction accessible, transparente et professionnelle pour tous.
+          </p>
+        </div>
+
+        {/* SECTION : Alerte Arnaque */}
+        <div className="mt-4 p-4 bg-red-50/80 backdrop-blur-lg rounded-2xl border border-red-200">
+          <h3 className="text-lg font-bold text-red-700 mb-3">🚨 ALERTE ARNAQUE</h3>
+          <p className="text-sm text-gray-800 mb-2 font-semibold">
+            ⚠️ BÂTIZEN.CI ne demande JAMAIS :
+          </p>
+          <ul className="text-sm text-gray-700 space-y-1 mb-3">
+            <li>• Votre code OTP par téléphone</li>
+            <li>• Un paiement avant contrat signé</li>
+            <li>• Vos mots de passe complets</li>
+            <li>• Des frais cachés ou supplémentaires non annoncés</li>
+          </ul>
+          <p className="text-sm text-gray-700">
+            📞 En cas de doute, contactez-nous : +225 07 07 07 07 07
+          </p>
+        </div>
+
+        {/* SECTION : Nos Engagements */}
+        <div className="mt-4 p-4 bg-green-50/80 backdrop-blur-lg rounded-2xl border border-green-200">
+          <h3 className="text-lg font-bold text-green-700 mb-3">🤝 NOS ENGAGEMENTS</h3>
+          <ul className="text-sm text-gray-700 space-y-2">
+            <li className="flex items-start">
+              <span className="text-green-600 mr-2">✅</span>
+              <span>Transparence totale des prix et des délais</span>
+            </li>
+            <li className="flex items-start">
+              <span className="text-green-600 mr-2">✅</span>
+              <span>Experts qualifiés et certifiés</span>
+            </li>
+            <li className="flex items-start">
+              <span className="text-green-600 mr-2">✅</span>
+              <span>Suivi en temps réel de votre projet</span>
+            </li>
+            <li className="flex items-start">
+              <span className="text-green-600 mr-2">✅</span>
+              <span>Garantie décennale sur tous les travaux</span>
+            </li>
+            <li className="flex items-start">
+              <span className="text-green-600 mr-2">✅</span>
+              <span>Support client 7j/7</span>
+            </li>
+          </ul>
+        </div>
         
         <ChatBot />
       </main>
