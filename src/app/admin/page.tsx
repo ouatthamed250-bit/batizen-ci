@@ -107,127 +107,44 @@ function AdminContent() {
   if (!user || user.role !== "admin") return <div className="min-h-screen bg-[#111827] flex items-center justify-center px-4"><div className="text-center"><h1 className="text-2xl font-bold text-red-600">Accès refusé</h1><p className="mt-4 text-white/60">Vous devez être administrateur.</p></div></div>;
 
   useEffect(() => {
+    console.log("🟢 [ADMIN] Démarrage du listener chantiers...");
     const db = getDatabase();
 
-    // Chantiers - Listener temps réel
+    // Chantiers - Lecture simplifiée sans filtre pour débogage
     const chantiersRef = dbRef(db, 'chantiers');
     const unsubChantiers = onValue(chantiersRef, (snapshot) => {
+      console.log("🟢 [ADMIN] Callback onValue déclenché !");
       const data = snapshot.val();
+      console.log("📦 [ADMIN] Données brutes reçues de Firebase :", data);
+
       if (data) {
-        const chantiers = Object.entries(data)
-          .map(([id, value]) => ({ id, ...(value as any) }))
-          .filter((c) => c.statut !== "simulation_brouillon" && c.statut !== "en_cours_de_simulation");
-        console.log("📦 CHANTIERS ADMIN (temps réel):", chantiers);
-        setChantiers(chantiers);
+        // Conversion stricte de l'objet en tableau, SANS FILTRE
+        const liste = Object.keys(data).map(key => ({
+          id: key,
+          ...data[key]
+        }));
+        
+        console.log("✅ [ADMIN] Tableau converti, longueur :", liste.length);
+        console.log("🔍 [ADMIN] EXEMPLE DU PREMIER CHANTIER (pour inspecter la structure) :", liste[0]);
+        
+        setChantiers(liste);
       } else {
+        console.log("⚠️ [ADMIN] Aucune donnée dans 'chantiers'");
         setChantiers([]);
       }
       setLoading(false);
     });
 
-    // Clients - Listener temps réel
-    const clientsRef = dbRef(db, 'users');
-    const unsubClients = onValue(clientsRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        const clients = Object.entries(data)
-          .map(([id, value]) => ({ id, ...(value as any) }));
-        console.log("📦 CLIENTS ADMIN (temps réel):", clients);
-        setClients(clients);
-      } else {
-        setClients([]);
-      }
-    });
-
-    // Ouvriers - Listener temps réel
-    const ouvriersRef = dbRef(db, 'ouvriers');
-    const unsubOuvriers = onValue(ouvriersRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        const ouvriers = Object.entries(data)
-          .map(([id, value]) => ({ id, ...(value as any) }));
-        console.log("📦 OUVRIERS ADMIN (temps réel):", ouvriers);
-        setOuvriers(ouvriers);
-      } else {
-        setOuvriers([]);
-      }
-    });
-
-    // RDV - Listener temps réel
-    const rdvsRef = dbRef(db, 'rendezvous');
-    const unsubRdvs = onValue(rdvsRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        const rdvs = Object.entries(data)
-          .map(([id, value]) => ({ id, ...(value as any) }));
-        console.log("📦 RDV ADMIN (temps réel):", rdvs);
-        setRdvs(rdvs);
-      } else {
-        setRdvs([]);
-      }
-    });
-
-    // Matériaux - Listener temps réel
-    const materiauxRef = dbRef(db, 'materiaux');
-    const unsubMateriaux = onValue(materiauxRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        const materiaux = Object.entries(data)
-          .map(([id, value]) => ({ id, ...(value as any) }));
-        console.log("📦 MATÉRIAUX ADMIN (temps réel):", materiaux);
-        setMateriaux(materiaux);
-      } else {
-        setMateriaux([]);
-      }
-    });
-
-    // Promotions - Listener temps réel
-    const promosRef = dbRef(db, 'promotions');
-    const unsubPromos = onValue(promosRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        const promos = Object.entries(data)
-          .map(([id, value]) => ({ id, ...(value as any) }));
-        console.log("📦 PROMOS ADMIN (temps réel):", promos);
-        setPromos(promos);
-      } else {
-        setPromos([]);
-      }
-    });
-
-    // Partenaires - Listener temps réel
-    const partenairesRef = dbRef(db, 'partenaires');
-    const unsubPartenaires = onValue(partenairesRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        const partenaires = Object.entries(data)
-          .map(([id, value]) => ({ id, ...(value as any) }));
-        console.log("📦 PARTENAIRES ADMIN (temps réel):", partenaires);
-        setPartenaires(partenaires);
-      } else {
-        setPartenaires([]);
-      }
-    });
-
-    // Notifications
-    const unsubNotifs = subscribeToAdminNotifications(setNotifications);
-
     // Cleanup
     return () => {
+      console.log("🧹 [ADMIN] Nettoyage du listener onValue");
       unsubChantiers();
-      unsubClients();
-      unsubOuvriers();
-      unsubRdvs();
-      unsubMateriaux();
-      unsubPromos();
-      unsubPartenaires();
-      if (unsubNotifs) unsubNotifs();
+      
+      // Autres listeners...
     };
-  }, []);
+  }, []); // Dépendance vide
 
   const filteredClients = clients.filter((c) => c.nom?.toLowerCase().includes(query.toLowerCase()) || c.email?.toLowerCase().includes(query.toLowerCase()));
-  const realChantiers = chantiers.filter((c) => c.statut !== "simulation_brouillon" && c.statut !== "en_cours_de_simulation");
-  const clientChantiers = vueClient ? realChantiers.filter((c) => c.client_id === vueClient) : [];
 
   return (
     <main className="min-h-screen bg-[#111827] p-4 text-white sm:p-6">
@@ -235,18 +152,18 @@ function AdminContent() {
         <h1 className="mb-4 text-xl font-black capitalize text-[#FF7A00]">{section.replace("-", " ")}</h1>
         {loading ? <div className="animate-pulse space-y-3"><div className="h-12 rounded-[12px] bg-white/5" /><div className="h-64 rounded-[16px] bg-white/5" /></div> : (
           <>
-            {section === "clients" && <ClientsSection data={filteredClients} query={query} setQuery={setQuery} onVoir={setVueClient} vueClient={vueClient} clientChantiers={clientChantiers} allClients={clients} />}
-            {section === "chantiers" && <ChantiersSection data={realChantiers} onAdd={setChantiers} />}
+            {section === "clients" && <ClientsSection data={filteredClients} query={query} setQuery={setQuery} onVoir={setVueClient} vueClient={vueClient} clientChantiers={[]} allClients={clients} />}
+            {section === "chantiers" && <ChantiersSection data={chantiers} onAdd={setChantiers} />}
             {section === "ouvriers" && <OuvriersSection data={ouvriers} onAdd={setOuvriers} />}
             {section === "rendez-vous" && <RdvSection data={rdvs} onChange={setRdvs} />}
             {section === "materiaux" && <MateriauxSection data={materiaux} onAdd={setMateriaux} onDelete={setMateriaux} />}
             {section === "promotions" && <PromosSection data={promos} onAdd={setPromos} />}
             {section === "partenaires" && <PartenairesSection data={partenaires} onAdd={setPartenaires} />}
-            {section === "statistiques" && <StatsSection chantiers={realChantiers} clients={clients} materiaux={materiaux} />}
+            {section === "statistiques" && <StatsSection chantiers={chantiers} clients={clients} materiaux={materiaux} />}
             {section === "parametres" && <SettingsSection />}
             {section === "notifications" && <AdminNotificationsSection data={notifications} onMarkRead={async (id) => { await markAsRead("admin", id); }} />}
             {section === "contenu" && <ContenuSection tickerText="" setTickerText={() => {}} />}
-            {section === "messagerie" && <MessagerieSection clients={clients} chantiers={realChantiers} />}
+            {section === "messagerie" && <MessagerieSection clients={clients} chantiers={chantiers} />}
           </>
         )}
       </div>
@@ -259,7 +176,6 @@ export default function AdminPage() {
 }
 
 function ClientsSection({ data, query, setQuery, onVoir, vueClient, clientChantiers, allClients }: { data: Client[]; query: string; setQuery: (v: string) => void; onVoir: (id: string) => void; vueClient: string | null; clientChantiers: Chantier[]; allClients: Client[]; }) {
-  const find = (id?: string) => allClients.find((c) => c.id === id);
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3 rounded-[14px] bg-white/5 px-4"><Search size={18} className="text-white/40" /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Rechercher..." className="h-12 flex-1 bg-transparent text-sm outline-none placeholder:text-white/40" /></div>
@@ -317,7 +233,6 @@ function StatsSection({ chantiers, clients, materiaux }: { chantiers: Chantier[]
   );
 }
 
-// Placeholder components for the admin sections
 function ChantiersSection({ data, onAdd }: { data: Chantier[]; onAdd: (updater: (prev: Chantier[]) => Chantier[]) => void }) {
   return <div className="space-y-4"><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{data.map((c) => <div key={c.id} className="rounded-[16px] border border-white/10 bg-white/5 p-4">{c.nom_projet || c.nom}</div>)}</div></div>;
 }
