@@ -17,6 +17,7 @@ import {
   X,
   Handshake,
   MessageCircle,
+  Calendar,
 } from "lucide-react";
 import { logoutAdmin } from "@/lib/admin";
 import { useAuthContext } from "@/contexts/AuthContext";
@@ -26,6 +27,7 @@ const SIDEBAR = [
   { key: "chantiers", label: "Chantiers", icon: HardHat, href: "/admin?section=chantiers" },
   { key: "ouvriers", label: "Ouvriers", icon: Hammer, href: "/admin?section=ouvriers" },
   { key: "rendez-vous", label: "Rendez-vous", icon: CalendarDays, href: "/admin?section=rendez-vous" },
+  { key: "calendar", label: "Calendrier", icon: Calendar, href: "/admin/calendar" },
   { key: "materiaux", label: "Matériaux", icon: BrickWall, href: "/admin?section=materiaux" },
   { key: "promotions", label: "Promotions", icon: Megaphone, href: "/admin?section=promotions" },
   { key: "partenaires", label: "Partenaires", icon: Handshake, href: "/admin?section=partenaires" },
