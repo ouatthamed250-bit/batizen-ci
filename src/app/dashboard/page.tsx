@@ -126,6 +126,12 @@ function SummaryCard({ icon: Icon, label, value, color = "#0B5FFF" }: {
   );
 }
 
+const actionItems = [
+  { icon: Calculator, label: "Simulation", color: "#FF7A00", href: "/simulation" },
+  { icon: BrickWall, label: "Nouveau chantier", color: "#0B5FFF", href: "/nouveau-chantier" },
+  { icon: HardHat, label: "Rénovation", color: "#22C55E", href: "/renovation" },
+];
+
 function ActionButton({ icon: Icon, label, color, href }: { 
   icon: typeof HardHat; 
   label: string; 
@@ -133,12 +139,28 @@ function ActionButton({ icon: Icon, label, color, href }: {
   href: string;
 }) {
   return (
-    <Link href={href} className="flex flex-col items-center justify-center gap-2 rounded-[20px] border border-white/50 bg-white/90 p-4 backdrop-blur-sm transition active:scale-95 hover:shadow-lg">
-      <div className="grid size-12 place-items-center rounded-[16px] text-white" style={{ background: color }}>
-        <Icon size={24} />
-      </div>
-      <span className="text-xs font-bold text-[var(--navy)]">{label}</span>
-    </Link>
+    <motion.div
+      whileHover={{ y: -4, scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ type: "spring", stiffness: 400, damping: 10 }}
+    >
+      <Link
+        href={href}
+        className="group flex h-full flex-col items-center gap-2 rounded-[16px] border border-white/50 bg-white/90 p-3 text-center shadow-[0_4px_12px_rgba(16,24,40,0.06)] backdrop-blur-sm transition-all active:scale-95 hover:shadow-[0_6px_16px_rgba(16,24,40,0.08)]"
+      >
+        <motion.div
+          className="grid size-10 place-items-center rounded-[12px] text-white shadow-md"
+          style={{ backgroundColor: color }}
+          whileHover={{ scale: 1.1, rotate: 5 }}
+          transition={{ type: "spring", stiffness: 400, damping: 10 }}
+        >
+          <Icon size={18} aria-hidden />
+        </motion.div>
+        <span className="text-[10px] font-black leading-tight text-[var(--navy)] group-hover:text-[var(--primary)] transition-colors">
+          {label}
+        </span>
+      </Link>
+    </motion.div>
   );
 }
 

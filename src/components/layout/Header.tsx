@@ -92,14 +92,13 @@ export function Header() {
 
             {/* Items du menu */}
             <div className="space-y-2">
-              {[
+{[
                 { href: "/dashboard", label: "Tableau de bord", icon: "📊" },
-                { href: "/chantier", label: "Mes chantiers", icon: "🏗️" },
                 { href: "/renovation", label: "Rénovation", icon: "🔨" },
                 { href: "/catalogue-materiaux", label: "Matériaux", icon: "🧱" },
-{ href: "/messages", label: "Messages", icon: "💬" },
-{ href: "/devis", label: "Devis", icon: "📋" },
-              ].map((item, i) => (
+                { href: "/messages", label: "Messages", icon: "💬" },
+                { href: "/devis", label: "Devis", icon: "📋" },
+                ].map((item, i) => (
                 <Link
                   key={item.href}
                   href={item.href}

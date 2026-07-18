@@ -14,7 +14,6 @@ interface MenuItem {
 
 const menuItems: MenuItem[] = [
   { label: "Accueil", icon: "🏠", href: "/dashboard", useRouter: true },
-  { label: "Mes chantiers", icon: "🏗️", href: "/chantier-en-cours" },
   { label: "Simulation", icon: "📐", href: "/simulation" },
   { label: "Rénovation", icon: "🔨", href: "/renovation" },
   { label: "Nouveau chantier", icon: "➕", href: "/nouveau-chantier" },
