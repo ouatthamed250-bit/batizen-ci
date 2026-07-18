@@ -19,7 +19,7 @@ import {
   MessageCircle,
   Calendar,
 } from "lucide-react";
-import { logoutAdmin } from "@/lib/admin";
+import { getAuth, signOut } from "firebase/auth";
 import { useAuthContext } from "@/contexts/AuthContext";
 
 const SIDEBAR = [
@@ -33,7 +33,7 @@ const SIDEBAR = [
   { key: "partenaires", label: "Partenaires", icon: Handshake, href: "/admin?section=partenaires" },
   { key: "messages", label: "Messagerie", icon: MessageCircle, href: "/admin/messages" },
   { key: "statistiques", label: "Statistiques", icon: BarChart3, href: "/admin?section=statistiques" },
-  { key: "parametres", label: "Paramètres", icon: Settings, href: "/admin?section=parametres" },
+  { key: "parametres", label: "Paramètres", icon: Settings, href: "/admin/parametres" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -41,6 +41,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const { user, loading } = useAuthContext();
   const [open, setOpen] = useState(false);
+
+  const handleLogout = async () => {
+    if (typeof window !== "undefined") {
+      try {
+        const auth = getAuth();
+        await signOut(auth);
+        document.cookie = "batizen_admin=; path=/; max-age=0";
+        localStorage.removeItem("batizen_admin_session");
+      } catch (error) {
+        console.error("Logout error:", error);
+      }
+    }
+    window.location.href = "/login";
+  };
 
   // ⚠️ Vérification stricte : seul un admin peut accéder à /admin
   useEffect(() => {
@@ -74,7 +88,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="grid size-9 place-items-center rounded-[12px] bg-[#FF7A00] font-black">B</div>
           <span className="text-lg font-black tracking-tight">BÂTIZEN Admin</span>
         </div>
-<nav className="flex-1 space-y-1">
+        <nav className="flex-1 space-y-1">
           {SIDEBAR.map((s) => {
             const active = pathname.includes(s.key);
             return (
@@ -93,7 +107,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </nav>
         <button
           type="button"
-          onClick={logoutAdmin}
+          onClick={handleLogout}
           className="mt-4 flex items-center gap-3 rounded-[12px] px-3 py-2.5 text-sm font-bold text-red-400 transition hover:bg-red-500/10"
         >
           <LogOut size={18} /> Déconnexion
@@ -121,7 +135,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
             <nav className="flex-1 space-y-1">
               {SIDEBAR.map((s) => (
-<Link
+                <Link
                   key={s.key}
                   href={s.href || `/admin?section=${s.key}`}
                   onClick={() => setOpen(false)}
@@ -134,7 +148,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </nav>
             <button
               type="button"
-              onClick={logoutAdmin}
+              onClick={handleLogout}
               className="mt-4 flex items-center gap-3 rounded-[12px] px-3 py-2.5 text-sm font-bold text-red-400"
             >
               <LogOut size={18} /> Déconnexion

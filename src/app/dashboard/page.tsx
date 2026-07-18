@@ -10,6 +10,7 @@ import { WeatherWidget } from "@/components/btp/WeatherWidget";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import SuperCalculateur from "@/components/btp/SuperCalculateur";
 import { getDatabase, ref, onValue } from "firebase/database";
+import { update } from "firebase/database";
 import ChatBot from "@/components/ChatBot";
 
 /* ------------------------------------------------------------------ */
@@ -44,6 +45,14 @@ type Chantier = {
   budget?: number;
   apport_personnel?: number;
   date_soumission?: string;
+};
+
+type Promo = {
+  id: string;
+  titre?: string;
+  description?: string;
+  image_url?: string;
+  active?: boolean;
 };
 
 /* ------------------------------------------------------------------ */
@@ -252,6 +261,7 @@ export default function DashboardClientPage() {
   const [loading, setLoading] = useState(true);
   const [mesChantiers, setMesChantiers] = useState<Chantier[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [promos, setPromos] = useState<Promo[]>([]);
 
   const nomClient = user?.displayName || user?.email?.split("@")[0] || "Client";
 
@@ -313,12 +323,15 @@ export default function DashboardClientPage() {
         }
       });
 
-      const promosRef = ref(db, 'promotions');
+const promosRef = ref(db, 'promotions');
       const unsubscribePromos = onValue(promosRef, (snapshot) => {
         const data = snapshot.val();
         if (data) {
           const promosActives = Object.keys(data).map(key => ({ id: key, ...data[key] })).filter(p => p.active === true);
+          setPromos(promosActives);
           console.log("📦 PROMOS CLIENT (temps réel):", promosActives);
+        } else {
+          setPromos([]);
         }
       });
 
@@ -392,6 +405,35 @@ export default function DashboardClientPage() {
             mode="widget"
           />
         </section>
+
+        {/* 3.5 SECTION "PROMOTIONS EN COURS" - Affiche les promos actives */}
+        {!loading && promos.length > 0 && (
+          <section>
+            <h2 className="text-xs font-black uppercase tracking-[0.2em] text-[var(--muted)] mb-3">📢 Promotions en cours</h2>
+            <div className="space-y-3">
+              {promos.map((p) => (
+                <motion.div
+                  key={p.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="rounded-[20px] overflow-hidden border border-white/50 bg-white/90 shadow-lg"
+                >
+                  {p.image_url && (
+                    <div className="relative h-32 w-full">
+                      <Image src={p.image_url} alt={p.titre || "Promotion"} fill className="object-cover" />
+                    </div>
+                  )}
+                  <div className="p-4">
+                    <h3 className="font-black text-[var(--navy)]">{p.titre || "Promotion"}</h3>
+                    {p.description && (
+                      <p className="text-xs text-[var(--muted)] mt-1">{p.description}</p>
+                    )}
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* 4. SECTION "RÉSUMÉ RAPIDE" - 4 SummaryCards avec couleurs distinctes */}
         {!loading && (
