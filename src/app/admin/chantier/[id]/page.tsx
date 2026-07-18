@@ -23,7 +23,6 @@ import {
   Pencil,
 } from "lucide-react";
 import { rtdbGet, rtdbGetList, rtdbSet } from "@/lib/rtdb";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 type Localisation = {
   adresse?: string;
@@ -285,6 +284,28 @@ export default function ChantierDetailPage() {
     }
   };
 
+  // Upload vers Cloudinary (gratuit, pas besoin de Firebase Storage payant)
+  const handleImageUpload = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", "batizen_unsigned"); // Preset unsigned Cloudinary
+    
+    const response = await fetch(
+      "https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/image/upload",
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error("Erreur lors de l'upload de l'image");
+    }
+    
+    const data = await response.json();
+    return data.secure_url;
+  };
+
   const handleAddMedia = async (e: FormEvent) => {
     e.preventDefault();
     const input = document.createElement("input");
@@ -295,10 +316,7 @@ export default function ChantierDetailPage() {
       if (!file) return;
       setMediaLoading(true);
       try {
-        const storage = getStorage();
-        const storageRef = ref(storage, `chantiers/${chantierId}/medias/${Date.now()}_${file.name}`);
-        await uploadBytes(storageRef, file);
-        const url = await getDownloadURL(storageRef);
+        const url = await handleImageUpload(file);
         const newMedia = { type: mediaType, url, nom: file.name, dateAjout: Date.now() };
         await rtdbSet(`chantiers/${chantierId}/medias`, [...medias, newMedia]);
         setMedias([...medias, { ...newMedia, id: url }]);

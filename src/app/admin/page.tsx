@@ -24,7 +24,6 @@ import {
 import { subscribeToAdminNotifications, markAsRead, type Notification } from "@/lib/notifications";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { getDatabase, ref as dbRef, onValue, update, push, set, get, remove } from "firebase/database";
-import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 
 type Localisation = {
   adresse?: string;
@@ -254,17 +253,26 @@ function AdminContent() {
     }
   };
 
-  const handleImageUpload = async (file: File, path: string): Promise<string> => {
-    setUploading(true);
-    try {
-      const storage = getStorage();
-      const fileRef = storageRef(storage, `${path}/${Date.now()}_${file.name}`);
-      await uploadBytes(fileRef, file);
-      const url = await getDownloadURL(fileRef);
-      return url;
-    } finally {
-      setUploading(false);
+  // Upload vers Cloudinary (gratuit, pas besoin de Firebase Storage payant)
+  const handleImageUpload = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", "batizen_unsigned"); // Preset unsigned Cloudinary
+    
+    const response = await fetch(
+      "https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/image/upload",
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error("Erreur lors de l'upload de l'image");
     }
+    
+    const data = await response.json();
+    return data.secure_url;
   };
 
   const [partenaireForm, setPartenaireForm] = useState({ nom: "", description: "", photo: null as File | null, actif: true });
@@ -277,7 +285,7 @@ function AdminContent() {
     if (!partenaireForm.nom) return;
     let photo_url = "";
     if (partenaireForm.photo) {
-      photo_url = await handleImageUpload(partenaireForm.photo, "partenaires");
+      photo_url = await handleImageUpload(partenaireForm.photo);
     }
     const db = getDatabase();
     const newRef = push(dbRef(db, 'partenaires'));
@@ -296,7 +304,7 @@ function AdminContent() {
     if (!promoForm.titre) return;
     let image_url = "";
     if (promoForm.image) {
-      image_url = await handleImageUpload(promoForm.image, "promotions");
+      image_url = await handleImageUpload(promoForm.image);
     }
     const db = getDatabase();
     const newRef = push(dbRef(db, 'promotions'));
