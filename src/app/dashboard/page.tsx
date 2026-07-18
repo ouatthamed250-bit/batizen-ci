@@ -7,25 +7,25 @@ import Image from "next/image";
 import { motion, type Variants } from "framer-motion";
 import {
   HardHat,
-  Wallet,
-  CalendarClock,
-  Bell,
   BrickWall,
-  Hammer,
   ChevronRight,
-  Calculator,
 } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { WeatherWidget } from "@/components/btp/WeatherWidget";
 import { ProgressBar } from "@/components/ui/ProgressBar";
-import SuperCalculateur from "@/components/btp/SuperCalculateur";
-import { formatFcfa } from "@/utils/currency";
 import { getDatabase, ref, onValue } from "firebase/database";
 import ChatBot from "@/components/ChatBot";
 
 /* ------------------------------------------------------------------ */
 /* Types                                                              */
 /* ------------------------------------------------------------------ */
+
+type Localisation = {
+  adresse?: string;
+  commune?: string;
+  quartier?: string;
+  ville?: string;
+};
 
 type Chantier = {
   id: string;
@@ -42,22 +42,11 @@ type Chantier = {
   date_fin?: string;
   date_debut?: string;
   type?: string;
-  localisation?: string;
+  localisation?: Localisation;
   plan_choisi?: string;
   rdv_date?: string;
   budget?: number;
   date_soumission?: string;
-};
-
-type Promo = {
-  id: string;
-  titre?: string;
-  description?: string;
-  image_url?: string;
-  reduction?: number;
-  date_debut?: string;
-  date_fin?: string;
-  active?: boolean;
 };
 
 /* ------------------------------------------------------------------ */
@@ -76,13 +65,6 @@ function formatDateFrancais(d: Date): string {
   return `${JOURS[d.getDay()]} ${d.getDate()} ${MOIS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-function formatDateFr(d?: string): string {
-  if (!d) return "—";
-  const dt = new Date(d);
-  if (isNaN(dt.getTime())) return d;
-  return `${dt.getDate()} ${MOIS[dt.getMonth()]} ${dt.getFullYear()}`;
-}
-
 function statutLabel(s?: string): string {
   switch (s) {
     case "en_cours": return "En cours";
@@ -95,84 +77,51 @@ function statutLabel(s?: string): string {
   }
 }
 
-/* ------------------------------------------------------------------ */
-/* Animations                                                         */
-/* ------------------------------------------------------------------ */
-
-const containerVariants: Variants = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
-};
-
-const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 24, scale: 0.97 },
-  show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.45, ease: "easeOut" } },
-};
-
-const fadeUp: Variants = {
-  hidden: { opacity: 0, y: 16 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
-};
+function formatLocalisation(loc?: Localisation): string {
+  if (!loc) return "—";
+  return loc.ville || loc.commune || loc.quartier || loc.adresse || "—";
+}
 
 /* ------------------------------------------------------------------ */
 /* Composants                                                         */
 /* ------------------------------------------------------------------ */
 
-function SkeletonCard() {
-  return (
-    <div className="animate-pulse rounded-[22px] border border-[#E7EBF5] bg-white p-5 shadow-[0_8px_24px_rgba(16,24,40,0.06)]">
-      <div className="mb-3 size-11 rounded-[14px] bg-[#E7EBF5]" />
-      <div className="mb-2 h-3 w-1/2 rounded bg-[#E7EBF5]" />
-      <div className="h-6 w-2/3 rounded bg-[#E7EBF5]" />
-    </div>
-  );
-}
-
-function SummaryCard({ icon: Icon, label, value, color }: { icon: typeof HardHat; label: string; value: string; color: string; }) {
-  return (
-    <motion.div variants={itemVariants} className="rounded-[22px] border border-white/50 bg-white/90 p-4 shadow-[0_8px_24px_rgba(16,24,40,0.06)] backdrop-blur-sm">
-      <div className="mb-3 grid size-11 place-items-center rounded-[14px] text-white shadow-sm" style={{ backgroundColor: color }}>
-        <Icon size={20} aria-hidden />
-      </div>
-      <p className="text-[10px] font-bold uppercase tracking-wide text-[var(--muted)]">{label}</p>
-      <p className="mt-1 text-xl font-black text-[var(--navy)]">{value}</p>
-    </motion.div>
-  );
-}
-
 function SkeletonChantier() {
   return (
-    <div className="animate-pulse overflow-hidden rounded-[22px] border border-white/50 bg-white/90 shadow-[0_8px_24px_rgba(16,24,40,0.06)] backdrop-blur-sm">
+    <div className="animate-pulse overflow-hidden rounded-[22px] border border-white/50 bg-white/90">
       <div className="h-36 w-full bg-[#E7EBF5]" />
       <div className="space-y-2 p-4">
         <div className="h-4 w-2/3 rounded bg-[#E7EBF5]" />
         <div className="h-3 w-1/2 rounded bg-[#E7EBF5]" />
-        <div className="h-2 w-full rounded bg-[#E7EBF5]" />
         <div className="h-9 w-full rounded-[16px] bg-[#E7EBF5]" />
       </div>
     </div>
   );
 }
 
-function ChantierCard({ chantier, statut }: { chantier: Chantier; statut: string; }) {
+function ChantierCard({ chantier }: { chantier: Chantier; }) {
   const photo = chantier.photo || chantier.image_url;
   const nom = chantier.nom_projet || chantier.nom || "Chantier";
   const pct = Number(chantier.progression ?? chantier.progress ?? 0);
 
   return (
-    <motion.div variants={itemVariants} className="overflow-hidden rounded-[22px] border border-white/50 bg-white/90 shadow-[0_8px_24px_rgba(16,24,40,0.06)] backdrop-blur-sm">
+    <motion.div 
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="overflow-hidden rounded-[22px] border border-white/50 bg-white/90 shadow-[0_8px_24px_rgba(16,24,40,0.06)]"
+    >
       <div className="relative h-36 w-full bg-[#E7EBF5]">
         {photo ? <Image src={photo} alt={nom} fill className="object-cover" /> : <div className="grid size-full place-items-center text-[#9CA3AF]"><HardHat size={40} /></div>}
       </div>
       <div className="p-4">
         <div className="flex items-start justify-between gap-2">
           <h3 className="font-black text-[var(--navy)]">{nom}</h3>
-          <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black text-white bg-[#0B5FFF]">{statutLabel(statut)}</span>
+          <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black text-white bg-[#0B5FFF]">{statutLabel(chantier.statut)}</span>
         </div>
         <p className="mt-0.5 flex items-center gap-1 text-xs text-[var(--muted)]">
-          <HardHat size={12} /> {chantier.type || "—"} · {chantier.localisation || "—"}
+          <HardHat size={12} /> {chantier.type || "—"} · {formatLocalisation(chantier.localisation)}
         </p>
-        {statut === "en_cours" && <div className="mt-3"><ProgressBar value={pct} label="Progression" /></div>}
+        {chantier.statut === "en_cours" && <div className="mt-3"><ProgressBar value={pct} label="Progression" /></div>}
         <div className="mt-4 flex gap-2">
           <Link href={`/chantier/${chantier.id}`} className="flex flex-1 items-center justify-center gap-1.5 rounded-[16px] bg-[linear-gradient(135deg,#0B5FFF,#0D2B6B)] py-2.5 text-sm font-black text-white transition active:scale-95">
             Voir détails <ChevronRight size={16} />
@@ -214,12 +163,11 @@ export default function DashboardClientPage() {
         console.log("📦 [6] DONNÉES BRUTES FIREBASE:", data);
 
         if (data) {
-          // LECTURE SANS AUCUN FILTRE - juste pour voir ce qui est dans Firebase
           const liste = Object.keys(data).map(key => ({
             id: key,
             ...data[key]
           }));
-          
+
           console.log("✅ [8] CHANTIERS LUS DEPUIS FIREBASE:", liste);
           console.log("📊 [9] NOMBRE DE CHANTIERS TROUVÉS:", liste.length);
           console.log("🔍 [7] EXEMPLE PREMIER CHANTIER:", liste[0]);
@@ -262,7 +210,7 @@ export default function DashboardClientPage() {
           <div className="px-4 pt-4 pb-2 sm:px-6">
             <h1 className="text-2xl font-black tracking-[-0.03em] text-[var(--navy)] sm:text-3xl">Bonjour {nomClient}</h1>
             <p className="mt-1 text-sm font-semibold text-[var(--muted)]">{formatDateFrancais(new Date())}</p>
-            <div className="mt-2 flex justify-start"><WeatherWidget title="Météo du jour" /></div>
+            <div className="mt-2"><WeatherWidget title="Météo du jour" /></div>
           </div>
         </header>
 
@@ -274,7 +222,7 @@ export default function DashboardClientPage() {
           <div className="rounded-[22px] border border-dashed border-white/50 bg-white/90 p-8 text-center backdrop-blur-sm">
             <HardHat size={48} className="mx-auto mb-3 text-[#9CA3AF]" />
             <p className="text-sm font-bold text-[var(--muted)]">Vous n'avez pas encore de chantier. Commencez par une simulation.</p>
-            <Link href="/nouveau-chantier" className="mt-3 inline-flex items-center gap-2 rounded-[16px] bg-[var(--primary)] px-6 py-2.5 text-sm font-black text-white transition hover:bg-[var(--primary)]/80">
+            <Link href="/nouveau-chantier" className="mt-3 inline-flex items-center gap-2 rounded-[16px] bg-[var(--primary)] px-6 py-2.5 text-sm font-black text-white">
               <BrickWall size={18} /> Créer un chantier
             </Link>
           </div>
@@ -282,7 +230,7 @@ export default function DashboardClientPage() {
           <div className="space-y-3">
             <h2 className="text-xs font-black uppercase tracking-[0.2em] text-[var(--muted)]">Mes chantiers</h2>
             <div className="grid gap-3 sm:grid-cols-2">
-              {mesChantiers.map((c) => <ChantierCard key={c.id} chantier={c} statut={c.statut || "en_cours"} />)}
+              {mesChantiers.map((c) => <ChantierCard key={c.id} chantier={c} />)}
             </div>
           </div>
         )}
