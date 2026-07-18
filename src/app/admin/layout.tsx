@@ -21,15 +21,15 @@ import { logoutAdmin } from "@/lib/admin";
 import { useAuthContext } from "@/contexts/AuthContext";
 
 const SIDEBAR = [
-  { key: "clients", label: "Clients", icon: Users },
-  { key: "chantiers", label: "Chantiers", icon: HardHat },
-  { key: "ouvriers", label: "Ouvriers", icon: Hammer },
-  { key: "rendez-vous", label: "Rendez-vous", icon: CalendarDays },
-  { key: "materiaux", label: "Matériaux", icon: BrickWall },
-  { key: "promotions", label: "Promotions", icon: Megaphone },
-  { key: "partenaires", label: "Partenaires", icon: Handshake },
-  { key: "statistiques", label: "Statistiques", icon: BarChart3 },
-  { key: "parametres", label: "Paramètres", icon: Settings },
+  { key: "clients", label: "Clients", icon: Users, href: "/admin/clients" },
+  { key: "chantiers", label: "Chantiers", icon: HardHat, href: "/admin?section=chantiers" },
+  { key: "ouvriers", label: "Ouvriers", icon: Hammer, href: "/admin?section=ouvriers" },
+  { key: "rendez-vous", label: "Rendez-vous", icon: CalendarDays, href: "/admin?section=rendez-vous" },
+  { key: "materiaux", label: "Matériaux", icon: BrickWall, href: "/admin?section=materiaux" },
+  { key: "promotions", label: "Promotions", icon: Megaphone, href: "/admin?section=promotions" },
+  { key: "partenaires", label: "Partenaires", icon: Handshake, href: "/admin?section=partenaires" },
+  { key: "statistiques", label: "Statistiques", icon: BarChart3, href: "/admin?section=statistiques" },
+  { key: "parametres", label: "Paramètres", icon: Settings, href: "/admin?section=parametres" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -70,13 +70,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="grid size-9 place-items-center rounded-[12px] bg-[#FF7A00] font-black">B</div>
           <span className="text-lg font-black tracking-tight">BÂTIZEN Admin</span>
         </div>
-        <nav className="flex-1 space-y-1">
+<nav className="flex-1 space-y-1">
           {SIDEBAR.map((s) => {
             const active = pathname.includes(s.key);
             return (
               <Link
                 key={s.key}
-                href={`/admin?section=${s.key}`}
+                href={s.href || `/admin?section=${s.key}`}
                 className={`flex items-center gap-3 rounded-[12px] px-3 py-2.5 text-sm font-bold transition ${
                   active ? "bg-[#FF7A00] text-white" : "text-white/70 hover:bg-white/5 hover:text-white"
                 }`}
