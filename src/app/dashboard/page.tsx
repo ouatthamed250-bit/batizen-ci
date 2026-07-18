@@ -4,10 +4,11 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { HardHat, BrickWall, ChevronRight, Calendar, Bell, CreditCard, Wallet, CalendarClock } from "lucide-react";
+import { HardHat, BrickWall, ChevronRight, Calendar, Bell, CreditCard, Wallet, CalendarClock, Calculator } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { WeatherWidget } from "@/components/btp/WeatherWidget";
 import { ProgressBar } from "@/components/ui/ProgressBar";
+import SuperCalculateur from "@/components/btp/SuperCalculateur";
 import { getDatabase, ref, onValue } from "firebase/database";
 import ChatBot from "@/components/ChatBot";
 
@@ -125,6 +126,22 @@ function SummaryCard({ icon: Icon, label, value, color = "#0B5FFF" }: {
   );
 }
 
+function ActionButton({ icon: Icon, label, color, href }: { 
+  icon: typeof HardHat; 
+  label: string; 
+  color: string;
+  href: string;
+}) {
+  return (
+    <Link href={href} className="flex flex-col items-center justify-center gap-2 rounded-[20px] border border-white/50 bg-white/90 p-4 backdrop-blur-sm transition active:scale-95 hover:shadow-lg">
+      <div className="grid size-12 place-items-center rounded-[16px] text-white" style={{ background: color }}>
+        <Icon size={24} />
+      </div>
+      <span className="text-xs font-bold text-[var(--navy)]">{label}</span>
+    </Link>
+  );
+}
+
 function SkeletonChantier() {
   return (
     <div className="animate-pulse overflow-hidden rounded-[22px] border border-white/50 bg-white/90">
@@ -218,7 +235,6 @@ export default function DashboardClientPage() {
 
   // Calculer les stats depuis les vrais chantiers
   const chantiersActifs = mesChantiers.filter(c => c.statut === "en_cours").length;
-  const chantiersTermines = mesChantiers.filter(c => c.statut === "termine" || c.statut === "terminé");
   const prochainRdv = mesChantiers
     .filter(c => (c.statut === "en_attente" || c.statut === "en_attente_rdv") && c.rdv_date)
     .sort((a, b) => new Date(a.rdv_date!).getTime() - new Date(b.rdv_date!).getTime())[0];
@@ -296,7 +312,7 @@ export default function DashboardClientPage() {
     }
   }, [user?.uid]);
 
-  // Calculer les dépenses du mois (pour l'instant 0)
+  // Calculer les dépenses du mois (pour l'instant 0) et notifications non lues
   const depensesMois = 0;
   const notifsNonLues = notifications.length;
 
@@ -308,7 +324,7 @@ export default function DashboardClientPage() {
       
       {/* Contenu principal avec padding pour scroll correct */}
       <main className="relative z-20 flex flex-col gap-3 px-4 pt-4 pb-28">
-        {/* Header */}
+        {/* 1. HEADER PERSONNALISÉ */}
         <header className="rounded-[22px] border border-white/50 bg-white/90 backdrop-blur-sm">
           <div className="px-4 pt-4 pb-2 sm:px-6">
             <h1 className="text-2xl font-black tracking-[-0.03em] text-[var(--navy)] sm:text-3xl">Bonjour {nomClient}</h1>
@@ -317,7 +333,45 @@ export default function DashboardClientPage() {
           </div>
         </header>
 
-        {/* Résumé rapide - 4 cartes avec couleurs distinctes */}
+        {/* 2. 3 BOUTONS D'ACTIONS RAPIDES (grille 3 colonnes) */}
+        <section className="grid gap-3 sm:grid-cols-3">
+          <ActionButton 
+            icon={Calculator} 
+            label="Simulation" 
+            color="#FF7A00"
+            href="/simulation"
+          />
+          <ActionButton 
+            icon={BrickWall} 
+            label="Nouveau chantier" 
+            color="#0B5FFF"
+            href="/nouveau-chantier"
+          />
+          <ActionButton 
+            icon={HardHat} 
+            label="Rénovation" 
+            color="#22C55E"
+            href="/renovation"
+          />
+        </section>
+
+        {/* 3. SUPER CALCULATEUR (Widget d'estimation rapide) */}
+        <section>
+          <SuperCalculateur
+            surface={100}
+            chambres={3}
+            sallesDeBain={2}
+            etages={1}
+            garage={false}
+            piscine={false}
+            jardin={false}
+            standing="moyen"
+            style="moderne"
+            mode="widget"
+          />
+        </section>
+
+        {/* 4. SECTION "RÉSUMÉ RAPIDE" - 4 SummaryCards avec couleurs distinctes */}
         {!loading && (
           <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <SummaryCard 
@@ -347,6 +401,7 @@ export default function DashboardClientPage() {
           </section>
         )}
 
+        {/* 5. SECTION "MES CHANTIERS" */}
         {loading ? (
           <div className="space-y-3">
             <SkeletonChantier /><SkeletonChantier />
@@ -368,7 +423,7 @@ export default function DashboardClientPage() {
           </div>
         )}
         
-        {/* SECTION : À propos de BÂTIZEN.CI */}
+        {/* 6. BLOC "À PROPOS DE BÂTIZEN.CI" */}
         <div className="mt-6 p-4 bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20">
           <h3 className="text-lg font-bold text-[var(--navy)] mb-3">🏗️ À PROPOS DE BÂTIZEN.CI</h3>
           <p className="text-sm text-gray-700 mb-3">
@@ -381,7 +436,7 @@ export default function DashboardClientPage() {
           </p>
         </div>
 
-        {/* SECTION : Alerte Arnaque */}
+        {/* 7. BLOC "ALERTE ARNAQUE" */}
         <div className="mt-4 p-4 bg-red-50/80 backdrop-blur-lg rounded-2xl border border-red-200">
           <h3 className="text-lg font-bold text-red-700 mb-3">🚨 ALERTE ARNAQUE</h3>
           <p className="text-sm text-gray-800 mb-2 font-semibold">
@@ -398,7 +453,7 @@ export default function DashboardClientPage() {
           </p>
         </div>
 
-        {/* SECTION : Nos Engagements */}
+        {/* 8. BLOC "NOS ENGAGEMENTS" */}
         <div className="mt-4 p-4 bg-green-50/80 backdrop-blur-lg rounded-2xl border border-green-200">
           <h3 className="text-lg font-bold text-green-700 mb-3">🤝 NOS ENGAGEMENTS</h3>
           <ul className="text-sm text-gray-700 space-y-2">
@@ -424,7 +479,8 @@ export default function DashboardClientPage() {
             </li>
           </ul>
         </div>
-        
+
+        {/* 9. CHATBOT */}
         <ChatBot />
       </main>
     </div>
