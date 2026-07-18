@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { getStorage, ref, deleteObject } from "firebase/storage";
 import { database } from "@/lib/firebase";
 
 export const runtime = "edge";
@@ -15,7 +14,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Base de données indisponible" }, { status: 500 });
     }
 
-    const { ref: dbRef, get } = await import("firebase/database");
+    const { ref: dbRef, get, remove } = await import("firebase/database");
     const snapshot = await get(dbRef(database, "chantiers"));
     if (!snapshot.exists()) {
       return NextResponse.json({ ok: true, deleted: [] });
@@ -28,12 +27,10 @@ export async function GET(request: Request) {
     const data = snapshot.val() as Record<string, Record<string, { type: string; url: string; nom: string; dateAjout: number }>>;
     for (const [chantierId, medias] of Object.entries(data)) {
       const filtered = Object.entries(medias).filter(([, m]) => now - m.dateAjout > maxAge);
-      for (const [key, m] of filtered) {
+      for (const [key] of filtered) {
         try {
-          const storage = getStorage();
-          const storageRef = ref(storage, m.url);
-          await deleteObject(storageRef);
-          await import("firebase/database").then(({ ref: dbRef2, remove }) => remove(dbRef2(database, `chantiers/${chantierId}/medias/${key}`)));
+          // Suppression DB uniquement (Cloudinary gère son propre nettoyage/purge)
+          await remove(dbRef(database, `chantiers/${chantierId}/medias/${key}`));
           deleted.push(`${chantierId}/${key}`);
         } catch {
           // ignore
