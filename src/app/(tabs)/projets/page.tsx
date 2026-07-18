@@ -9,6 +9,7 @@ import { FolderKanban, HardHat } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { getDatabase, ref, onValue } from "firebase/database";
 import Link from "next/link";
+import ChatBot from "@/components/ChatBot";
 
 type Chantier = {
   id: string;

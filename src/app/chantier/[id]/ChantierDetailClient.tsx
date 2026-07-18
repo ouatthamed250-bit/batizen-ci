@@ -44,6 +44,7 @@ import { formatFcfa } from "@/utils/currency";
 import { ref, push, onValue, type Unsubscribe } from "firebase/database";
 import { getFirebaseServices } from "@/lib/firebase";
 import SuperCalculateur from "@/components/btp/SuperCalculateur";
+import ChatBot from "@/components/ChatBot";
 
 /* ------------------------------------------------------------------ */
 /* Types                                                              */
@@ -1097,7 +1098,7 @@ export default function ChantierDetailClient() {
         </div>
       )}
 
-      {/* BOUTONS D'ACTION FIXES */}
+      <ChatBot />
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[#E7EBF5] bg-white/95 backdrop-blur">
         <div className="mx-auto flex w-full max-w-3xl items-stretch gap-1 p-2">
           <ActionBtn icon={Phone} label="Appeler" href={chef?.telephone ? `tel:${chef.telephone}` : "#"} color="#0B5FFF" />
