@@ -781,7 +781,7 @@ const [ouvriersList, setOuvriersList] = useState<any[]>([]);
                             <Image src={p.url} alt="Photo chantier" fill className="object-cover transition group-hover:scale-105" />
                           ) : null}
                           {p.date && (
-<span className="absolute bottom-0 left-0 right-0 bg-black/50 px-2 py-1 text-[10px] font-bold text-white">
+                            <span className="absolute bottom-0 left-0 right-0 bg-black/50 px-2 py-1 text-[10px] font-bold text-white">
                               {formatDateFr(p.date)}
                             </span>
                           )}
