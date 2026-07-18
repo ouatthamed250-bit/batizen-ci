@@ -67,6 +67,7 @@ type Chantier = {
   type?: string;
   budget?: number;
   plan_choisi?: string;
+  delai?: string;
   date_creation?: string;
   dateActivation?: number;
   rdv_date?: string;
@@ -553,6 +554,10 @@ export default function ChantierDetailClient() {
                       <div>
                         <p className="text-xs font-bold text-[#6B7280]">Plan choisi</p>
                         <p className="text-sm font-black text-[#0D2B6B]">{chantier?.plan_choisi || "—"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-[#6B7280]">Délai</p>
+                        <p className="text-sm font-black text-[#0D2B6B]">{chantier?.delai || "—"}</p>
                       </div>
                       <div>
                         <p className="text-xs font-bold text-[#6B7280]">Date de création</p>

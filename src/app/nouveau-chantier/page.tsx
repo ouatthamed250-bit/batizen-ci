@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, ArrowLeft, CheckCircle2, HardHat, MapPin, Wallet, Calendar, Building2, Home, Paintbrush } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
-import { ref, set } from "firebase/database";
+import { ref, set, onValue } from "firebase/database";
 import { getFirebaseServices } from "@/lib/firebase";
 import { PHOTOS_CHANTIER } from "@/data/photos-chantier";
 import BtpPageBackground from "@/components/btp/BtpPageBackground";
@@ -17,6 +17,7 @@ import PlanGenerator2D from "@/components/simulation/PlanGenerator2D";
 import PlanGenerator3D from "@/components/simulation/PlanGenerator3D";
 import SuperCalculateur from "@/components/btp/SuperCalculateur";
 import ChatBot from "@/components/ChatBot";
+import { Suspense } from "react";
 
 type FormData = {
   nom?: string;
@@ -42,12 +43,23 @@ type FormData = {
   planChoisi?: string;
   planType?: string;
   rendezVous?: any;
+  dateCreation?: number;
 };
 
 type Step = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
+// Wrapper avec Suspense pour useSearchParams
 export default function NouveauChantierPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Chargement...</div>}>
+      <NouveauChantierContent />
+    </Suspense>
+  );
+}
+
+function NouveauChantierContent() {
   const router = useRouter();
+  const params = useSearchParams();
   const { user } = useAuthContext();
   const [step, setStep] = useState<Step>(1);
   const [prefilledData, setPrefilledData] = useState<FormData | null>(null);
@@ -56,9 +68,12 @@ export default function NouveauChantierPage() {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [showRdvForm, setShowRdvForm] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [chantierId, setChantierId] = useState<string | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [existingChantier, setExistingChantier] = useState<FormData | null>(null);
+  const [editChantierId, setEditChantierId] = useState<string | null>(null);
   // Garde-fou anti-réentrance : empêche handleSubmit de tourner en boucle
   const submittingRef = useRef(false);
+  const [chantierId, setChantierId] = useState<string | null>(null);
   const [rdvData, setRdvData] = useState({
     lieu: "bureau",
     date: "",
@@ -69,7 +84,7 @@ export default function NouveauChantierPage() {
     commentaire: ""
   });
 
-  // Read simulation data from localStorage
+// Read simulation data from localStorage
   useEffect(() => {
     const simulationData = localStorage.getItem('simulationData');
     if (simulationData) {
@@ -81,7 +96,28 @@ export default function NouveauChantierPage() {
         console.error("Error parsing simulation data:", e);
       }
     }
-  }, []);
+    
+    // Vérifier si on est en mode édition
+    const editId = params.get("edit");
+    if (editId && user?.uid) {
+      setIsEditMode(true);
+      setEditChantierId(editId);
+      console.log("🔧 Mode édition activé pour le chantier:", editId);
+      
+      const { database } = getFirebaseServices();
+      const chantierRef = ref(database, `chantiers/${editId}`);
+      onValue(chantierRef, (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          console.log("📦 Chargement données chantier pour édition:", data);
+          setFormData(data);
+          setExistingChantier(data);
+          if (data.planChoisi) setSelectedPlan(data.planChoisi);
+          if (data.rendezVous) setRdvData(data.rendezVous);
+        }
+      });
+    }
+  }, [params, user?.uid]);
 
   const handleNext = () => {
     if (step < 8) setStep((step + 1) as Step);
@@ -112,13 +148,12 @@ export default function NouveauChantierPage() {
 
   const handleSubmit = async () => {
     // ⛔ Garde-fou : si une soumission est déjà en cours (ou déjà créée), on bloque.
-    // Empêche la boucle de création de chantiers (clics répétés, remontage, ou tout re-déclenchement auto).
     if (submittingRef.current || chantierId) {
       console.warn("⛔ handleSubmit ignoré : création de chantier déjà en cours / déjà effectuée");
       return;
     }
     console.log("═══════════════════════════════════════");
-    console.log("🔵 DÉBUT DE LA SOUMISSION");
+    console.log(isEditMode ? "🔵 DÉBUT DE LA MODIFICATION" : "🔵 DÉBUT DE LA SOUMISSION");
     console.log("═══════════════════════════════════════");
     console.log("Données du formulaire:", formData);
     console.log("Plan choisi:", selectedPlan || formData.planType || "gratuit");
@@ -136,17 +171,22 @@ export default function NouveauChantierPage() {
     
     try {
       const { database } = getFirebaseServices();
-      const newId = `chantier_${Date.now()}`;
+      
+      // En mode édition, on met à jour le chantier existant
+      const chantierIdToUse = isEditMode ? editChantierId : `chantier_${Date.now()}`;
+      
+      if (!isEditMode) {
+        console.log("✅ ID du chantier créé:", chantierIdToUse);
+      } else {
+        console.log("✅ ID du chantier existant:", chantierIdToUse);
+      }
 
-      console.log("✅ ID du chantier créé:", newId);
+      setChantierId(chantierIdToUse);
 
-      setChantierId(newId);
-      console.log("🟡 chantierId stocké dans le state:", newId);
-
-      // Données du chantier — userId explicitement à la racine (OBLIGATOIRE)
+      // Données du chantier
       const chantierData = {
-        id: newId,
-        userId: user?.uid || "inconnu", // ⚠️ OBLIGATOIRE : doit être à la racine de l'objet
+        id: chantierIdToUse,
+        userId: user?.uid || "inconnu",
         nom: formData.nom || "Chantier sans nom",
         type: formData.type || "construction",
         surface: Number(formData.surfaceConstruite) || 150,
@@ -169,41 +209,38 @@ export default function NouveauChantierPage() {
         planChoisi: formData.planChoisi || formData.planType || "gratuit",
         rendezVous: rdvData,
         statut: "en_attente",
-        dateCreation: Date.now(),
+        dateCreation: isEditMode ? existingChantier?.dateCreation || Date.now() : Date.now(),
         dateMiseAJour: Date.now()
       };
 
-      // 🚀 LOG ULTRA-VISUEL pour prouver que les données sont automatiquement correctes
-      console.log("🚀�🚀 DONNÉES ENVOYÉES À FIREBASE (VÉRIFICATION AUTO) :", JSON.stringify(chantierData, null, 2));
+      console.log("📦 DONNÉES ENVOYÉES À FIREBASE :", JSON.stringify(chantierData, null, 2));
 
-      const newChantierRef = ref(database, `chantiers/${newId}`);
-      await set(newChantierRef, chantierData);
+      const chantierRef = ref(database, `chantiers/${chantierIdToUse}`);
+      await set(chantierRef, chantierData);
 
       console.log("📦 Données écrites dans Firebase");
 
-      // Send notification to admin
-      await set(ref(database, `notifications/admin/nouveau_chantier_${newId}`), {
-        type: "nouveau_chantier",
-        chantierId: newId,
-        userId: user.uid,
-        userName: user.displayName || user.email,
-        planChoisi: formData.planChoisi || formData.planType || "gratuit",
-        rendezVous: sanitizeData(rdvData),
-        dateCreation: Date.now(),
-        lu: false
-      });
+      // Notification admin uniquement pour nouvelle création
+      if (!isEditMode) {
+        await set(ref(database, `notifications/admin/nouveau_chantier_${chantierIdToUse}`), {
+          type: "nouveau_chantier",
+          chantierId: chantierIdToUse,
+          userId: user.uid,
+          userName: user.displayName || user.email,
+          planChoisi: formData.planChoisi || formData.planType || "gratuit",
+          rendezVous: sanitizeData(rdvData),
+          dateCreation: Date.now(),
+          lu: false
+        });
+        localStorage.removeItem('simulationData');
+      }
 
-      // Clear simulation data
-      localStorage.removeItem('simulationData');
-
-      console.log("🟢 Soumission terminée avec succès");
+      console.log(isEditMode ? "🟢 Modification terminée avec succès" : "🟢 Soumission terminée avec succès");
       console.log("═══════════════════════════════════════");
       
-      // Loading reste true pour afficher l'écran de succès
-      // L'utilisateur peut cliquer sur "Voir mon chantier" ou "Retour au Dashboard"
     } catch (error) {
       console.error("❌ ERREUR lors de la soumission:", error);
-      submittingRef.current = false; // autorise une nouvelle tentative après échec
+      submittingRef.current = false;
       setLoading(false);
       alert("Erreur lors de la soumission. Veuillez réessayer.");
     }

@@ -9,8 +9,7 @@ import { useAuthContext } from "@/contexts/AuthContext";
 import { WeatherWidget } from "@/components/btp/WeatherWidget";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import SuperCalculateur from "@/components/btp/SuperCalculateur";
-import { getDatabase, ref, onValue } from "firebase/database";
-import { update } from "firebase/database";
+import { getDatabase, ref, onValue, update } from "firebase/database";
 import ChatBot from "@/components/ChatBot";
 
 /* ------------------------------------------------------------------ */
@@ -186,7 +185,11 @@ function SkeletonChantier() {
   );
 }
 
-function ChantierCard({ chantier }: { chantier: Chantier; }) {
+function ChantierCard({ chantier, onModifier, onSupprimer }: { 
+  chantier: Chantier; 
+  onModifier?: (id: string) => void;
+  onSupprimer?: (id: string, statut: string) => void;
+}) {
   const photo = chantier.photo || chantier.image_url;
   const nom = chantier.nom_projet || chantier.nom || "Chantier";
   const pct = Number(chantier.progression ?? chantier.progress ?? 0);
@@ -242,10 +245,28 @@ function ChantierCard({ chantier }: { chantier: Chantier; }) {
           </p>
         )}
         
-        <div className="mt-4 flex gap-2">
+        <div className="mt-4 flex flex-col gap-2">
           <Link href={`/chantier/${chantier.id}`} className="flex flex-1 items-center justify-center gap-1.5 rounded-[16px] bg-[linear-gradient(135deg,#0B5FFF,#0D2B6B)] py-2.5 text-sm font-black text-white transition active:scale-95">
             Voir détails <ChevronRight size={16} />
           </Link>
+          
+          {/* Boutons Modifier/Supprimer - seulement si le statut est "en_attente" */}
+          {chantier.statut === "en_attente" && onModifier && onSupprimer && (
+            <div className="flex gap-2">
+              <button
+                onClick={() => onModifier(chantier.id)}
+                className="flex-1 rounded-[14px] bg-blue-500/20 py-2 text-xs font-bold text-blue-400 transition active:scale-95"
+              >
+                ✏️ Modifier
+              </button>
+              <button
+                onClick={() => onSupprimer(chantier.id, chantier.statut!)}
+                className="flex-1 rounded-[14px] bg-red-500/20 py-2 text-xs font-bold text-red-400 transition active:scale-95"
+              >
+                🗑️ Supprimer
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </motion.div>
@@ -350,6 +371,28 @@ const promosRef = ref(db, 'promotions');
   // Calculer les dépenses du mois (pour l'instant 0) et notifications non lues
   const depensesMois = 0;
   const notifsNonLues = notifications.length;
+
+   // Fonction de suppression sécurisée
+   const handleSupprimerChantier = async (id: string, statut: string) => {
+     if (statut === "en_cours" || statut === "termine" || statut === "terminé") {
+       alert("⚠️ Impossible de supprimer un chantier en cours ou terminé. Veuillez contacter l'administration.");
+       return;
+     }
+     if (!confirm("Voulez-vous vraiment supprimer ce chantier ? Cette action est irréversible.")) return;
+     
+     const db = getDatabase();
+     // Soft delete pour garder une trace propre dans la DB
+     await update(ref(db, `chantiers/${id}`), { 
+       statut: "supprime_par_client", 
+       dateMiseAJour: Date.now() 
+     });
+     alert("✅ Chantier supprimé avec succès.");
+   };
+
+  // Fonction de modification - redirige vers la page d'édition
+  const handleModifierChantier = (id: string) => {
+    window.location.href = `/nouveau-chantier?edit=${id}`;
+  };
 
   return (
     <div className="relative min-h-screen bg-[var(--bg-dashboard)]">
@@ -465,7 +508,7 @@ const promosRef = ref(db, 'promotions');
           </section>
         )}
 
-        {/* 5. SECTION "MES CHANTIERS" */}
+{/* 5. SECTION "MES CHANTIERS" */}
         {loading ? (
           <div className="space-y-3">
             <SkeletonChantier /><SkeletonChantier />
@@ -482,7 +525,14 @@ const promosRef = ref(db, 'promotions');
           <div className="space-y-3">
             <h2 className="text-xs font-black uppercase tracking-[0.2em] text-[var(--muted)]">Mes chantiers</h2>
             <div className="grid gap-3 sm:grid-cols-2">
-              {mesChantiers.map((c) => <ChantierCard key={c.id} chantier={c} />)}
+              {mesChantiers.map((c) => (
+                <ChantierCard 
+                  key={c.id} 
+                  chantier={c} 
+                  onModifier={handleModifierChantier}
+                  onSupprimer={handleSupprimerChantier}
+                />
+              ))}
             </div>
           </div>
         )}
