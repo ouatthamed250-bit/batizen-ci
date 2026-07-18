@@ -105,6 +105,7 @@ type Promo = {
   id: string;
   titre?: string;
   description?: string;
+  image_url?: string;
   reduction?: number;
   date_debut?: string;
   date_fin?: string;
@@ -647,7 +648,7 @@ function MateriauxSection({
   );
 }
 
-/* ---------- Promotions ---------- */
+/* ---------- Promotions (CRUD) ---------- */
 function PromosSection({ data, onAdd }: { data: Promo[]; onAdd: (updater: (prev: Promo[]) => Promo[]) => void }) {
   const [open, setOpen] = useState(false);
   const [titre, setTitre] = useState("");
@@ -656,16 +657,30 @@ function PromosSection({ data, onAdd }: { data: Promo[]; onAdd: (updater: (prev:
   const [deb, setDeb] = useState("");
   const [fin, setFin] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
+  const [editActive, setEditActive] = useState(true);
+
+  async function uploadImage(id: string, file: File) {
+    try {
+      const storage = getStorage();
+      const storageRef = ref(storage, `promotions/${id}_${file.name}`);
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
+      await rtdbSet(`promotions/${id}`, { image_url: url });
+      onAdd((prev) => prev.map((p) => (p.id === id ? { ...p, image_url: url } : p)));
+    } catch (err) {
+      console.error("Upload image erreur", err);
+    }
+  }
 
   function submit(e: FormEvent) {
     e.preventDefault();
     if (editId) {
-      onAdd((prev) => prev.map((p) => (p.id === editId ? { ...p, titre, description: desc, reduction, date_debut: deb, date_fin: fin } : p)));
+      onAdd((prev) => prev.map((p) => (p.id === editId ? { ...p, titre, description: desc, reduction, date_debut: deb, date_fin: fin, active: editActive } : p)));
       setEditId(null);
     } else {
       onAdd((prev) => [...prev, { id: `p${Date.now()}`, titre, description: desc, reduction, date_debut: deb, date_fin: fin, active: true }]);
     }
-    setTitre(""); setDesc(""); setReduction(0); setDeb(""); setFin(""); setOpen(false);
+    setTitre(""); setDesc(""); setReduction(0); setDeb(""); setFin(""); setEditActive(true); setOpen(false);
   }
 
   const startEdit = (p: Promo) => {
@@ -675,17 +690,22 @@ function PromosSection({ data, onAdd }: { data: Promo[]; onAdd: (updater: (prev:
     setReduction(p.reduction || 0);
     setDeb(p.date_debut || "");
     setFin(p.date_fin || "");
+    setEditActive(p.active ?? true);
     setOpen(true);
   };
 
-  const remove = (id: string) => {
+  const remove = async (id: string) => {
     if (!confirm("Supprimer cette promotion ?")) return;
     onAdd((prev) => prev.filter((p) => p.id !== id));
   };
 
+  const toggleActive = (id: string, active: boolean) => {
+    onAdd((prev) => prev.map((p) => (p.id === id ? { ...p, active } : p)));
+  };
+
   return (
     <div className="space-y-4">
-      <button onClick={() => { setEditId(null); setOpen((o) => !o); }} className="flex items-center gap-2 rounded-[12px] bg-[#FF7A00] px-4 py-2.5 text-sm font-black">
+      <button onClick={() => { setEditId(null); setEditActive(true); setOpen((o) => !o); }} className="flex items-center gap-2 rounded-[12px] bg-[#FF7A00] px-4 py-2.5 text-sm font-black">
         <Plus size={18} /> {editId ? "Modifier la promo" : "Créer une promo"}
       </button>
       {open && (
@@ -697,26 +717,44 @@ function PromosSection({ data, onAdd }: { data: Promo[]; onAdd: (updater: (prev:
           </label>
           <div className="grid grid-cols-3 gap-3">
             <Input label="Réduction %" value={String(reduction)} set={(v) => setReduction(Number(v))} type="number" />
-            <Input label="Début" value={deb} set={setDeb} />
-            <Input label="Fin" value={fin} set={setFin} />
+            <Input label="Début (YYYY-MM-DD)" value={deb} set={setDeb} placeholder="2024-01-01" />
+            <Input label="Fin (YYYY-MM-DD)" value={fin} set={setFin} placeholder="2024-12-31" />
           </div>
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={editActive} onChange={(e) => setEditActive(e.target.checked)} className="h-4 w-4" />
+            <span className="text-xs font-bold">Active</span>
+          </label>
           <button className="h-11 w-full rounded-[12px] bg-[#0B5FFF] font-black">{editId ? "Mettre à jour" : "Publier"}</button>
         </form>
       )}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {data.map((p) => (
           <div key={p.id} className="rounded-[16px] border border-white/10 bg-white/5 p-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-start justify-between mb-2">
               <h3 className="font-black">{p.titre}</h3>
               <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${p.active ? "bg-green-500/20 text-green-400" : "bg-white/10 text-white/50"}`}>
-                {p.active ? "Active" : "Inactive"}
+                {p.active ? "✅ Actif" : "⏸️ Inactif"}
               </span>
             </div>
-            <p className="mt-1 text-sm text-white/60">{p.description}</p>
-            <p className="mt-2 text-[#FF7A00] font-black">-{p.reduction}%</p>
+            {p.image_url && <img src={p.image_url} alt={p.titre} className="mb-2 h-32 w-full rounded-lg object-cover" />}
+            <p className="text-xs text-white/60">{p.description}</p>
+            <p className="mt-1 text-[#FF7A00] font-black">-{p.reduction}%</p>
             <p className="text-xs text-white/40">{p.date_debut} → {p.date_fin}</p>
-            <div className="mt-3 flex gap-2">
+            <div className="mt-3 flex flex-wrap gap-2">
               <button onClick={() => startEdit(p)} className="flex-1 rounded-[10px] bg-white/10 py-1.5 text-xs font-bold">Modifier</button>
+              <button onClick={() => {
+                const input = document.createElement("input");
+                input.type = "file";
+                input.accept = "image/*";
+                input.onchange = () => {
+                  const file = input.files?.[0];
+                  if (file) uploadImage(p.id, file);
+                };
+                input.click();
+              }} className="flex-1 rounded-[10px] bg-blue-500/15 py-1.5 text-xs font-bold text-blue-400">Image</button>
+              <button onClick={() => toggleActive(p.id, !p.active)} className={`flex-1 rounded-[10px] py-1.5 text-xs font-bold ${p.active ? "bg-orange-500/15 text-orange-400" : "bg-green-500/15 text-green-400"}`}>
+                {p.active ? "Désactiver" : "Activer"}
+              </button>
               <button onClick={() => remove(p.id)} className="flex-1 rounded-[10px] bg-red-500/15 py-1.5 text-xs font-bold text-red-400">Supprimer</button>
             </div>
           </div>
@@ -1219,13 +1257,14 @@ function Btn({ icon: Icon, label, danger, onClick }: { icon: typeof Eye; label: 
     </button>
   );
 }
-function Input({ label, value, set, type = "text" }: { label: string; value: string; set: (v: string) => void; type?: string }) {
+function Input({ label, value, set, type = "text", placeholder = "" }: { label: string; value: string; set: (v: string) => void; type?: string; placeholder?: string }) {
   return (
     <label className="block">
       <span className="mb-1 block text-xs text-white/60">{label}</span>
       <input
         type={type}
         value={value}
+        placeholder={placeholder}
         onChange={(e) => set(e.target.value)}
         className="h-11 w-full rounded-[12px] bg-white/5 px-3 outline-none ring-1 ring-white/10 focus:ring-[#FF7A00]"
       />
