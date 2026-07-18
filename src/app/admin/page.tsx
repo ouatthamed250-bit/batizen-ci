@@ -23,7 +23,7 @@ import {
 } from "recharts";
 import { subscribeToAdminNotifications, markAsRead, type Notification } from "@/lib/notifications";
 import { useAuthContext } from "@/contexts/AuthContext";
-import { getDatabase, ref as dbRef, onValue, update, push, set } from "firebase/database";
+import { getDatabase, ref as dbRef, onValue, update, push, set, get, remove } from "firebase/database";
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 
 type Localisation = {
