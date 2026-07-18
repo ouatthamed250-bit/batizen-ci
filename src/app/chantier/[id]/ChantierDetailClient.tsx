@@ -294,8 +294,27 @@ const [planning, setPlanning] = useState<Etape[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [album, setAlbum] = useState<Photo[]>([]);
   const [rapports, setRapports] = useState<Rapport[]>([]);
-  const [ouvriersList, setOuvriersList] = useState<any[]>([]);
+const [ouvriersList, setOuvriersList] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState("");
+
+  // Fonction de téléchargement universelle
+  const handleTelechargerFichier = async (url: string, nomFichier: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const downloadUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = nomFichier;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      console.error("Erreur téléchargement:", error);
+      alert("Impossible de télécharger le fichier.");
+    }
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -791,18 +810,28 @@ const [planning, setPlanning] = useState<Etape[]>([]);
                           {p.url ? (
                             <Image src={p.url} alt={p.titre || "Photo album"} fill className="object-cover transition group-hover:scale-105" />
                           ) : null}
-                          <span className="absolute bottom-0 left-0 right-0 bg-black/50 px-2 py-1 text-[10px] font-bold text-white line-clamp-1">
+<span className="absolute bottom-0 left-0 right-0 bg-black/50 px-2 py-1 text-[10px] font-bold text-white line-clamp-1">
                             {p.titre || `Photo ${idx + 1}`}
                           </span>
                           <span className="absolute right-2 top-2 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-black text-[#0D2B6B]">
                             {p.categorie === "avant" ? "Avant" : p.categorie === "apres" ? "Après" : "Pendant"}
                           </span>
+                          {p.url && (
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); handleTelechargerFichier(p.url!, `photo_${p.id}.jpg`); }}
+                              className="absolute top-2 left-2 rounded-full bg-white/90 p-1.5 text-[#0D2B6B] hover:bg-white"
+                            >
+                              <Download size={14} />
+                            </button>
+                          )}
                         </button>
                       ))}
                     </div>
                   )}
                 </section>
               )}
+
 
               {/* ONGLET 6 - ÉQUIPE */}
               {activeTab === "equipe" && (
