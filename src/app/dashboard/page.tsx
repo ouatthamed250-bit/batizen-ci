@@ -359,39 +359,42 @@ export default function DashboardClientPage() {
   const nomClient = user?.displayName || user?.email?.split("@")[0] || "Client";
 
   useEffect(() => {
+    console.log("🟢 [1] useEffect dashboard démarré. user?.uid =", user?.uid);
+    
     if (!user?.uid) {
-      console.log("⚠️ Pas d'utilisateur connecté, arrêt du chargement.");
+      console.log("🔴 [2] Pas d'utilisateur connecté, arrêt.");
       return;
     }
 
-    console.log("🚨🚨🚨 LE USEEFFECT DU DASHBOARD S'EST DÉCLENCHÉ ! 🚨🚨🚨");
-    console.log("👤 User UID:", user.uid);
-
+    console.log("🟢 [3] Initialisation Firebase...");
     try {
+      console.log("🟢 [4] Appel de onValue sur 'chantiers'...");
       const db = getDatabase();
       const chantiersRef = ref(db, 'chantiers');
-
+      
       const unsubscribe = onValue(chantiersRef, (snapshot) => {
-        console.log("📦 DONNÉES BRUTES DE FIREBASE (CHANTIERS):", snapshot.val());
-
+        console.log("🟢 [5] CALLBACK onValue DÉCLENCÉ !");
         const data = snapshot.val();
+        console.log("📦 [6] DONNÉES BRUTES FIREBASE:", data);
+
         if (data) {
           const userChantiers = Object.entries(data)
             .filter(([id, chantier]: [string, any]) => {
-              console.log("🔎 Vérif chantier:", id, "| UID:", chantier.userId, "| Statut:", chantier.statut);
-              return chantier.userId === user.uid && chantier.statut !== 'simulation_brouillon';
+              const isMatch = chantier.userId === user.uid && chantier.statut !== 'simulation_brouillon';
+              console.log(`🔎 [7] Vérif ${id}: UID=${chantier.userId} (match=${chantier.userId === user.uid}) | Statut=${chantier.statut} => ${isMatch ? '✅ INCLUS' : '❌ EXCLU'}`);
+              return isMatch;
             })
             .map(([id, chantier]) => ({ id, ...(chantier as object) }));
 
-          console.log("✅ CHANTIERS FILTRÉS FINAUX POUR CE USER:", userChantiers);
-          console.log("📊 NOMBRE DE CHANTIERS TROUVÉS:", userChantiers.length);
+          console.log("✅ [8] CHANTIERS FILTRÉS FINAUX POUR CE USER:", userChantiers);
+          console.log("📊 [9] NOMBRE DE CHANTIERS TROUVÉS:", userChantiers.length);
 
           setMesChantiers(userChantiers);
           setChantiersEnCours(userChantiers.filter((c: any) => (c.statut || c.status) === "en_cours"));
           setChantiersEnAttente(userChantiers.filter((c: any) => (c.statut || c.status) === "en_attente" || (c.statut || c.status) === "en_attente_rdv"));
           setChantiersTermines(userChantiers.filter((c: any) => (c.statut || c.status) === "termine" || (c.statut || c.status) === "terminé"));
         } else {
-          console.log("⚠️ Aucune donnée dans le nœud 'chantiers' de Firebase");
+          console.log("⚠️ [10] Aucune donnée dans le nœud 'chantiers'");
           setMesChantiers([]);
           setChantiersEnCours([]);
           setChantiersEnAttente([]);
@@ -416,12 +419,12 @@ export default function DashboardClientPage() {
       });
 
       return () => {
-        console.log("🧹 Nettoyage du listener onValue du dashboard");
+        console.log("🧹 [11] Nettoyage du listener onValue");
         unsubscribe();
         unsubscribePromos();
       };
     } catch (error) {
-      console.error("💥 ERREUR FATALE DANS LE USEEFFECT DU DASHBOARD :", error);
+      console.error("💥 [12] ERREUR FATALE DANS LE USEEFFECT :", error);
       setLoading(false);
     }
   }, [user?.uid]);
@@ -616,17 +619,8 @@ export default function DashboardClientPage() {
               <div className="rounded-[22px] border border-dashed border-white/50 bg-white/90 p-8 text-center backdrop-blur-sm">
                 <HardHat size={48} className="mx-auto mb-3 text-[#9CA3AF]" />
                 <p className="text-sm font-bold text-[var(--muted)]">
-                  Vous n'avez pas encore de chantier
+                  Vous n'avez pas encore de chantier réel. Commencez par une simulation.
                 </p>
-                <p className="mt-1 text-xs text-[#9CA3AF]">
-                  Commencez par créer votre premier projet !
-                </p>
-                <Link
-                  href="/nouveau-chantier"
-                  className="mt-3 inline-flex items-center gap-2 rounded-[16px] bg-[var(--primary)] px-6 py-2.5 text-sm font-black text-white transition hover:bg-[var(--primary)]/80"
-                >
-                  <BrickWall size={18} /> Créer un chantier
-                </Link>
               </div>
             ) : (
               <div className="space-y-3">
