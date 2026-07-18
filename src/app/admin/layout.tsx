@@ -16,6 +16,7 @@ import {
   Menu,
   X,
   Handshake,
+  MessageCircle,
 } from "lucide-react";
 import { logoutAdmin } from "@/lib/admin";
 import { useAuthContext } from "@/contexts/AuthContext";
@@ -28,6 +29,7 @@ const SIDEBAR = [
   { key: "materiaux", label: "Matériaux", icon: BrickWall, href: "/admin?section=materiaux" },
   { key: "promotions", label: "Promotions", icon: Megaphone, href: "/admin?section=promotions" },
   { key: "partenaires", label: "Partenaires", icon: Handshake, href: "/admin?section=partenaires" },
+  { key: "messages", label: "Messagerie", icon: MessageCircle, href: "/admin/messages" },
   { key: "statistiques", label: "Statistiques", icon: BarChart3, href: "/admin?section=statistiques" },
   { key: "parametres", label: "Paramètres", icon: Settings, href: "/admin?section=parametres" },
 ];
@@ -117,9 +119,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
             <nav className="flex-1 space-y-1">
               {SIDEBAR.map((s) => (
-                <Link
+<Link
                   key={s.key}
-                  href={`/admin?section=${s.key}`}
+                  href={s.href || `/admin?section=${s.key}`}
                   onClick={() => setOpen(false)}
                   className="flex items-center gap-3 rounded-[12px] px-3 py-2.5 text-sm font-bold text-white/70 transition hover:bg-white/5 hover:text-white"
                 >
