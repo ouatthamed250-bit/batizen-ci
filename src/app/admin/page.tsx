@@ -24,6 +24,7 @@ import {
 import { subscribeToAdminNotifications, markAsRead, type Notification } from "@/lib/notifications";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { getDatabase, ref as dbRef, onValue, update, push, set, get, remove } from "firebase/database";
+import { uploadToCloudinary } from "@/lib/cloudinary";
 
 type Localisation = {
   adresse?: string;
@@ -253,26 +254,9 @@ function AdminContent() {
     }
   };
 
-  // Upload vers Cloudinary (gratuit, pas besoin de Firebase Storage payant)
+  // Upload vers Cloudinary via fonction globale
   const handleImageUpload = async (file: File): Promise<string> => {
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", "batizen_unsigned"); // Preset unsigned Cloudinary
-    
-    const response = await fetch(
-      "https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/image/upload",
-      {
-        method: "POST",
-        body: formData,
-      }
-    );
-    
-    if (!response.ok) {
-      throw new Error("Erreur lors de l'upload de l'image");
-    }
-    
-    const data = await response.json();
-    return data.secure_url;
+    return await uploadToCloudinary(file);
   };
 
   const [partenaireForm, setPartenaireForm] = useState({ nom: "", description: "", photo: null as File | null, actif: true });
