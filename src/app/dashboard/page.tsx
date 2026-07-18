@@ -26,6 +26,7 @@ import SuperCalculateur from "@/components/btp/SuperCalculateur";
 import { rtdbGetList, rtdbGetListByChild, rtdbGet } from "@/lib/rtdb";
 import { formatFcfa } from "@/utils/currency";
 import { getDatabase, ref, onValue } from "firebase/database";
+import ChatBot from "@/components/ChatBot";
 
 /* ------------------------------------------------------------------ */
 /* Types                                                              */
@@ -726,6 +727,7 @@ export default function DashboardClientPage() {
            </div>
          </div>
        </main>
+       <ChatBot />
      </div>
    );
  }
