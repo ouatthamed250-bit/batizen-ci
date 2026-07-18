@@ -35,7 +35,7 @@ import { rtdbGetList, rtdbGet, rtdbSet } from "@/lib/rtdb";
 import { subscribeToAdminNotifications, markAsRead, getNotificationIcon, formatNotificationDate, type Notification } from "@/lib/notifications";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { getDatabase, ref as dbRef, push, set } from "firebase/database";
+import { getDatabase, ref as dbRef, push, set, onValue } from "firebase/database";
 
 type Client = {
   id: string;
@@ -107,16 +107,122 @@ function AdminContent() {
   if (!user || user.role !== "admin") return <div className="min-h-screen bg-[#111827] flex items-center justify-center px-4"><div className="text-center"><h1 className="text-2xl font-bold text-red-600">Accès refusé</h1><p className="mt-4 text-white/60">Vous devez être administrateur.</p></div></div>;
 
   useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      const ch = await rtdbGetList<Chantier>("chantiers");
-      if (cancelled) return;
-      setChantiers(ch);
+    const db = getDatabase();
+
+    // Chantiers - Listener temps réel
+    const chantiersRef = dbRef(db, 'chantiers');
+    const unsubChantiers = onValue(chantiersRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const chantiers = Object.entries(data)
+          .map(([id, value]) => ({ id, ...(value as any) }))
+          .filter((c) => c.statut !== "simulation_brouillon" && c.statut !== "en_cours_de_simulation");
+        console.log("📦 CHANTIERS ADMIN (temps réel):", chantiers);
+        setChantiers(chantiers);
+      } else {
+        setChantiers([]);
+      }
       setLoading(false);
-    }
-    load();
+    });
+
+    // Clients - Listener temps réel
+    const clientsRef = dbRef(db, 'users');
+    const unsubClients = onValue(clientsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const clients = Object.entries(data)
+          .map(([id, value]) => ({ id, ...(value as any) }));
+        console.log("📦 CLIENTS ADMIN (temps réel):", clients);
+        setClients(clients);
+      } else {
+        setClients([]);
+      }
+    });
+
+    // Ouvriers - Listener temps réel
+    const ouvriersRef = dbRef(db, 'ouvriers');
+    const unsubOuvriers = onValue(ouvriersRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const ouvriers = Object.entries(data)
+          .map(([id, value]) => ({ id, ...(value as any) }));
+        console.log("📦 OUVRIERS ADMIN (temps réel):", ouvriers);
+        setOuvriers(ouvriers);
+      } else {
+        setOuvriers([]);
+      }
+    });
+
+    // RDV - Listener temps réel
+    const rdvsRef = dbRef(db, 'rendezvous');
+    const unsubRdvs = onValue(rdvsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const rdvs = Object.entries(data)
+          .map(([id, value]) => ({ id, ...(value as any) }));
+        console.log("📦 RDV ADMIN (temps réel):", rdvs);
+        setRdvs(rdvs);
+      } else {
+        setRdvs([]);
+      }
+    });
+
+    // Matériaux - Listener temps réel
+    const materiauxRef = dbRef(db, 'materiaux');
+    const unsubMateriaux = onValue(materiauxRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const materiaux = Object.entries(data)
+          .map(([id, value]) => ({ id, ...(value as any) }));
+        console.log("📦 MATÉRIAUX ADMIN (temps réel):", materiaux);
+        setMateriaux(materiaux);
+      } else {
+        setMateriaux([]);
+      }
+    });
+
+    // Promotions - Listener temps réel
+    const promosRef = dbRef(db, 'promotions');
+    const unsubPromos = onValue(promosRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const promos = Object.entries(data)
+          .map(([id, value]) => ({ id, ...(value as any) }));
+        console.log("📦 PROMOS ADMIN (temps réel):", promos);
+        setPromos(promos);
+      } else {
+        setPromos([]);
+      }
+    });
+
+    // Partenaires - Listener temps réel
+    const partenairesRef = dbRef(db, 'partenaires');
+    const unsubPartenaires = onValue(partenairesRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const partenaires = Object.entries(data)
+          .map(([id, value]) => ({ id, ...(value as any) }));
+        console.log("📦 PARTENAIRES ADMIN (temps réel):", partenaires);
+        setPartenaires(partenaires);
+      } else {
+        setPartenaires([]);
+      }
+    });
+
+    // Notifications
     const unsubNotifs = subscribeToAdminNotifications(setNotifications);
-    return () => { cancelled = true; if (unsubNotifs) unsubNotifs(); };
+
+    // Cleanup
+    return () => {
+      unsubChantiers();
+      unsubClients();
+      unsubOuvriers();
+      unsubRdvs();
+      unsubMateriaux();
+      unsubPromos();
+      unsubPartenaires();
+      if (unsubNotifs) unsubNotifs();
+    };
   }, []);
 
   const filteredClients = clients.filter((c) => c.nom?.toLowerCase().includes(query.toLowerCase()) || c.email?.toLowerCase().includes(query.toLowerCase()));
