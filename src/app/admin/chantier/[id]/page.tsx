@@ -20,6 +20,7 @@ import {
   Building2,
   Hammer,
   Palette,
+  Pencil,
 } from "lucide-react";
 import { rtdbGet, rtdbGetList, rtdbSet } from "@/lib/rtdb";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -30,7 +31,9 @@ type Chantier = {
   userId?: string;
   nom?: string;
   nom_projet?: string;
+  description?: string;
   adresse?: string;
+  progression?: number;
   statut?: string;
   type?: string;
   budget?: number;
@@ -69,7 +72,15 @@ export default function ChantierDetailPage() {
   const [chantier, setChantier] = useState<Chantier | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  
+  // États pour l'édition rapide
+  const [editNom, setEditNom] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editProgression, setEditProgression] = useState(0);
+  const [editStatut, setEditStatut] = useState<"en_attente_rdv" | "en_cours" | "termine">("en_attente_rdv");
+
   const [medias, setMedias] = useState<{ id: string; type: string; url: string; nom: string; dateAjout: number }[]>([]);
   const [mediaType, setMediaType] = useState<"photo" | "video" | "pdf">("photo");
   const [mediaLoading, setMediaLoading] = useState(false);
@@ -79,6 +90,16 @@ export default function ChantierDetailPage() {
       try {
         const data = await rtdbGet<Chantier>(`chantiers/${chantierId}`);
         setChantier(data);
+        // Initialiser les champs d'édition
+        if (data) {
+          setEditNom(data.nom_projet || data.nom || "");
+          setEditDescription(data.description || "");
+          setEditProgression(data.progression || 0);
+          // Mapper les statuts
+          if (data.statut === "en_cours") setEditStatut("en_cours");
+          else if (data.statut === "termine") setEditStatut("termine");
+          else setEditStatut("en_attente_rdv");
+        }
       } catch (error) {
         console.error("Erreur lors du chargement du chantier:", error);
         setMessage({ type: "error", text: "Erreur lors du chargement du chantier" });
@@ -121,48 +142,59 @@ export default function ChantierDetailPage() {
     return new Intl.NumberFormat("fr-FR").format(budget) + " F";
   };
 
+  // Sauvegarde de l'édition rapide
+  const handleSaveEdit = async () => {
+    if (!confirm("Sauvegarder les modifications ?")) return;
+    setEditLoading(true);
+    try {
+      const { getDatabase, ref: dbRef, update } = await import("firebase/database");
+      const { getFirebaseServices } = await import("@/lib/firebase");
+      const { database } = getFirebaseServices();
+      
+      await update(dbRef(database, `chantiers/${chantierId}`), {
+        nom_projet: editNom,
+        description: editDescription,
+        progression: editProgression,
+        statut: editStatut,
+      });
+      
+      setMessage({ type: "success", text: "✅ Modifications sauvegardées avec succès !" });
+      const updated = await rtdbGet<Chantier>(`chantiers/${chantierId}`);
+      setChantier(updated);
+    } catch (err) {
+      console.error("Erreur sauvegarde:", err);
+      setMessage({ type: "error", text: "Erreur lors de la sauvegarde" });
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
   const handleActivate = async () => {
     if (!confirm("Êtes-vous sûr de vouloir activer ce chantier ? Le client recevra une notification et pourra accéder au suivi complet.")) {
       return;
     }
-
     setActionLoading(true);
     setMessage(null);
-
     try {
-      // Import Firebase dynamically
       const { getDatabase, ref, update, set } = await import("firebase/database");
       const { getFirebaseServices } = await import("@/lib/firebase");
       const { database } = getFirebaseServices();
-
-      // Mettre à jour le statut du chantier
       await update(ref(database, `chantiers/${chantierId}`), {
         statut: "en_cours",
         dateActivation: Date.now(),
       });
-
-      // Créer une notification pour le client
       if (chantier?.userId) {
         await set(ref(database, `notifications/${chantier.userId}/activation_${chantierId}`), {
           type: "chantier_active",
           chantierId: chantierId,
-          chantierNom: chantier.nom_projet || chantier.nom,
-          message: `Votre chantier "${chantier.nom_projet || chantier.nom}" a été activé ! Vous pouvez maintenant accéder au suivi complet.`,
+          chantierNom: chantier?.nom_projet || chantier?.nom,
+          message: `Votre chantier "${chantier?.nom_projet || chantier?.nom}" a été activé ! Vous pouvez maintenant accéder au suivi complet.`,
           dateCreation: Date.now(),
           lu: false,
         });
       }
-
       setMessage({ type: "success", text: "✅ Chantier activé avec succès ! Le client a été notifié." });
-      
-      // Recharger les données
-      const updated = await rtdbGet<Chantier>(`chantiers/${chantierId}`);
-      setChantier(updated);
-
-      // Rediriger après 2 secondes
-      setTimeout(() => {
-        router.push("/admin?section=chantiers");
-      }, 2000);
+      setChantier({ ...chantier, statut: "en_cours" } as Chantier);
     } catch (error) {
       console.error("Erreur lors de l'activation:", error);
       setMessage({ type: "error", text: "Erreur lors de l'activation du chantier" });
@@ -175,35 +207,28 @@ export default function ChantierDetailPage() {
     if (!confirm("Êtes-vous sûr de vouloir marquer ce chantier comme terminé ?")) {
       return;
     }
-
     setActionLoading(true);
     setMessage(null);
-
     try {
       const { getDatabase, ref, update, set } = await import("firebase/database");
       const { getFirebaseServices } = await import("@/lib/firebase");
       const { database } = getFirebaseServices();
-
       await update(ref(database, `chantiers/${chantierId}`), {
         statut: "termine",
         date_fin: new Date().toISOString(),
       });
-
       if (chantier?.userId) {
         await set(ref(database, `notifications/${chantier.userId}/termine_${chantierId}`), {
           type: "chantier_termine",
           chantierId: chantierId,
-          chantierNom: chantier.nom_projet || chantier.nom,
-          message: `🎉 Félicitations ! Votre chantier "${chantier.nom_projet || chantier.nom}" est terminé.`,
+          chantierNom: chantier?.nom_projet || chantier?.nom,
+          message: `🎉 Félicitations ! Votre chantier "${chantier?.nom_projet || chantier?.nom}" est terminé.`,
           dateCreation: Date.now(),
           lu: false,
         });
       }
-
       setMessage({ type: "success", text: "✅ Chantier marqué comme terminé avec succès !" });
-      
-      const updated = await rtdbGet<Chantier>(`chantiers/${chantierId}`);
-      setChantier(updated);
+      setChantier({ ...chantier, statut: "termine" } as Chantier);
     } catch (error) {
       console.error("Erreur lors de la mise à jour:", error);
       setMessage({ type: "error", text: "Erreur lors de la mise à jour du chantier" });
@@ -216,23 +241,15 @@ export default function ChantierDetailPage() {
     if (!confirm("Êtes-vous sûr de vouloir annuler ce chantier ? Cette action est irréversible.")) {
       return;
     }
-
     setActionLoading(true);
     setMessage(null);
-
     try {
       const { getDatabase, ref, update } = await import("firebase/database");
       const { getFirebaseServices } = await import("@/lib/firebase");
       const { database } = getFirebaseServices();
-
-      await update(ref(database, `chantiers/${chantierId}`), {
-        statut: "annule",
-      });
-
+      await update(ref(database, `chantiers/${chantierId}`), { statut: "annule" });
       setMessage({ type: "success", text: "✅ Chantier annulé avec succès." });
-      
-      const updated = await rtdbGet<Chantier>(`chantiers/${chantierId}`);
-      setChantier(updated);
+      setChantier({ ...chantier, statut: "annule" } as Chantier);
     } catch (error) {
       console.error("Erreur lors de l'annulation:", error);
       setMessage({ type: "error", text: "Erreur lors de l'annulation du chantier" });
@@ -241,7 +258,7 @@ export default function ChantierDetailPage() {
     }
   };
 
-   const handleAddMedia = async (e: FormEvent) => {
+  const handleAddMedia = async (e: FormEvent) => {
     e.preventDefault();
     const input = document.createElement("input");
     input.type = "file";
@@ -268,13 +285,14 @@ export default function ChantierDetailPage() {
     input.click();
   };
 
-   const handleDeleteMedia = async (mediaId: string) => {
-     if (!confirm("Supprimer ce média ?")) return;
-     setMedias(medias.filter(m => m.id !== mediaId));
-     await rtdbSet(`chantiers/${chantierId}/medias`, medias.filter(m => m.id !== mediaId));
-   };
+  const handleDeleteMedia = async (mediaId: string) => {
+    if (!confirm("Supprimer ce média ?")) return;
+    const newMedias = medias.filter(m => m.id !== mediaId);
+    setMedias(newMedias);
+    await rtdbSet(`chantiers/${chantierId}/medias`, newMedias.map(m => ({ type: m.type, url: m.url, nom: m.nom, dateAjout: m.dateAjout })));
+  };
 
-   const handleContactClient = () => {
+  const handleContactClient = () => {
     if (chantier?.client_telephone) {
       const phone = chantier.client_telephone.replace(/\s/g, "");
       window.open(`https://wa.me/${phone.replace("+225", "")}`, "_blank");
@@ -327,7 +345,50 @@ export default function ChantierDetailPage() {
           </div>
         )}
 
-        {/* SECTION 1: Informations générales */}
+        {/* SECTION 1: Édition rapide */}
+        <Section title="✏️ Édition rapide" icon={Pencil}>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <InputField label="Nom du projet" value={editNom} set={setEditNom} />
+            <InputField label="Description" value={editDescription} set={setEditDescription} />
+            <div className="sm:col-span-2">
+              <label className="flex items-center gap-3">
+                <span className="text-xs font-bold">Progression (%)</span>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={editProgression}
+                  onChange={(e) => setEditProgression(Number(e.target.value))}
+                  className="flex-1"
+                />
+                <span className="font-black text-[#FF7A00]">{editProgression}%</span>
+              </label>
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block">
+                <span className="mb-1 block text-xs font-bold">Statut</span>
+                <select
+                  value={editStatut}
+                  onChange={(e) => setEditStatut(e.target.value as "en_attente_rdv" | "en_cours" | "termine")}
+                  className="h-10 w-full rounded-[10px] bg-white/5 px-3 text-xs font-bold outline-none ring-1 ring-white/10"
+                >
+                  <option value="en_attente_rdv">⏳ En attente RDV</option>
+                  <option value="en_cours">✅ En cours</option>
+                  <option value="termine">🏁 Terminé</option>
+                </select>
+              </label>
+            </div>
+            <button
+              onClick={handleSaveEdit}
+              disabled={editLoading}
+              className="h-10 rounded-[10px] bg-[#FF7A00] px-4 text-xs font-black disabled:opacity-50 sm:col-span-2"
+            >
+              {editLoading ? "Sauvegarde..." : "💾 Sauvegarder les modifications"}
+            </button>
+          </div>
+        </Section>
+
+        {/* SECTION 2: Informations générales */}
         <Section title="Informations générales" icon={FileText}>
           <div className="grid gap-4 sm:grid-cols-2">
             <InfoItem label="Nom du projet" value={chantier.nom_projet || chantier.nom} icon={Building2} />
@@ -339,7 +400,7 @@ export default function ChantierDetailPage() {
           </div>
         </Section>
 
-        {/* SECTION 2: Détails techniques */}
+        {/* SECTION 3: Détails techniques */}
         <Section title="Détails techniques" icon={Hammer}>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <InfoItem label="Surface du terrain" value={chantier.surface_terrain ? `${chantier.surface_terrain} m²` : undefined} icon={Layers} />
@@ -352,7 +413,7 @@ export default function ChantierDetailPage() {
           </div>
         </Section>
 
-        {/* SECTION 3: Matériaux sélectionnés */}
+        {/* SECTION 4: Matériaux sélectionnés */}
         <Section title="Matériaux sélectionnés" icon={Palette}>
           <div className="grid gap-6 lg:grid-cols-2">
             <div>
@@ -394,7 +455,7 @@ export default function ChantierDetailPage() {
           </div>
         </Section>
 
-        {/* SECTION 4: Budget et financement */}
+        {/* SECTION 5: Budget et financement */}
         <Section title="Budget et financement" icon={DollarSign}>
           <div className="grid gap-4 sm:grid-cols-2">
             <InfoItem label="Budget total" value={formatBudget(chantier.budget)} icon={DollarSign} />
@@ -403,7 +464,7 @@ export default function ChantierDetailPage() {
           </div>
         </Section>
 
-        {/* SECTION 5: Plan choisi */}
+        {/* SECTION 6: Plan choisi */}
         <Section title="Plan choisi" icon={FileText}>
           <div className="grid gap-4 sm:grid-cols-2">
             <InfoItem label="Plan" value={chantier.plan_choisi} icon={FileText} />
@@ -417,7 +478,7 @@ export default function ChantierDetailPage() {
           )}
         </Section>
 
-        {/* SECTION 6: Rendez-vous */}
+        {/* SECTION 7: Rendez-vous */}
         {chantier.rdv_date && (
           <Section title="Rendez-vous" icon={Calendar}>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -433,7 +494,7 @@ export default function ChantierDetailPage() {
           </Section>
         )}
 
-        {/* SECTION 7: Actions admin */}
+        {/* SECTION 8: Actions admin */}
         <Section title="Actions admin" icon={Check}>
           <div className="flex flex-wrap gap-3">
             {(chantier.statut === "en_attente" || chantier.statut === "en_attente_rdv") && (
@@ -472,7 +533,7 @@ export default function ChantierDetailPage() {
           </div>
         </Section>
 
-        {/* SECTION 8: Médias & Avancement */}
+        {/* SECTION 9: Médias & Avancement */}
         <Section title="📁 Médias & Avancement" icon={Building2}>
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-3">
@@ -529,5 +590,18 @@ function InfoItem({ label, value, icon: Icon }: { label: string; value?: string 
         <div className="font-bold">{value || "—"}</div>
       </div>
     </div>
+  );
+}
+
+function InputField({ label, value, set }: { label: string; value: string; set: (v: string) => void }) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-xs font-bold">{label}</span>
+      <input
+        value={value}
+        onChange={(e) => set(e.target.value)}
+        className="h-10 w-full rounded-[10px] bg-white/5 px-3 text-xs font-bold outline-none ring-1 ring-white/10"
+      />
+    </label>
   );
 }
