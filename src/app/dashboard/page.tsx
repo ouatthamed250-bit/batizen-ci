@@ -1,15 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-console.log("🚨🚨🚨 LE FICHIER DASHBOARD A ÉTÉ MIS À JOUR ET CHARGÉ ! 🚨🚨🚨");
 import Link from "next/link";
 import Image from "next/image";
-import { motion, type Variants } from "framer-motion";
-import {
-  HardHat,
-  BrickWall,
-  ChevronRight,
-} from "lucide-react";
+import { motion } from "framer-motion";
+import { HardHat, BrickWall, ChevronRight, Calendar, Bell, CreditCard } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { WeatherWidget } from "@/components/btp/WeatherWidget";
 import { ProgressBar } from "@/components/ui/ProgressBar";
@@ -46,6 +41,7 @@ type Chantier = {
   plan_choisi?: string;
   rdv_date?: string;
   budget?: number;
+  apport_personnel?: number;
   date_soumission?: string;
 };
 
@@ -65,6 +61,12 @@ function formatDateFrancais(d: Date): string {
   return `${JOURS[d.getDay()]} ${d.getDate()} ${MOIS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
+function formatDateCourte(dateStr?: string): string {
+  if (!dateStr) return "—";
+  const date = new Date(dateStr);
+  return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
+
 function statutLabel(s?: string): string {
   switch (s) {
     case "en_cours": return "En cours";
@@ -73,6 +75,8 @@ function statutLabel(s?: string): string {
     case "terminé": return "Terminé";
     case "en_pause": return "En pause";
     case "en pause": return "En pause";
+    case "en_attente": return "En attente";
+    case "en_attente_rdv": return "En attente RDV";
     default: return s || "En cours";
   }
 }
@@ -82,9 +86,33 @@ function formatLocalisation(loc?: Localisation): string {
   return loc.ville || loc.commune || loc.quartier || loc.adresse || "—";
 }
 
+function formatBudget(budget?: number): string {
+  if (!budget) return "—";
+  return new Intl.NumberFormat("fr-FR").format(budget) + " F";
+}
+
 /* ------------------------------------------------------------------ */
 /* Composants                                                         */
 /* ------------------------------------------------------------------ */
+
+function SummaryCard({ icon: Icon, label, value, bgColor = "bg-white/90" }: { 
+  icon: typeof HardHat; 
+  label: string; 
+  value: string | number; 
+  bgColor?: string;
+}) {
+  return (
+    <div className={`rounded-[22px] border border-white/50 ${bgColor} backdrop-blur-sm p-4 flex items-center gap-3`}>
+      <div className="grid size-12 place-items-center rounded-[16px] bg-gradient-to-br from-[#0B5FFF] to-[#0D2B6B] text-white">
+        <Icon size={24} />
+      </div>
+      <div>
+        <p className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider">{label}</p>
+        <p className="text-lg font-black text-[var(--navy)]">{value}</p>
+      </div>
+    </div>
+  );
+}
 
 function SkeletonChantier() {
   return (
@@ -103,6 +131,7 @@ function ChantierCard({ chantier }: { chantier: Chantier; }) {
   const photo = chantier.photo || chantier.image_url;
   const nom = chantier.nom_projet || chantier.nom || "Chantier";
   const pct = Number(chantier.progression ?? chantier.progress ?? 0);
+  const budget = chantier.budget || 0;
 
   return (
     <motion.div 
@@ -121,7 +150,37 @@ function ChantierCard({ chantier }: { chantier: Chantier; }) {
         <p className="mt-0.5 flex items-center gap-1 text-xs text-[var(--muted)]">
           <HardHat size={12} /> {chantier.type || "—"} · {formatLocalisation(chantier.localisation)}
         </p>
-        {chantier.statut === "en_cours" && <div className="mt-3"><ProgressBar value={pct} label="Progression" /></div>}
+        
+        {/* PROGRESSION pour les chantiers en cours */}
+        {chantier.statut === "en_cours" && (
+          <div className="mt-3">
+            <ProgressBar value={pct} label="Progression" />
+          </div>
+        )}
+        
+        {/* INFOS PLAN & RDV pour les chantiers en attente */}
+        {(chantier.statut === "en_attente" || chantier.statut === "en_attente_rdv") && (
+          <div className="mt-3 space-y-1">
+            {chantier.plan_choisi && (
+              <p className="text-xs text-[var(--muted)]">
+                🎯 Plan : <span className="font-bold text-[var(--navy)]">{chantier.plan_choisi}</span>
+              </p>
+            )}
+            {chantier.rdv_date && (
+              <p className="text-xs text-[var(--muted)]">
+                📅 RDV : <span className="font-bold text-[var(--navy)]">{formatDateCourte(chantier.rdv_date)}</span>
+              </p>
+            )}
+          </div>
+        )}
+        
+        {/* DATE FIN pour les chantiers terminés */}
+        {(chantier.statut === "termine" || chantier.statut === "terminé") && chantier.date_fin && (
+          <p className="mt-3 text-xs text-[var(--muted)]">
+            🏁 Terminé le : <span className="font-bold text-[var(--navy)]">{formatDateCourte(chantier.date_fin)}</span>
+          </p>
+        )}
+        
         <div className="mt-4 flex gap-2">
           <Link href={`/chantier/${chantier.id}`} className="flex flex-1 items-center justify-center gap-1.5 rounded-[16px] bg-[linear-gradient(135deg,#0B5FFF,#0D2B6B)] py-2.5 text-sm font-black text-white transition active:scale-95">
             Voir détails <ChevronRight size={16} />
@@ -140,14 +199,22 @@ export default function DashboardClientPage() {
   const { user } = useAuthContext();
   const [loading, setLoading] = useState(true);
   const [mesChantiers, setMesChantiers] = useState<Chantier[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
 
   const nomClient = user?.displayName || user?.email?.split("@")[0] || "Client";
+
+  // Calculer les stats depuis les vrais chantiers
+  const chantiersActifs = mesChantiers.filter(c => c.statut === "en_cours").length;
+  const prochainRdv = mesChantiers
+    .filter(c => (c.statut === "en_attente" || c.statut === "en_attente_rdv") && c.rdv_date)
+    .sort((a, b) => new Date(a.rdv_date!).getTime() - new Date(b.rdv_date!).getTime())[0];
 
   useEffect(() => {
     console.log("🟢 [1] useEffect dashboard démarré. user?.uid =", user?.uid);
     
     if (!user?.uid) {
       console.log("🔴 [2] Pas d'utilisateur connecté, arrêt.");
+      setLoading(false);
       return;
     }
 
@@ -163,10 +230,13 @@ export default function DashboardClientPage() {
         console.log("📦 [6] DONNÉES BRUTES FIREBASE:", data);
 
         if (data) {
-          const liste = Object.keys(data).map(key => ({
-            id: key,
-            ...data[key]
-          }));
+          // Filtrer pour ne garder que les chantiers du client connecté
+          const liste = Object.keys(data)
+            .map(key => ({
+              id: key,
+              ...data[key]
+            }))
+            .filter((c: Chantier) => c.userId === user?.uid && c.statut !== 'simulation_brouillon');
 
           console.log("✅ [8] CHANTIERS LUS DEPUIS FIREBASE:", liste);
           console.log("📊 [9] NOMBRE DE CHANTIERS TROUVÉS:", liste.length);
@@ -178,6 +248,18 @@ export default function DashboardClientPage() {
           setMesChantiers([]);
         }
         setLoading(false);
+      });
+
+      // Charger les notifications du client
+      const notificationsRef = ref(db, `notifications/${user.uid}`);
+      const unsubscribeNotif = onValue(notificationsRef, (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          const notifs = Object.values(data).filter((n: any) => n.lu === false);
+          setNotifications(notifs);
+        } else {
+          setNotifications([]);
+        }
       });
 
       const promosRef = ref(db, 'promotions');
@@ -193,6 +275,7 @@ export default function DashboardClientPage() {
         console.log("🧹 [11] Nettoyage du listener onValue");
         unsubscribe();
         unsubscribePromos();
+        unsubscribeNotif();
       };
     } catch (error) {
       console.error("💥 [12] ERREUR FATALE DANS LE USEEFFECT :", error);
@@ -202,10 +285,13 @@ export default function DashboardClientPage() {
 
   return (
     <div className="relative min-h-screen bg-[var(--bg-dashboard)]">
+      {/* Background avec image et overlay */}
       <div className="absolute inset-0 bg-cover bg-center bg-no-repeat z-0" style={{ backgroundImage: 'url(/images/villa-bg.jpg)' }}></div>
       <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10"></div>
       
-      <main className="relative z-20 flex flex-col gap-3 px-4 py-4 pb-28">
+      {/* Contenu principal avec padding pour scroll correct */}
+      <main className="relative z-20 flex flex-col gap-3 px-4 pt-4 pb-28">
+        {/* Header */}
         <header className="rounded-[22px] border border-white/50 bg-white/90 backdrop-blur-sm">
           <div className="px-4 pt-4 pb-2 sm:px-6">
             <h1 className="text-2xl font-black tracking-[-0.03em] text-[var(--navy)] sm:text-3xl">Bonjour {nomClient}</h1>
@@ -213,6 +299,32 @@ export default function DashboardClientPage() {
             <div className="mt-2"><WeatherWidget title="Météo du jour" /></div>
           </div>
         </header>
+
+        {/* Résumé rapide - 4 cartes */}
+        {!loading && (
+          <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <SummaryCard 
+              icon={HardHat} 
+              label="Chantiers actifs" 
+              value={chantiersActifs} 
+            />
+            <SummaryCard 
+              icon={CreditCard} 
+              label="Dépensé ce mois" 
+              value="0 F" 
+            />
+            <SummaryCard 
+              icon={Calendar} 
+              label="Prochain RDV" 
+              value={prochainRdv ? formatDateCourte(prochainRdv.rdv_date) : "Aucun"} 
+            />
+            <SummaryCard 
+              icon={Bell} 
+              label="Notifications" 
+              value={notifications.length} 
+            />
+          </section>
+        )}
 
         {loading ? (
           <div className="space-y-3">
