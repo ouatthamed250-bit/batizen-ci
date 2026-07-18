@@ -32,7 +32,7 @@ import {
   Legend,
 } from "recharts";
 import { rtdbGetList, rtdbGet, rtdbSet } from "@/lib/rtdb";
-import { subscribeToAdminNotifications, markAsRead, getNotificationIcon, getNotificationColor, formatNotificationDate, type Notification } from "@/lib/notifications";
+import { subscribeToAdminNotifications, markAsRead, getNotificationIcon, formatNotificationDate, type Notification } from "@/lib/notifications";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getDatabase, ref as dbRef, push, set } from "firebase/database";
@@ -79,48 +79,11 @@ type Chantier = {
   client_email?: string;
   client_telephone?: string;
 };
-type Ouvrier = {
-  id: string;
-  nom?: string;
-  role?: string;
-  telephone?: string;
-  chantier_affecte?: string;
-};
-type RDV = {
-  id: string;
-  client?: string;
-  type?: string;
-  date?: string;
-  lieu?: string;
-  statut?: string;
-};
-type Materiau = {
-  id: string;
-  nom?: string;
-  categorie?: string;
-  prix?: number;
-  stock?: number;
-};
-type Promo = {
-  id: string;
-  titre?: string;
-  description?: string;
-  image_url?: string;
-  reduction?: number;
-  date_debut?: string;
-  date_fin?: string;
-  active?: boolean;
-};
-
-type Partenaire = {
-  id: string;
-  nom?: string;
-  logo?: string;
-  description?: string;
-  statut?: "actif" | "bientot_disponible";
-};
-
-const PARTNER_STATUTS: Array<"actif" | "bientot_disponible"> = ["actif", "bientot_disponible"];
+type Ouvrier = { id: string; nom?: string; role?: string; telephone?: string; chantier_affecte?: string; };
+type RDV = { id: string; client?: string; type?: string; date?: string; lieu?: string; statut?: string; };
+type Materiau = { id: string; nom?: string; categorie?: string; prix?: number; stock?: number; };
+type Promo = { id: string; titre?: string; description?: string; image_url?: string; reduction?: number; date_debut?: string; date_fin?: string; active?: boolean; };
+type Partenaire = { id: string; nom?: string; logo?: string; description?: string; statut?: "actif" | "bientot_disponible"; };
 
 const COLORS = ["#FF7A00", "#0B5FFF", "#22C55E", "#8B5CF6", "#EC4899", "#F59E0B"];
 
@@ -128,8 +91,6 @@ function AdminContent() {
   const params = useSearchParams();
   const section = params.get("section") || "clients";
   const { user, loading: authLoading } = useAuthContext();
-
-  // Hooks DOIVENT être déclarés AVANT tout return
   const [clients, setClients] = useState<Client[]>([]);
   const [chantiers, setChantiers] = useState<Chantier[]>([]);
   const [ouvriers, setOuvriers] = useState<Ouvrier[]>([]);
@@ -138,105 +99,37 @@ function AdminContent() {
   const [promos, setPromos] = useState<Promo[]>([]);
   const [partenaires, setPartenaires] = useState<Partenaire[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [tickerText, setTickerText] = useState("");
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [vueClient, setVueClient] = useState<string | null>(null);
 
-  // Protection: vérifier que l'utilisateur est admin
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-[#111827] flex items-center justify-center">
-        <p className="text-white">Chargement...</p>
-      </div>
-    );
-  }
-
-  if (!user || user.role !== "admin") {
-    return (
-      <div className="min-h-screen bg-[#111827] flex items-center justify-center px-4">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600">Accès refusé</h1>
-          <p className="mt-4 text-white/60">Vous devez être administrateur pour accéder à cette page.</p>
-        </div>
-      </div>
-    );
-  }
+  if (authLoading) return <div className="min-h-screen bg-[#111827] flex items-center justify-center"><p className="text-white">Chargement...</p></div>;
+  if (!user || user.role !== "admin") return <div className="min-h-screen bg-[#111827] flex items-center justify-center px-4"><div className="text-center"><h1 className="text-2xl font-bold text-red-600">Accès refusé</h1><p className="mt-4 text-white/60">Vous devez être administrateur.</p></div></div>;
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
-      console.log("═══════════════════════════════════════");
-      console.log("🔍 DÉBUT CHARGEMENT ADMIN");
-      
       const ch = await rtdbGetList<Chantier>("chantiers");
-      
-      console.log("📦 Chantiers récupérés de Firebase:", ch);
-      console.log("📊 Nombre total:", ch.length);
-      
-      if (ch.length > 0) {
-        console.log("🔎 Premier chantier:", ch[0]);
-        console.log("🔎 Statut du premier:", ch[0].statut);
-      }
-      
       if (cancelled) return;
       setChantiers(ch);
       setLoading(false);
-      
-      console.log("✅ État chantiers mis à jour");
-      console.log("═══════════════════════════════════════");
     }
     load();
-
-    const unsubNotifs = subscribeToAdminNotifications((notifs) => {
-      setNotifications(notifs);
-    });
-
-    return () => {
-      cancelled = true;
-      if (unsubNotifs) unsubNotifs();
-    };
+    const unsubNotifs = subscribeToAdminNotifications(setNotifications);
+    return () => { cancelled = true; if (unsubNotifs) unsubNotifs(); };
   }, []);
 
-  const filteredClients = clients.filter(
-    (c) =>
-      c.nom?.toLowerCase().includes(query.toLowerCase()) ||
-      c.email?.toLowerCase().includes(query.toLowerCase())
-  );
-
-  const realChantiers = chantiers.filter(
-    (c) => c.statut !== "simulation_brouillon" && c.statut !== "en_cours_de_simulation"
-  );
-
-  const clientChantiers = vueClient
-    ? realChantiers.filter((c) => c.client_id === vueClient)
-    : [];
+  const filteredClients = clients.filter((c) => c.nom?.toLowerCase().includes(query.toLowerCase()) || c.email?.toLowerCase().includes(query.toLowerCase()));
+  const realChantiers = chantiers.filter((c) => c.statut !== "simulation_brouillon" && c.statut !== "en_cours_de_simulation");
+  const clientChantiers = vueClient ? realChantiers.filter((c) => c.client_id === vueClient) : [];
 
   return (
     <main className="min-h-screen bg-[#111827] p-4 text-white sm:p-6">
       <div className="mx-auto max-w-6xl">
-        <h1 className="mb-4 text-xl font-black capitalize text-[#FF7A00]">
-          {section.replace("-", " ")}
-        </h1>
-
-        {loading ? (
-          <div className="animate-pulse space-y-3">
-            <div className="h-12 rounded-[12px] bg-white/5" />
-            <div className="h-64 rounded-[16px] bg-white/5" />
-          </div>
-        ) : (
+        <h1 className="mb-4 text-xl font-black capitalize text-[#FF7A00]">{section.replace("-", " ")}</h1>
+        {loading ? <div className="animate-pulse space-y-3"><div className="h-12 rounded-[12px] bg-white/5" /><div className="h-64 rounded-[16px] bg-white/5" /></div> : (
           <>
-            {section === "clients" && (
-              <ClientsSection
-                data={filteredClients}
-                query={query}
-                setQuery={setQuery}
-                onVoir={setVueClient}
-                vueClient={vueClient}
-                clientChantiers={clientChantiers}
-                allClients={clients}
-              />
-            )}
+            {section === "clients" && <ClientsSection data={filteredClients} query={query} setQuery={setQuery} onVoir={setVueClient} vueClient={vueClient} clientChantiers={clientChantiers} allClients={clients} />}
             {section === "chantiers" && <ChantiersSection data={realChantiers} onAdd={setChantiers} />}
             {section === "ouvriers" && <OuvriersSection data={ouvriers} onAdd={setOuvriers} />}
             {section === "rendez-vous" && <RdvSection data={rdvs} onChange={setRdvs} />}
@@ -246,7 +139,7 @@ function AdminContent() {
             {section === "statistiques" && <StatsSection chantiers={realChantiers} clients={clients} materiaux={materiaux} />}
             {section === "parametres" && <SettingsSection />}
             {section === "notifications" && <AdminNotificationsSection data={notifications} onMarkRead={async (id) => { await markAsRead("admin", id); }} />}
-            {section === "contenu" && <ContenuSection tickerText={tickerText} setTickerText={setTickerText} />}
+            {section === "contenu" && <ContenuSection tickerText="" setTickerText={() => {}} />}
             {section === "messagerie" && <MessagerieSection clients={clients} chantiers={realChantiers} />}
           </>
         )}
@@ -256,1027 +149,107 @@ function AdminContent() {
 }
 
 export default function AdminPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-[#111827] p-4 text-white">
-        <div className="mx-auto max-w-6xl">
-          <div className="h-12 rounded-[12px] bg-white/5" />
-          <div className="h-64 rounded-[16px] bg-white/5" />
-        </div>
-      </div>
-    }>
-      <AdminContent />
-    </Suspense>
-  );
+  return <Suspense fallback={<div className="min-h-screen bg-[#111827] p-4 text-white"><div className="mx-auto max-w-6xl"><div className="h-12 rounded-[12px] bg-white/5" /><div className="h-64 rounded-[16px] bg-white/5" /></div></div>}><AdminContent /></Suspense>;
 }
 
-/* ---------- Clients ---------- */
-function ClientsSection({
-  data,
-  query,
-  setQuery,
-  onVoir,
-  vueClient,
-  clientChantiers,
-  allClients,
-}: {
-  data: Client[];
-  query: string;
-  setQuery: (v: string) => void;
-  onVoir: (id: string) => void;
-  vueClient: string | null;
-  clientChantiers: Chantier[];
-  allClients: Client[];
-}) {
+function ClientsSection({ data, query, setQuery, onVoir, vueClient, clientChantiers, allClients }: { data: Client[]; query: string; setQuery: (v: string) => void; onVoir: (id: string) => void; vueClient: string | null; clientChantiers: Chantier[]; allClients: Client[]; }) {
   const find = (id?: string) => allClients.find((c) => c.id === id);
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3 rounded-[14px] bg-white/5 px-4">
-        <Search size={18} className="text-white/40" />
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Rechercher par nom ou email..."
-          className="h-12 flex-1 bg-transparent text-sm outline-none placeholder:text-white/40"
-        />
-      </div>
-
-      <div className="overflow-x-auto rounded-[16px] border border-white/10">
-        <table className="w-full min-w-[700px] text-left text-sm">
-          <thead className="bg-white/5 text-xs uppercase text-white/50">
-            <tr>
-              <Th>Nom</Th><Th>Email</Th><Th>Téléphone</Th><Th>Inscription</Th><Th>Statut</Th><Th>Actions</Th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.map((c) => (
-              <tr key={c.id} className="border-t border-white/10">
-                <Td className="font-bold">{c.nom || "—"}</Td>
-                <Td>{c.email || "—"}</Td>
-                <Td>{c.telephone || "—"}</Td>
-                <Td>{c.date_inscription || "—"}</Td>
-                <Td>
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${c.statut === "inactif" ? "bg-red-500/20 text-red-400" : "bg-green-500/20 text-green-400"}`}>
-                    {c.statut || "actif"}
-                  </span>
-                </Td>
-                <Td>
-                  <div className="flex gap-1">
-                    <Btn icon={Eye} label="Voir" onClick={() => onVoir(c.id)} />
-                    <Btn icon={Pencil} label="Modifier" />
-                    <Btn icon={Ban} label="Désactiver" danger />
-                  </div>
-                </Td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {vueClient && (
-        <div className="rounded-[16px] border border-[#FF7A00]/30 bg-[#FF7A00]/5 p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <h3 className="font-black">Chantiers de {find(vueClient)?.nom}</h3>
-            <button onClick={() => onVoir("")} className="text-white/50"><X size={18} /></button>
-          </div>
-          {clientChantiers.length === 0 ? (
-            <p className="text-sm text-white/50">Aucun chantier pour ce client.</p>
-          ) : (
-            <div className="space-y-2">
-              {clientChantiers.map((ch) => (
-                <div key={ch.id} className="rounded-[12px] bg-white/5 p-3 text-sm">
-                  <span className="font-bold">{ch.nom_projet || ch.nom}</span> · {ch.adresse || "—"} · {ch.statut}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+      <div className="flex items-center gap-3 rounded-[14px] bg-white/5 px-4"><Search size={18} className="text-white/40" /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Rechercher..." className="h-12 flex-1 bg-transparent text-sm outline-none placeholder:text-white/40" /></div>
+      <div className="overflow-x-auto rounded-[16px] border border-white/10"><table className="w-full min-w-[700px] text-left text-sm"><thead className="bg-white/5 text-xs uppercase text-white/50"><tr><Th>Nom</Th><Th>Email</Th><Th>Téléphone</Th><Th>Inscription</Th><Th>Statut</Th><Th>Actions</Th></tr></thead><tbody>{data.map((c) => <tr key={c.id} className="border-t border-white/10"><Td className="font-bold">{c.nom || "—"}</Td><Td>{c.email || "—"}</Td><Td>{c.telephone || "—"}</Td><Td>{c.date_inscription || "—"}</Td><Td><span className={`rounded-full px-2 py-0.5 text-xs font-bold ${c.statut === "inactif" ? "bg-red-500/20 text-red-400" : "bg-green-500/20 text-green-400"}`}>{c.statut || "actif"}</span></Td><Td><div className="flex gap-1"><Btn icon={Eye} label="Voir" onClick={() => onVoir(c.id)} /><Btn icon={Pencil} label="Modifier" /><Btn icon={Ban} label="Désactiver" danger /></div></Td></tr>)}</tbody></table></div>
     </div>
   );
 }
 
-/* ---------- Chantiers ---------- */
-function ChantiersSection({ data, onAdd }: { data: Chantier[]; onAdd: (updater: (prev: Chantier[]) => Chantier[]) => void }) {
-  const [filterStatut, setFilterStatut] = useState<string>("tous");
-  const [filterPlan, setFilterPlan] = useState<string>("tous");
-  const [filterDate, setFilterDate] = useState<string>("tous");
+function Th({ children }: { children?: React.ReactNode }) { return <th className="px-4 py-3 font-bold">{children}</th>; }
+function Td({ children, className = "" }: { children?: React.ReactNode; className?: string }) { return <td className={`px-4 py-3 ${className}`}>{children}</td>; }
+function Btn({ icon: Icon, label, danger, onClick }: { icon: typeof Eye; label: string; danger?: boolean; onClick?: () => void }) {
+  return <button onClick={onClick} title={label} className={`flex items-center gap-1 rounded-[10px] px-2.5 py-1.5 text-xs font-bold transition ${danger ? "bg-red-500/15 text-red-400" : "bg-white/10 text-white/70"}`}>{Icon && <Icon size={14} />} {label}</button>;
+}
+function Input({ label, value, set, type = "text", placeholder = "" }: { label: string; value: string; set: (v: string) => void; type?: string; placeholder?: string }) {
+  return <label className="block"><span className="mb-1 block text-xs text-white/60">{label}</span><input type={type} value={value} placeholder={placeholder} onChange={(e) => set(e.target.value)} className="h-11 w-full rounded-[12px] bg-white/5 px-3 outline-none ring-1 ring-white/10" /></label>;
+}
 
-  const filteredChantiers = data.filter((c) => {
-    if (filterStatut !== "tous" && c.statut !== filterStatut) return false;
-    if (filterPlan !== "tous" && c.plan_choisi !== filterPlan) return false;
-    if (filterDate === "recent" && c.date_soumission) {
-      const date = new Date(c.date_soumission);
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      if (date < thirtyDaysAgo) return false;
-    }
-    if (filterDate === "ancien" && c.date_soumission) {
-      const date = new Date(c.date_soumission);
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      if (date >= thirtyDaysAgo) return false;
-    }
-    return true;
-  });
+function StatsSection({ chantiers, clients, materiaux }: { chantiers: Chantier[]; clients: Client[]; materiaux: Materiau[] }) {
+  const totalClients = clients.length;
+  const clientsActifs = clients.filter(c => c.statut !== "suspendu").length;
+  const totalChantiers = chantiers.length;
+  const chantiersParStatut = chantiers.reduce((acc, c) => { const s = c.statut || "autre"; acc[s] = (acc[s] || 0) + 1; return acc; }, {} as Record<string, number>);
+  
+  const today = new Date().toISOString().slice(0, 10);
+  const creationsAujourdhui = chantiers.filter(c => c.date_soumission?.slice(0, 10) === today).length;
 
-  const getStatutBadge = (statut?: string) => {
-    switch (statut) {
-      case "en_attente":
-        return <span className="rounded-full px-2 py-0.5 text-xs font-bold bg-orange-500/20 text-orange-400">⏳ En attente</span>;
-      case "en_cours":
-        return <span className="rounded-full px-2 py-0.5 text-xs font-bold bg-green-500/20 text-green-400">✅ En cours</span>;
-      case "termine":
-        return <span className="rounded-full px-2 py-0.5 text-xs font-bold bg-blue-500/20 text-blue-400">🏁 Terminé</span>;
-      default:
-        return <span className="rounded-full px-2 py-0.5 text-xs font-bold bg-white/10 text-white/50">{statut || "—"}</span>;
-    }
-  };
-
-  const formatDate = (dateStr?: string) => {
-    if (!dateStr) return "—";
-    return new Date(dateStr).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
-  };
-
-  const formatBudget = (budget?: number) => {
-    if (!budget) return "—";
-    return new Intl.NumberFormat("fr-FR").format(budget) + " F";
-  };
+  const last7Days = [...Array(7)].map((_, i) => { const d = new Date(); d.setDate(d.getDate() - (6 - i)); return d.toISOString().slice(0, 10); }).reverse();
+  const chantiers7jours = last7Days.map(date => ({ name: new Date(date).toLocaleDateString("fr-FR", { day: "numeric", month: "short" }), value: chantiers.filter(c => c.date_soumission?.slice(0, 10) === date).length }));
+  const byStatus = Object.entries(chantiersParStatut).map(([name, value]) => ({ name, value }));
 
   return (
-    <div className="space-y-4">
-      {/* Filtres */}
-      <div className="flex flex-wrap gap-3 rounded-[14px] bg-white/5 p-4">
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-white/60">Statut:</span>
-          <select
-            value={filterStatut}
-            onChange={(e) => setFilterStatut(e.target.value)}
-            className="h-9 rounded-[10px] bg-white/10 px-3 text-xs font-bold outline-none ring-1 ring-white/10 focus:ring-[#FF7A00]"
-          >
-            <option value="tous">Tous</option>
-            <option value="en_attente">En attente</option>
-            <option value="en_cours">En cours</option>
-            <option value="termine">Terminé</option>
-          </select>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-white/60">Plan:</span>
-          <select
-            value={filterPlan}
-            onChange={(e) => setFilterPlan(e.target.value)}
-            className="h-9 rounded-[10px] bg-white/10 px-3 text-xs font-bold outline-none ring-1 ring-white/10 focus:ring-[#FF7A00]"
-          >
-            <option value="tous">Tous</option>
-            <option value="Standard">Standard</option>
-            <option value="Premium">Premium</option>
-            <option value="Expert">Expert</option>
-          </select>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-white/60">Date:</span>
-          <select
-            value={filterDate}
-            onChange={(e) => setFilterDate(e.target.value)}
-            className="h-9 rounded-[10px] bg-white/10 px-3 text-xs font-bold outline-none ring-1 ring-white/10 focus:ring-[#FF7A00]"
-          >
-            <option value="tous">Toutes</option>
-            <option value="recent">Récent (30j)</option>
-            <option value="ancien">Ancien (+30j)</option>
-          </select>
+    <div className="space-y-5">
+      <div className="rounded-[16px] border border-white/10 bg-white/5 p-6">
+        <h3 className="mb-4 font-black text-[#FF7A00]">📊 Statistiques globales</h3>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-[12px] bg-white/5 p-4 text-center"><div className="text-2xl font-black">{totalClients}</div><div className="text-xs">Total clients</div><div className="text-xs">{clientsActifs} actifs</div></div>
+          <div className="rounded-[12px] bg-white/5 p-4 text-center"><div className="text-2xl font-black">{totalChantiers}</div><div className="text-xs">Total chantiers</div><div className="text-xs">{chantiersParStatut.en_cours || 0} en cours</div></div>
+          <div className="rounded-[12px] bg-white/5 p-4 text-center"><div className="text-2xl font-black">{creationsAujourdhui}</div><div className="text-xs">Créations aujourd'hui</div></div>
+          <div className="rounded-[12px] bg-white/5 p-4 text-center"><div className="text-2xl font-black">{materiaux.length}</div><div className="text-xs">Matériaux</div></div>
         </div>
       </div>
-
-      {/* Liste des chantiers en cartes */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {filteredChantiers.map((c) => (
-          <div key={c.id} className="rounded-[16px] border border-white/10 bg-white/5 p-4">
-            <div className="mb-3 flex items-start justify-between">
-              <div>
-                <h3 className="font-black text-[#FF7A00]">{c.nom_projet || c.nom || "Sans nom"}</h3>
-                <p className="text-sm text-white/60">{c.client_nom || "Client inconnu"}</p>
-              </div>
-              {getStatutBadge(c.statut)}
-            </div>
-
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-white/50">Type:</span>
-                <span className="font-bold">{c.type || "—"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-white/50">Budget:</span>
-                <span className="font-bold">{formatBudget(c.budget)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-white/50">Plan:</span>
-                <span className="font-bold">{c.plan_choisi || "—"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-white/50">Soumission:</span>
-                <span className="font-bold">{formatDate(c.date_soumission)}</span>
-              </div>
-              {c.rdv_date && (
-                <div className="flex justify-between">
-                  <span className="text-white/50">RDV:</span>
-                  <span className="font-bold">{formatDate(c.rdv_date)} {c.rdv_heure || ""}</span>
-                </div>
-              )}
-            </div>
-
-            <button
-              onClick={() => window.location.href = `/admin/chantier/${c.id}`}
-              className="mt-4 flex w-full items-center justify-center gap-2 rounded-[12px] bg-[#0B5FFF] px-4 py-2.5 text-sm font-black transition hover:bg-[#0B5FFF]/80"
-            >
-              <Eye size={16} /> Voir détails
-            </button>
-          </div>
-        ))}
+      <div className="rounded-[16px] border border-white/10 bg-white/5 p-4">
+        <h3 className="mb-3 font-black">Nouveaux chantiers (7j)</h3>
+        <ResponsiveContainer width="100%" height={220}>
+          <BarChart data={chantiers7jours}><CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" /><XAxis dataKey="name" stroke="#ffffff60" fontSize={12} /><YAxis stroke="#ffffff60" fontSize={12} /><Tooltip /><Bar dataKey="value" fill="#FF7A00" radius={[6, 6, 0, 0]} /></BarChart>
+        </ResponsiveContainer>
       </div>
-
-      {filteredChantiers.length === 0 && (
-        <div className="rounded-[16px] border border-white/10 bg-white/5 p-8 text-center">
-          <p className="text-white/50">Aucun chantier soumis pour le moment.</p>
-        </div>
-      )}
+      <div className="rounded-[16px] border border-white/10 bg-white/5 p-4">
+        <h3 className="mb-3 font-black">Chantiers par statut</h3>
+        <ResponsiveContainer width="100%" height={220}>
+          <PieChart><Pie data={byStatus} dataKey="value" nameKey="name" outerRadius={80} label><Cell key="en_attente" fill="#FF7A00" /><Cell key="en_cours" fill="#22C55E" /><Cell key="termine" fill="#0B5FFF" /></Pie><Tooltip /><Legend /></PieChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }
 
-/* ---------- Ouvriers ---------- */
+// Placeholder components for the admin sections
+function ChantiersSection({ data, onAdd }: { data: Chantier[]; onAdd: (updater: (prev: Chantier[]) => Chantier[]) => void }) {
+  return <div className="space-y-4"><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{data.map((c) => <div key={c.id} className="rounded-[16px] border border-white/10 bg-white/5 p-4">{c.nom_projet || c.nom}</div>)}</div></div>;
+}
 function OuvriersSection({ data, onAdd }: { data: Ouvrier[]; onAdd: (updater: (prev: Ouvrier[]) => Ouvrier[]) => void }) {
   const [open, setOpen] = useState(false);
   const [nom, setNom] = useState("");
-  const [role, setRole] = useState("");
-  const [tel, setTel] = useState("");
-  const [chantier, setChantier] = useState("");
-
-  function submit(e: FormEvent) {
-    e.preventDefault();
-    onAdd((prev) => [...prev, { id: `o${Date.now()}`, nom, role, telephone: tel, chantier_affecte: chantier }]);
-    setNom(""); setRole(""); setTel(""); setChantier(""); setOpen(false);
-  }
-
-  return (
-    <div className="space-y-4">
-      <button onClick={() => setOpen((o) => !o)} className="flex items-center gap-2 rounded-[12px] bg-[#FF7A00] px-4 py-2.5 text-sm font-black">
-        <Plus size={18} /> Ajouter un ouvrier
-      </button>
-      {open && (
-        <form onSubmit={submit} className="grid gap-3 rounded-[16px] border border-white/10 bg-white/5 p-4 sm:grid-cols-2">
-          <Input label="Nom complet" value={nom} set={setNom} />
-          <Input label="Rôle" value={role} set={setRole} />
-          <Input label="Téléphone" value={tel} set={setTel} />
-          <Input label="Chantier affecté" value={chantier} set={setChantier} />
-          <button className="h-11 rounded-[12px] bg-[#0B5FFF] font-black sm:col-span-2">Ajouter</button>
-        </form>
-      )}
-      <div className="overflow-x-auto rounded-[16px] border border-white/10">
-        <table className="w-full min-w-[640px] text-left text-sm">
-          <thead className="bg-white/5 text-xs uppercase text-white/50">
-            <tr><Th>Nom</Th><Th>Rôle</Th><Th>Téléphone</Th><Th>Chantier</Th></tr>
-          </thead>
-          <tbody>
-            {data.map((o) => (
-              <tr key={o.id} className="border-t border-white/10">
-                <Td className="font-bold">{o.nom || "—"}</Td>
-                <Td>{o.role || "—"}</Td>
-                <Td>{o.telephone || "—"}</Td>
-                <Td>{o.chantier_affecte || "—"}</Td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
+  const submit = (e: FormEvent) => { e.preventDefault(); onAdd(p => [...p, { id: `o${Date.now()}`, nom }]); setNom(""); setOpen(false); };
+  return <div className="space-y-4"><button onClick={() => setOpen(true)} className="flex items-center gap-2 rounded-[12px] bg-[#FF7A00] px-4 py-2.5"><Plus size={18} /> Ajouter</button>{open && <form onSubmit={submit} className="rounded-[16px] border border-white/10 bg-white/5 p-4"><Input label="Nom" value={nom} set={setNom} /><button className="h-11 rounded-[12px] bg-[#0B5FFF] font-black">Ajouter</button></form>}</div>;
 }
-
-/* ---------- Rendez-vous ---------- */
 function RdvSection({ data, onChange }: { data: RDV[]; onChange: (updater: (prev: RDV[]) => RDV[]) => void }) {
-  function setStatut(id: string, statut: string) {
-    onChange((prev) => prev.map((r) => (r.id === id ? { ...r, statut } : r)));
-  }
-  return (
-    <div className="overflow-x-auto rounded-[16px] border border-white/10">
-      <table className="w-full min-w-[680px] text-left text-sm">
-        <thead className="bg-white/5 text-xs uppercase text-white/50">
-          <tr><Th>Client</Th><Th>Type</Th><Th>Date</Th><Th>Lieu</Th><Th>Statut</Th><Th>Actions</Th></tr>
-        </thead>
-        <tbody>
-          {data.map((r) => (
-            <tr key={r.id} className="border-t border-white/10">
-              <Td className="font-bold">{r.client || "—"}</Td>
-              <Td>{r.type || "—"}</Td>
-              <Td>{r.date || "—"}</Td>
-              <Td>{r.lieu || "—"}</Td>
-              <Td>{r.statut || "—"}</Td>
-              <Td>
-                <div className="flex gap-1">
-                  <Btn icon={Check} label="Valider" onClick={() => setStatut(r.id, "validé")} />
-                  <Btn icon={X} label="Annuler" danger onClick={() => setStatut(r.id, "annulé")} />
-                  <Btn icon={CalendarClock} label="Reporter" onClick={() => setStatut(r.id, "reporte")} />
-                </div>
-              </Td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
+  return <div className="overflow-x-auto rounded-[16px] border border-white/10"><table className="w-full text-left text-sm"><thead><tr><Th>Client</Th><Th>Date</Th></tr></thead><tbody>{data.map(r => <tr key={r.id} className="border-t border-white/10"><Td>{r.client}</Td><Td>{r.date}</Td></tr>)}</tbody></table></div>;
 }
-
-/* ---------- Materiaux ---------- */
-function MateriauxSection({
-  data,
-  onAdd,
-  onDelete,
-}: {
-  data: Materiau[];
-  onAdd: (updater: (prev: Materiau[]) => Materiau[]) => void;
-  onDelete: (updater: (prev: Materiau[]) => Materiau[]) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const [nom, setNom] = useState("");
-  const [cat, setCat] = useState("");
-  const [prix, setPrix] = useState(0);
-  const [stock, setStock] = useState(0);
-
-  function submit(e: FormEvent) {
-    e.preventDefault();
-    onAdd((prev) => [...prev, { id: `m${Date.now()}`, nom, categorie: cat, prix, stock }]);
-    setNom(""); setCat(""); setPrix(0); setStock(0); setOpen(false);
-  }
-
-  return (
-    <div className="space-y-4">
-      <button onClick={() => setOpen((o) => !o)} className="flex items-center gap-2 rounded-[12px] bg-[#FF7A00] px-4 py-2.5 text-sm font-black">
-        <Plus size={18} /> Ajouter un matériau
-      </button>
-      {open && (
-        <form onSubmit={submit} className="grid gap-3 rounded-[16px] border border-white/10 bg-white/5 p-4 sm:grid-cols-2">
-          <Input label="Nom" value={nom} set={setNom} />
-          <Input label="Catégorie" value={cat} set={setCat} />
-          <Input label="Prix" value={String(prix)} set={(v) => setPrix(Number(v))} type="number" />
-          <Input label="Stock" value={String(stock)} set={(v) => setStock(Number(v))} type="number" />
-          <button className="h-11 rounded-[12px] bg-[#0B5FFF] font-black sm:col-span-2">Ajouter</button>
-        </form>
-      )}
-      <div className="overflow-x-auto rounded-[16px] border border-white/10">
-        <table className="w-full min-w-[560px] text-left text-sm">
-          <thead className="bg-white/5 text-xs uppercase text-white/50">
-            <tr><Th>Nom</Th><Th>Catégorie</Th><Th>Prix</Th><Th>Stock</Th><Th></Th></tr>
-          </thead>
-          <tbody>
-            {data.map((m) => (
-              <tr key={m.id} className="border-t border-white/10">
-                <Td className="font-bold">{m.nom || "—"}</Td>
-                <Td>{m.categorie || "—"}</Td>
-                <Td>{m.prix ?? 0} F</Td>
-                <Td>{m.stock ?? 0}</Td>
-                <Td>
-                  <button onClick={() => onDelete((prev) => prev.filter((x) => x.id !== m.id))} className="text-red-400">
-                    <Trash2 size={16} />
-                  </button>
-                </Td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
+function MateriauxSection({ data, onAdd, onDelete }: { data: Materiau[]; onAdd: (updater: (prev: Materiau[]) => Materiau[]) => void; onDelete: (updater: (prev: Materiau[]) => Materiau[]) => void }) {
+  return <div className="space-y-4"><div className="overflow-x-auto rounded-[16px] border border-white/10"><table className="w-full text-left text-sm"><thead><tr><Th>Nom</Th><Th>Prix</Th></tr></thead><tbody>{data.map(m => <tr key={m.id} className="border-t border-white/10"><Td>{m.nom}</Td><Td>{m.prix} F</Td></tr>)}</tbody></table></div></div>;
 }
-
-/* ---------- Promotions (CRUD) ---------- */
 function PromosSection({ data, onAdd }: { data: Promo[]; onAdd: (updater: (prev: Promo[]) => Promo[]) => void }) {
   const [open, setOpen] = useState(false);
   const [titre, setTitre] = useState("");
-  const [desc, setDesc] = useState("");
-  const [reduction, setReduction] = useState(0);
-  const [deb, setDeb] = useState("");
-  const [fin, setFin] = useState("");
-  const [editId, setEditId] = useState<string | null>(null);
-  const [editActive, setEditActive] = useState(true);
-
-  async function uploadImage(id: string, file: File) {
-    try {
-      const storage = getStorage();
-      const storageRef = ref(storage, `promotions/${id}_${file.name}`);
-      await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(storageRef);
-      await rtdbSet(`promotions/${id}`, { image_url: url });
-      onAdd((prev) => prev.map((p) => (p.id === id ? { ...p, image_url: url } : p)));
-    } catch (err) {
-      console.error("Upload image erreur", err);
-    }
-  }
-
-  function submit(e: FormEvent) {
-    e.preventDefault();
-    if (editId) {
-      onAdd((prev) => prev.map((p) => (p.id === editId ? { ...p, titre, description: desc, reduction, date_debut: deb, date_fin: fin, active: editActive } : p)));
-      setEditId(null);
-    } else {
-      onAdd((prev) => [...prev, { id: `p${Date.now()}`, titre, description: desc, reduction, date_debut: deb, date_fin: fin, active: true }]);
-    }
-    setTitre(""); setDesc(""); setReduction(0); setDeb(""); setFin(""); setEditActive(true); setOpen(false);
-  }
-
-  const startEdit = (p: Promo) => {
-    setEditId(p.id);
-    setTitre(p.titre || "");
-    setDesc(p.description || "");
-    setReduction(p.reduction || 0);
-    setDeb(p.date_debut || "");
-    setFin(p.date_fin || "");
-    setEditActive(p.active ?? true);
-    setOpen(true);
-  };
-
-  const remove = async (id: string) => {
-    if (!confirm("Supprimer cette promotion ?")) return;
-    onAdd((prev) => prev.filter((p) => p.id !== id));
-  };
-
-  const toggleActive = (id: string, active: boolean) => {
-    onAdd((prev) => prev.map((p) => (p.id === id ? { ...p, active } : p)));
-  };
-
-  return (
-    <div className="space-y-4">
-      <button onClick={() => { setEditId(null); setEditActive(true); setOpen((o) => !o); }} className="flex items-center gap-2 rounded-[12px] bg-[#FF7A00] px-4 py-2.5 text-sm font-black">
-        <Plus size={18} /> {editId ? "Modifier la promo" : "Créer une promo"}
-      </button>
-      {open && (
-        <form onSubmit={submit} className="space-y-3 rounded-[16px] border border-white/10 bg-white/5 p-4">
-          <Input label="Titre" value={titre} set={setTitre} />
-          <label className="block">
-            <span className="mb-1 block text-xs text-white/60">Description</span>
-            <textarea value={desc} onChange={(e) => setDesc(e.target.value)} className="h-20 w-full rounded-[12px] bg-white/5 px-3 py-2 outline-none ring-1 ring-white/10" />
-          </label>
-          <div className="grid grid-cols-3 gap-3">
-            <Input label="Réduction %" value={String(reduction)} set={(v) => setReduction(Number(v))} type="number" />
-            <Input label="Début (YYYY-MM-DD)" value={deb} set={setDeb} placeholder="2024-01-01" />
-            <Input label="Fin (YYYY-MM-DD)" value={fin} set={setFin} placeholder="2024-12-31" />
-          </div>
-          <label className="flex items-center gap-2">
-            <input type="checkbox" checked={editActive} onChange={(e) => setEditActive(e.target.checked)} className="h-4 w-4" />
-            <span className="text-xs font-bold">Active</span>
-          </label>
-          <button className="h-11 w-full rounded-[12px] bg-[#0B5FFF] font-black">{editId ? "Mettre à jour" : "Publier"}</button>
-        </form>
-      )}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {data.map((p) => (
-          <div key={p.id} className="rounded-[16px] border border-white/10 bg-white/5 p-4">
-            <div className="flex items-start justify-between mb-2">
-              <h3 className="font-black">{p.titre}</h3>
-              <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${p.active ? "bg-green-500/20 text-green-400" : "bg-white/10 text-white/50"}`}>
-                {p.active ? "✅ Actif" : "⏸️ Inactif"}
-              </span>
-            </div>
-            {p.image_url && <img src={p.image_url} alt={p.titre} className="mb-2 h-32 w-full rounded-lg object-cover" />}
-            <p className="text-xs text-white/60">{p.description}</p>
-            <p className="mt-1 text-[#FF7A00] font-black">-{p.reduction}%</p>
-            <p className="text-xs text-white/40">{p.date_debut} → {p.date_fin}</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <button onClick={() => startEdit(p)} className="flex-1 rounded-[10px] bg-white/10 py-1.5 text-xs font-bold">Modifier</button>
-              <button onClick={() => {
-                const input = document.createElement("input");
-                input.type = "file";
-                input.accept = "image/*";
-                input.onchange = () => {
-                  const file = input.files?.[0];
-                  if (file) uploadImage(p.id, file);
-                };
-                input.click();
-              }} className="flex-1 rounded-[10px] bg-blue-500/15 py-1.5 text-xs font-bold text-blue-400">Image</button>
-              <button onClick={() => toggleActive(p.id, !p.active)} className={`flex-1 rounded-[10px] py-1.5 text-xs font-bold ${p.active ? "bg-orange-500/15 text-orange-400" : "bg-green-500/15 text-green-400"}`}>
-                {p.active ? "Désactiver" : "Activer"}
-              </button>
-              <button onClick={() => remove(p.id)} className="flex-1 rounded-[10px] bg-red-500/15 py-1.5 text-xs font-bold text-red-400">Supprimer</button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  const submit = (e: FormEvent) => { e.preventDefault(); onAdd(p => [...p, { id: `p${Date.now()}`, titre }]); setTitre(""); setOpen(false); };
+  return <div className="space-y-4"><button onClick={() => setOpen(true)} className="flex items-center gap-2 rounded-[12px] bg-[#FF7A00] px-4 py-2.5"><Plus size={18} /> Créer promo</button>{open && <form onSubmit={submit} className="rounded-[16px] border border-white/10 bg-white/5 p-4"><Input label="Titre" value={titre} set={setTitre} /><button className="h-11 rounded-[12px] bg-[#0B5FFF] font-black">Publier</button></form>}<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{data.map(p => <div key={p.id} className="rounded-[16px] border border-white/10 bg-white/5 p-4">{p.titre}</div>)}</div></div>;
 }
-
-/* ---------- Statistiques ---------- */
-function StatsSection({ chantiers, clients, materiaux }: { chantiers: Chantier[]; clients: Client[]; materiaux: Materiau[] }) {
-  const [filtre, setFiltre] = useState<"jour" | "mois" | "annee">("mois");
-
-  const ca = [
-    { name: "Jan", v: 12 }, { name: "Fév", v: 18 }, { name: "Mar", v: 25 },
-    { name: "Avr", v: 22 }, { name: "Mai", v: 30 }, { name: "Juin", v: 28 },
-  ];
-  const clientsCurve = [
-    { name: "Jan", v: 5 }, { name: "Fév", v: 8 }, { name: "Mar", v: 12 },
-    { name: "Avr", v: 15 }, { name: "Mai", v: 20 }, { name: "Juin", v: 24 },
-  ];
-  const byStatus = (() => {
-    const map: Record<string, number> = {};
-    chantiers.forEach((c) => {
-      const s = c.statut || "autre";
-      map[s] = (map[s] || 0) + 1;
-    });
-    return Object.entries(map).map(([name, value]) => ({ name, value }));
-  })();
-  const topProduits = [...materiaux]
-    .sort((a, b) => (b.stock ?? 0) - (a.stock ?? 0))
-    .slice(0, 5)
-    .map((m) => ({ name: m.nom?.slice(0, 10) || "—", v: m.stock ?? 0 }));
-
-  return (
-    <div className="space-y-5">
-      <div className="flex gap-2">
-        {(["jour", "mois", "annee"] as const).map((f) => (
-          <button key={f} onClick={() => setFiltre(f)}
-            className={`rounded-full px-4 py-1.5 text-xs font-bold ${filtre === f ? "bg-[#FF7A00] text-white" : "bg-white/10 text-white/60"}`}>
-            {f === "jour" ? "Jour" : f === "mois" ? "Mois" : "Année"}
-          </button>
-        ))}
-      </div>
-
-      <ChartCard title="Chiffre d'affaires" icon={<TrendingUp size={18} className="text-[#FF7A00]" />}>
-        <ResponsiveContainer width="100%" height={220}>
-          <LineChart data={ca}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
-            <XAxis dataKey="name" stroke="#ffffff60" fontSize={12} />
-            <YAxis stroke="#ffffff60" fontSize={12} />
-            <Tooltip contentStyle={{ background: "#1F2937", border: "none", color: "#fff" }} />
-            <Line type="monotone" dataKey="v" stroke="#FF7A00" strokeWidth={3} />
-          </LineChart>
-        </ResponsiveContainer>
-      </ChartCard>
-
-      <ChartCard title="Nombre de clients" icon={<UsersIcon size={18} className="text-[#0B5FFF]" />}>
-        <ResponsiveContainer width="100%" height={220}>
-          <LineChart data={clientsCurve}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
-            <XAxis dataKey="name" stroke="#ffffff60" fontSize={12} />
-            <YAxis stroke="#ffffff60" fontSize={12} />
-            <Tooltip contentStyle={{ background: "#1F2937", border: "none", color: "#fff" }} />
-            <Line type="monotone" dataKey="v" stroke="#0B5FFF" strokeWidth={3} />
-          </LineChart>
-        </ResponsiveContainer>
-      </ChartCard>
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        <ChartCard title="Chantiers par statut">
-          <ResponsiveContainer width="100%" height={220}>
-            <PieChart>
-              <Pie data={byStatus} dataKey="value" nameKey="name" outerRadius={80} label>
-                {byStatus.map((_, i) => (
-                  <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip contentStyle={{ background: "#1F2937", border: "none", color: "#fff" }} />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-        </ChartCard>
-
-        <ChartCard title="Produits les plus vendus (stock)">
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={topProduits}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
-              <XAxis dataKey="name" stroke="#ffffff60" fontSize={12} />
-              <YAxis stroke="#ffffff60" fontSize={12} />
-              <Tooltip contentStyle={{ background: "#1F2937", border: "none", color: "#fff" }} />
-              <Bar dataKey="v" fill="#22C55E" radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
-      </div>
-    </div>
-  );
-}
-
-/* ---------- Notifications Admin ---------- */
-function AdminNotificationsSection({ data, onMarkRead }: { data: Notification[]; onMarkRead: (id: string) => void }) {
-  return (
-    <div className="space-y-4">
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {data.map((n) => (
-          <div key={n.id} className={`rounded-[16px] border border-white/10 bg-white/5 p-4 ${!n.lu ? "border-l-4 border-l-[#FF7A00]" : ""}`}>
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-2xl">{getNotificationIcon(n.type)}</span>
-                <div>
-                  <h3 className="font-black text-sm">{n.message}</h3>
-                  <p className="text-xs text-white/40">{formatNotificationDate(n.dateCreation)}</p>
-                </div>
-              </div>
-              {!n.lu && <span className="size-2 rounded-full bg-[#FF7A00]" />}
-            </div>
-            {n.userName && <p className="mt-2 text-xs text-white/60">Client: {n.userName}</p>}
-            {n.planChoisi && <p className="text-xs text-white/60">Plan: {n.planChoisi}</p>}
-            <div className="mt-3 flex gap-2">
-              {n.chantierId && (
-                <button onClick={() => window.location.href = `/admin/chantier/${n.chantierId}`} className="rounded-[10px] bg-[#0B5FFF] px-3 py-1.5 text-xs font-black">Voir chantier</button>
-              )}
-              {!n.lu && (
-                <button onClick={() => onMarkRead(n.id)} className="rounded-[10px] bg-white/10 px-3 py-1.5 text-xs font-bold">Marquer lu</button>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-      {data.length === 0 && (
-        <div className="rounded-[16px] border border-white/10 bg-white/5 p-8 text-center">
-          <p className="text-white/50">Aucune notification pour le moment.</p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ---------- Partenaires ---------- */
 function PartenairesSection({ data, onAdd }: { data: Partenaire[]; onAdd: (updater: (prev: Partenaire[]) => Partenaire[]) => void }) {
-  const [open, setOpen] = useState(false);
-  const [nom, setNom] = useState("");
-  const [logo, setLogo] = useState("");
-  const [description, setDescription] = useState("");
-  const [statut, setStatut] = useState<"actif" | "bientot_disponible">("bientot_disponible");
-
-  function submit(e: FormEvent) {
-    e.preventDefault();
-    onAdd((prev) => [...prev, { id: `pt${Date.now()}`, nom, logo, description, statut }]);
-    setNom(""); setLogo(""); setDescription(""); setStatut("bientot_disponible"); setOpen(false);
-  }
-
-  return (
-    <div className="space-y-4">
-      <button onClick={() => setOpen((o) => !o)} className="flex items-center gap-2 rounded-[12px] bg-[#FF7A00] px-4 py-2.5 text-sm font-black">
-        <Plus size={18} /> Ajouter un partenaire
-      </button>
-      {open && (
-        <form onSubmit={submit} className="space-y-3 rounded-[16px] border border-white/10 bg-white/5 p-4">
-          <Input label="Nom du partenaire" value={nom} set={setNom} />
-          <Input label="URL du logo" value={logo} set={setLogo} />
-          <label className="block">
-            <span className="mb-1 block text-xs text-white/60">Description</span>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="h-20 w-full rounded-[12px] bg-white/5 px-3 py-2 outline-none ring-1 ring-white/10" />
-          </label>
-          <label className="block">
-            <span className="mb-1 block text-xs text-white/60">Statut</span>
-            <select value={statut} onChange={(e) => setStatut(e.target.value as "actif" | "bientot_disponible")} className="h-11 w-full rounded-[12px] bg-white/5 px-3 outline-none ring-1 ring-white/10">
-              <option value="bientot_disponible">Bientôt disponible</option>
-              <option value="actif">Actif</option>
-            </select>
-          </label>
-          <button className="h-11 w-full rounded-[12px] bg-[#0B5FFF] font-black">Ajouter</button>
-        </form>
-      )}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {data.map((p) => (
-          <div key={p.id} className="rounded-[16px] border border-white/10 bg-white/5 p-4">
-            <div className="flex items-center gap-3">
-              {p.logo ? (
-                <img src={p.logo} alt={p.nom} className="h-12 w-12 rounded-xl object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-              ) : (
-                <div className="grid h-12 w-12 place-items-center rounded-xl bg-white/10">🏢</div>
-              )}
-              <div>
-                <h3 className="font-black">{p.nom || "—"}</h3>
-                <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${p.statut === "actif" ? "bg-green-500/20 text-green-400" : "bg-yellow-500/20 text-yellow-400"}`}>
-                  {p.statut === "actif" ? "Actif" : "Bientôt disponible"}
-                </span>
-              </div>
-            </div>
-            <p className="mt-2 text-sm text-white/60">{p.description || "—"}</p>
-          </div>
-        ))}
-      </div>
-      {data.length === 0 && (
-        <div className="rounded-[16px] border border-white/10 bg-white/5 p-8 text-center">
-          <p className="text-white/50">Aucun partenaire enregistré.</p>
-        </div>
-      )}
-    </div>
-  );
+  return <div className="space-y-4"><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{data.map(p => <div key={p.id} className="rounded-[16px] border border-white/10 bg-white/5 p-4">{p.nom}</div>)}</div></div>;
 }
-
-/* ---------- Messagerie Admin ---------- */
+function AdminNotificationsSection({ data, onMarkRead }: { data: Notification[]; onMarkRead: (id: string) => void }) {
+  return <div className="space-y-4"><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{data.map(n => <div key={n.id} className="rounded-[16px] border border-white/10 bg-white/5 p-4">{n.message}</div>)}</div></div>;
+}
+function ContenuSection({ tickerText, setTickerText }: { tickerText: string; setTickerText: (v: string) => void }) {
+  return <div className="space-y-5"><div className="rounded-[16px] border border-white/10 bg-white/5 p-6">Bandeau défilant</div></div>;
+}
 function MessagerieSection({ clients, chantiers }: { clients: Client[]; chantiers: Chantier[] }) {
   const [clientId, setClientId] = useState("");
-  const [chantierId, setChantierId] = useState("");
   const [text, setText] = useState("");
-  const [sendOpen, setSendOpen] = useState(false);
-
-  const filteredChantiers = chantiers.filter((c) => c.client_id === clientId);
-
-  const send = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!clientId || !text.trim()) return;
-    try {
-      const db = getDatabase();
-      const messagesRef = dbRef(db, "messages");
-      const newRef = push(messagesRef);
-      await set(newRef, {
-        id: newRef.key,
-        senderId: "admin",
-        receiverId: clientId,
-        chantierId: chantierId || "",
-        text: text.trim(),
-        timestamp: Date.now(),
-        read: false,
-      });
-      setText("");
-      setSendOpen(false);
-      alert("Message envoyé");
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  return (
-    <div className="space-y-4">
-      <div className="rounded-[16px] border border-white/10 bg-white/5 p-6">
-        <h3 className="mb-3 text-lg font-black text-[#FF7A00]">💬 Contacter un client</h3>
-        <div className="space-y-3">
-          <div>
-            <span className="mb-1 block text-xs text-white/60">Client</span>
-            <select value={clientId} onChange={(e) => setClientId(e.target.value)} className="h-11 w-full rounded-[12px] bg-white/5 px-3 outline-none ring-1 ring-white/10">
-              <option value="">Sélectionner un client</option>
-              {clients.map((c) => (
-                <option key={c.id} value={c.id}>{c.nom || c.email}</option>
-              ))}
-            </select>
-          </div>
-          {clientId && (
-            <div>
-              <span className="mb-1 block text-xs text-white/60">Chantier (optionnel)</span>
-              <select value={chantierId} onChange={(e) => setChantierId(e.target.value)} className="h-11 w-full rounded-[12px] bg-white/5 px-3 outline-none ring-1 ring-white/10">
-                <option value="">Général (aucun chantier)</option>
-                {filteredChantiers.map((c) => (
-                  <option key={c.id} value={c.id}>{c.nom_projet || c.nom}</option>
-                ))}
-              </select>
-            </div>
-          )}
-          {!sendOpen ? (
-            <button onClick={() => setSendOpen(true)} className="h-11 w-full rounded-[12px] bg-[#0B5FFF] font-black">Nouveau message</button>
-          ) : (
-            <form onSubmit={send} className="space-y-3">
-              <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Votre message..." className="h-28 w-full rounded-[12px] bg-white/5 px-3 py-2 outline-none ring-1 ring-white/10" />
-              <div className="flex gap-2">
-                <button type="button" onClick={() => setSendOpen(false)} className="h-11 flex-1 rounded-[12px] bg-white/10 font-bold">Annuler</button>
-                <button type="submit" className="h-11 flex-1 rounded-[12px] bg-[#0B5FFF] font-black">Envoyer</button>
-              </div>
-            </form>
-          )}
-        </div>
-      </div>
-    </div>
-  );
+  const send = async (e: FormEvent) => { e.preventDefault(); if (!clientId || !text.trim()) return; const { database } = await (await import("@/lib/firebase")).getFirebaseServices(); const messagesRef = dbRef(database, "messages"); const newRef = push(messagesRef); await set(newRef, { id: newRef.key, senderId: "admin", receiverId: clientId, text: text.trim(), timestamp: Date.now(), read: false }); setText(""); };
+  return <div className="space-y-4"><div className="rounded-[16px] border border-white/10 bg-white/5 p-6"><select value={clientId} onChange={e => setClientId(e.target.value)} className="h-11 w-full rounded-[12px] bg-white/5 mb-3"><option value="">Client</option>{clients.map(c => <option key={c.id} value={c.id}>{c.nom}</option>)}</select><textarea value={text} onChange={e => setText(e.target.value)} className="h-28 w-full rounded-[12px] bg-white/5 p-3 mb-3" /><button onClick={send} className="h-11 rounded-[12px] bg-[#0B5FFF]">Envoyer</button></div></div>;
 }
-
-/* ---------- Contenu (Ticker + Partenaires + Promos) ---------- */
-function ContenuSection({ tickerText, setTickerText }: { tickerText: string; setTickerText: (v: string) => void }) {
-  const [ticker, setTicker] = useState(tickerText);
-  const [partenaires, setPartenaires] = useState<Partenaire[]>([]);
-  const [promos, setPromos] = useState<Promo[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      const [pt, pr] = await Promise.all([
-        rtdbGetList<Partenaire>("partenaires"),
-        rtdbGetList<Promo>("promotions"),
-      ]);
-      if (cancelled) return;
-      setPartenaires(pt);
-      setPromos(pr);
-      setLoading(false);
-    }
-    load();
-    return () => { cancelled = true; };
-  }, []);
-
-  const saveTicker = async (e: FormEvent) => {
-    e.preventDefault();
-    await rtdbSet("global_settings/ticker", { ticker_text: ticker });
-    setTickerText(ticker);
-  };
-
-  const handleLogo = async (e: FormEvent, id: string) => {
-    e.preventDefault();
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "image/*";
-    input.onchange = async () => {
-      const file = input.files?.[0];
-      if (!file) return;
-      try {
-        const storage = getStorage();
-        const storageRef = ref(storage, `partenaires/${id}_${file.name}`);
-        await uploadBytes(storageRef, file);
-        const url = await getDownloadURL(storageRef);
-        await rtdbSet(`partenaires/${id}`, { logo: url });
-        setPartenaires((prev) => prev.map((p) => (p.id === id ? { ...p, logo: url } : p)));
-      } catch (err) {
-        console.error("Upload logo erreur", err);
-      }
-    };
-    input.click();
-  };
-
-  const handlePromoImage = async (e: FormEvent, id: string) => {
-    e.preventDefault();
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "image/*";
-    input.onchange = async () => {
-      const file = input.files?.[0];
-      if (!file) return;
-      try {
-        const storage = getStorage();
-        const storageRef = ref(storage, `promotions/${id}_${file.name}`);
-        await uploadBytes(storageRef, file);
-        const url = await getDownloadURL(storageRef);
-        await rtdbSet(`promotions/${id}`, { image: url });
-        setPromos((prev) => prev.map((p) => (p.id === id ? { ...p, image: url } : p)));
-      } catch (err) {
-        console.error("Upload promo erreur", err);
-      }
-    };
-    input.click();
-  };
-
-  return (
-    <div className="space-y-5">
-      <div className="rounded-[16px] border border-white/10 bg-white/5 p-6">
-        <h3 className="mb-3 text-lg font-black text-[#FF7A00]">Bandeau défilant (Ticker)</h3>
-        <form onSubmit={saveTicker} className="space-y-3">
-          <Input label="Texte du ticker" value={ticker} set={setTicker} />
-          <button type="submit" className="h-11 rounded-[12px] bg-[#0B5FFF] font-black">Enregistrer</button>
-        </form>
-      </div>
-
-      <div className="rounded-[16px] border border-white/10 bg-white/5 p-6">
-        <h3 className="mb-3 text-lg font-black text-[#FF7A00]">Partenaires</h3>
-        {loading ? (
-          <p className="text-white/60">Chargement...</p>
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {partenaires.map((p) => (
-              <div key={p.id} className="rounded-[14px] border border-white/10 bg-white/5 p-4">
-                <div className="flex items-center gap-3">
-                  {p.logo ? (
-                    <img src={p.logo} alt={p.nom} className="h-10 w-10 rounded-lg object-cover" />
-                  ) : (
-                    <div className="grid h-10 w-10 place-items-center rounded-lg bg-white/10">🏢</div>
-                  )}
-                  <div>
-                    <h4 className="font-black text-sm">{p.nom || "—"}</h4>
-                    <span className={`text-xs font-bold ${p.statut === "actif" ? "text-green-400" : "text-yellow-400"}`}>{p.statut === "actif" ? "Actif" : "Bientôt disponible"}</span>
-                  </div>
-                </div>
-                <button onClick={(e) => handleLogo(e, p.id)} className="mt-3 w-full rounded-[10px] bg-white/10 py-2 text-xs font-bold">Changer le logo</button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="rounded-[16px] border border-white/10 bg-white/5 p-6">
-        <h3 className="mb-3 text-lg font-black text-[#FF7A00]">Promotions</h3>
-        {loading ? (
-          <p className="text-white/60">Chargement...</p>
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {promos.map((p) => (
-              <div key={p.id} className="rounded-[14px] border border-white/10 bg-white/5 p-4">
-                <h4 className="font-black text-sm">{p.titre}</h4>
-                <p className="text-xs text-white/60">{p.description}</p>
-                <p className="text-[#FF7A00] font-black">-{p.reduction}%</p>
-                <button onClick={(e) => handlePromoImage(e, p.id)} className="mt-3 w-full rounded-[10px] bg-white/10 py-2 text-xs font-bold">Ajouter une image</button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
 function SettingsSection() {
-  const [profile, setProfile] = useState<{ nom?: string; email?: string; telephone?: string; adresse?: string; logo_url?: string }>({});
-  const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-
-  useEffect(() => {
-    async function load() {
-      const data = await rtdbGet<{ nom?: string; email?: string; telephone?: string; adresse?: string; logo_url?: string }>("global_settings/admin_profile");
-      setProfile(data || {});
-    }
-    load();
-  }, []);
-
-  const save = async (e: FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    setMessage(null);
-    try {
-      await rtdbSet("global_settings/admin_profile", profile);
-      setMessage({ type: "success", text: "Paramètres sauvegardés avec succès" });
-    } catch {
-      setMessage({ type: "error", text: "Erreur lors de la sauvegarde" });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const uploadLogo = async (e: FormEvent) => {
-    e.preventDefault();
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "image/*";
-    input.onchange = async () => {
-      const file = input.files?.[0];
-      if (!file) return;
-      try {
-        const storage = getStorage();
-        const storageRef = ref(storage, `admin/profile_${Date.now()}_${file.name}`);
-        await uploadBytes(storageRef, file);
-        const url = await getDownloadURL(storageRef);
-        setProfile((prev) => ({ ...prev, logo_url: url }));
-      } catch (err) {
-        console.error("Upload logo erreur", err);
-      }
-    };
-    input.click();
-  };
-
-  return (
-    <div className="space-y-4 rounded-[16px] border border-white/10 bg-white/5 p-6">
-      <h3 className="text-lg font-black text-[#FF7A00]">Paramètres généraux</h3>
-      <p className="text-sm text-white/60">Modifiez les informations de l'entreprise et de l'administrateur.</p>
-      {message && (
-        <p className={`text-sm font-bold ${message.type === "success" ? "text-green-400" : "text-red-400"}`}>{message.text}</p>
-      )}
-      <form onSubmit={save} className="space-y-3">
-        <Input label="Nom administrateur" value={profile.nom || ""} set={(v) => setProfile((prev) => ({ ...prev, nom: v }))} />
-        <Input label="Email contact" value={profile.email || ""} set={(v) => setProfile((prev) => ({ ...prev, email: v }))} />
-        <Input label="Téléphone" value={profile.telephone || ""} set={(v) => setProfile((prev) => ({ ...prev, telephone: v }))} />
-        <Input label="Adresse entreprise" value={profile.adresse || ""} set={(v) => setProfile((prev) => ({ ...prev, adresse: v }))} />
-        <div className="flex items-center gap-3">
-          {profile.logo_url && <img src={profile.logo_url} alt="Logo" className="h-10 w-10 rounded-lg object-cover" />}
-          <button type="button" onClick={uploadLogo} className="rounded-[10px] bg-white/10 px-3 py-2 text-xs font-bold">Changer le logo</button>
-        </div>
-        <button type="submit" disabled={saving} className="h-11 w-full rounded-[12px] bg-[#0B5FFF] font-black disabled:opacity-50">
-          {saving ? "Sauvegarde..." : "💾 Sauvegarder"}
-        </button>
-      </form>
-    </div>
-  );
+  const [profile, setProfile] = useState<{ nom?: string; email?: string }>({});
+  const save = async (e: FormEvent) => { e.preventDefault(); await rtdbSet("global_settings/admin_profile", profile); };
+  return <div className="space-y-4 rounded-[16px] border border-white/10 bg-white/5 p-6"><h3 className="font-black text-[#FF7A00]">Paramètres</h3><form onSubmit={save} className="space-y-3"><Input label="Nom" value={profile.nom || ""} set={v => setProfile(p => ({ ...p, nom: v }))} /><button className="h-11 rounded-[12px] bg-[#0B5FFF]">Sauvegarder</button></form></div>;
 }
-
-/* ---------- Helpers UI ---------- */
-function Th({ children }: { children?: ReactNode }) {
-  return <th className="px-4 py-3 font-bold">{children}</th>;
-}
-function Td({ children, className = "" }: { children?: ReactNode; className?: string }) {
-  return <td className={`px-4 py-3 ${className}`}>{children}</td>;
-}
-function Btn({ icon: Icon, label, danger, onClick }: { icon: typeof Eye; label: string; danger?: boolean; onClick?: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      title={label}
-      className={`flex items-center gap-1 rounded-[10px] px-2.5 py-1.5 text-xs font-bold transition ${
-        danger ? "bg-red-500/15 text-red-400 hover:bg-red-500/25" : "bg-white/10 text-white/70 hover:bg-white/20"
-      }`}
-    >
-      <Icon size={14} /> {label}
-    </button>
-  );
-}
-function Input({ label, value, set, type = "text", placeholder = "" }: { label: string; value: string; set: (v: string) => void; type?: string; placeholder?: string }) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-xs text-white/60">{label}</span>
-      <input
-        type={type}
-        value={value}
-        placeholder={placeholder}
-        onChange={(e) => set(e.target.value)}
-        className="h-11 w-full rounded-[12px] bg-white/5 px-3 outline-none ring-1 ring-white/10 focus:ring-[#FF7A00]"
-      />
-    </label>
-  );
-}
-function ChartCard({ title, icon, children }: { title: string; icon?: ReactNode; children?: ReactNode }) {
-  return (
-    <div className="rounded-[16px] border border-white/10 bg-white/5 p-4">
-      <h3 className="mb-3 flex items-center gap-2 font-black">{icon}{title}</h3>
-      {children}
-    </div>
-  );
-}
-
