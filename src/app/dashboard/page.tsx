@@ -82,6 +82,17 @@ type Partenaire = {
   statut?: "actif" | "bientot_disponible";
 };
 
+type Promo = {
+  id: string;
+  titre?: string;
+  description?: string;
+  image_url?: string;
+  reduction?: number;
+  date_debut?: string;
+  date_fin?: string;
+  active?: boolean;
+};
+
 /* ------------------------------------------------------------------ */
 /* Helpers                                                            */
 /* ------------------------------------------------------------------ */
@@ -341,42 +352,46 @@ export default function DashboardClientPage() {
   const [chantiersEnAttente, setChantiersEnAttente] = useState<Chantier[]>([]);
   const [chantiersTermines, setChantiersTermines] = useState<Chantier[]>([]);
   const [partenaires, setPartenaires] = useState<Partenaire[]>([]);
+  const [promos, setPromos] = useState<Promo[]>([]);
   const [creationLimit, setCreationLimit] = useState<{ date: string; compteur: number } | null>(null);
   const [limitDataState, setLimitDataState] = useState<{ date: string; compteur: number } | null>(null);
 
   const nomClient = user?.displayName || user?.email?.split("@")[0] || "Client";
 
   useEffect(() => {
-    console.log("🚨🚨🚨 LE USEEFFECT DU DASHBOARD S'EST DÉCLenché ! 🚨🚨🚨");
-    if (user?.uid) {
-      console.log("═══════════════════════════════════════");
-      console.log("🔍 DÉBUT CHARGEMENT DASHBOARD CLIENT");
-      console.log("👤 User UID:", user.uid);
+    if (!user?.uid) {
+      console.log("⚠️ Pas d'utilisateur connecté, arrêt du chargement.");
+      return;
+    }
 
+    console.log("🚨🚨🚨 LE USEEFFECT DU DASHBOARD S'EST DÉCLENCHÉ ! 🚨🚨🚨");
+    console.log("👤 User UID:", user.uid);
+
+    try {
       const db = getDatabase();
       const chantiersRef = ref(db, 'chantiers');
 
       const unsubscribe = onValue(chantiersRef, (snapshot) => {
-        const data = snapshot.val();
-        console.log("📦 Données brutes de Firebase:", data);
+        console.log("📦 DONNÉES BRUTES DE FIREBASE (CHANTIERS):", snapshot.val());
 
+        const data = snapshot.val();
         if (data) {
           const userChantiers = Object.entries(data)
             .filter(([id, chantier]: [string, any]) => {
-              console.log("🔎 Vérification chantier:", id, "userId:", chantier.userId, "statut:", chantier.statut);
+              console.log("🔎 Vérif chantier:", id, "| UID:", chantier.userId, "| Statut:", chantier.statut);
               return chantier.userId === user.uid && chantier.statut !== 'simulation_brouillon';
             })
             .map(([id, chantier]) => ({ id, ...(chantier as object) }));
 
-          console.log("✅ Chantiers filtrés pour ce user:", userChantiers);
-          console.log("📊 Nombre:", userChantiers.length);
+          console.log("✅ CHANTIERS FILTRÉS FINAUX POUR CE USER:", userChantiers);
+          console.log("📊 NOMBRE DE CHANTIERS TROUVÉS:", userChantiers.length);
 
           setMesChantiers(userChantiers);
           setChantiersEnCours(userChantiers.filter((c: any) => (c.statut || c.status) === "en_cours"));
           setChantiersEnAttente(userChantiers.filter((c: any) => (c.statut || c.status) === "en_attente" || (c.statut || c.status) === "en_attente_rdv"));
           setChantiersTermines(userChantiers.filter((c: any) => (c.statut || c.status) === "termine" || (c.statut || c.status) === "terminé"));
         } else {
-          console.log("⚠️ Aucune donnée dans Firebase");
+          console.log("⚠️ Aucune donnée dans le nœud 'chantiers' de Firebase");
           setMesChantiers([]);
           setChantiersEnCours([]);
           setChantiersEnAttente([]);
@@ -385,8 +400,29 @@ export default function DashboardClientPage() {
         setLoading(false);
       });
 
-      console.log("═══════════════════════════════════════");
-      return () => unsubscribe();
+      // Listener pour les promos côté client (temps réel)
+      const promosRef = ref(db, 'promotions');
+      const unsubscribePromos = onValue(promosRef, (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          const promosActives = Object.entries(data)
+            .map(([id, value]: [string, any]) => ({ id, ...value }))
+            .filter(p => p.active === true);
+          console.log("📦 PROMOS CLIENT (temps réel):", promosActives);
+          setPromos(promosActives);
+        } else {
+          setPromos([]);
+        }
+      });
+
+      return () => {
+        console.log("🧹 Nettoyage du listener onValue du dashboard");
+        unsubscribe();
+        unsubscribePromos();
+      };
+    } catch (error) {
+      console.error("💥 ERREUR FATALE DANS LE USEEFFECT DU DASHBOARD :", error);
+      setLoading(false);
     }
   }, [user?.uid]);
 
@@ -730,4 +766,4 @@ export default function DashboardClientPage() {
        <ChatBot />
      </div>
    );
- }
+}
