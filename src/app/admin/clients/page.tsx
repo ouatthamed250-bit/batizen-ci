@@ -15,6 +15,8 @@ type Client = {
   statut?: string;
   statutCompte?: "actif" | "suspendu";
   raisonSuspension?: string;
+  lastLogin?: number | string;
+  dateMiseAJour?: number | string;
 };
 
 type Chantier = {
@@ -33,6 +35,7 @@ export default function AdminClientsPage() {
   const [query, setQuery] = useState("");
   const [suspendModal, setSuspendModal] = useState<{ clientId: string; raison: string } | null>(null);
   const [creationCounts, setCreationCounts] = useState<Record<string, { compteur: number; date: string }>>({});
+  const [lastLogins, setLastLogins] = useState<Record<string, number>>({});
 
   // Protection admin
   if (authLoading) {
@@ -74,12 +77,19 @@ export default function AdminClientsPage() {
       const data = snapshot.val();
       if (data) {
         const counts: Record<string, { compteur: number; date: string }> = {};
+        const logins: Record<string, number> = {};
         Object.entries(data).forEach(([uid, userData]: [string, any]) => {
           if (userData.creationsDuJour) {
             counts[uid] = userData.creationsDuJour;
           }
+          if (userData.lastLogin) {
+            logins[uid] = typeof userData.lastLogin === "string" ? new Date(userData.lastLogin).getTime() : userData.lastLogin;
+          } else if (userData.dateMiseAJour) {
+            logins[uid] = typeof userData.dateMiseAJour === "string" ? new Date(userData.dateMiseAJour).getTime() : userData.dateMiseAJour;
+          }
         });
         setCreationCounts(counts);
+        setLastLogins(logins);
       }
     });
     return () => unsub();
@@ -115,6 +125,27 @@ export default function AdminClientsPage() {
     return count && count.date === today ? count.compteur : 0;
   };
 
+  // Helper pour le statut d'activité
+  const formatDateActivite = (timestamp?: number): string => {
+    if (!timestamp) return "—";
+    const date = new Date(timestamp);
+    return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" });
+  };
+
+  const getStatutActivite = (clientId: string): { actif: boolean; date: string } => {
+    const lastLogin = lastLogins[clientId];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const lastLoginDate = lastLogin ? new Date(lastLogin) : null;
+    if (lastLoginDate) {
+      lastLoginDate.setHours(0, 0, 0, 0);
+      if (lastLoginDate.getTime() === today.getTime()) {
+        return { actif: true, date: "Aujourd'hui" };
+      }
+    }
+    return { actif: false, date: formatDateActivite(lastLogin) };
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#111827] p-6">
@@ -146,7 +177,7 @@ export default function AdminClientsPage() {
 
         {/* Liste des clients */}
         <div className="overflow-x-auto rounded-[16px] border border-white/10">
-          <table className="w-full min-w-[800px] text-left text-sm">
+          <table className="w-full min-w-[900px] text-left text-sm">
             <thead className="bg-white/5 text-xs uppercase text-white/50">
               <tr>
                 <Th>Nom</Th>
@@ -155,53 +186,68 @@ export default function AdminClientsPage() {
                 <Th>Inscription</Th>
                 <Th>Statut Compte</Th>
                 <Th>Créations aujourd'hui</Th>
+                <Th>Statut d'activité</Th>
                 <Th>Actions</Th>
               </tr>
             </thead>
             <tbody>
-              {filteredClients.map((c) => (
-                <tr key={c.id} className="border-t border-white/10">
-                  <Td className="font-bold">{c.nom || "—"}</Td>
-                  <Td>{c.email || "—"}</Td>
-                  <Td>{c.telephone || "—"}</Td>
-                  <Td>{c.date_inscription || "—"}</Td>
-                  <Td>
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${
-                      c.statutCompte === "suspendu" 
-                        ? "bg-red-500/20 text-red-400" 
-                        : "bg-green-500/20 text-green-400"
-                    }`}>
-                      {c.statutCompte === "suspendu" ? "⏸️ Suspendu" : "✅ Actif"}
-                    </span>
-                  </Td>
-                  <Td>
-                    <span className="text-xs">
-                      {getCompteurToday(c.id)}/3
-                    </span>
-                  </Td>
-                  <Td>
-                    <div className="flex gap-2">
-                      {c.statutCompte === "suspendu" ? (
-                        <button
-                          onClick={() => toggleSuspension(c.id, false)}
-                          className="flex items-center gap-1 rounded-[10px] bg-green-500/15 px-2.5 py-1.5 text-xs font-bold text-green-400 transition hover:bg-green-500/25"
-                          title="Réactiver"
-                        >
-                          <Play size={14} /> Réactiver
-                        </button>
+              {filteredClients.map((c) => {
+                const { actif, date } = getStatutActivite(c.id);
+                return (
+                  <tr key={c.id} className="border-t border-white/10">
+                    <Td className="font-bold">{c.nom || "—"}</Td>
+                    <Td>{c.email || "—"}</Td>
+                    <Td>{c.telephone || "—"}</Td>
+                    <Td>{c.date_inscription || "—"}</Td>
+                    <Td>
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${
+                        c.statutCompte === "suspendu" 
+                          ? "bg-red-500/20 text-red-400" 
+                          : "bg-green-500/20 text-green-400"
+                      }`}>
+                        {c.statutCompte === "suspendu" ? "⏸️ Suspendu" : "✅ Actif"}
+                      </span>
+                    </Td>
+                    <Td>
+                      <span className="text-xs">
+                        {getCompteurToday(c.id)}/3
+                      </span>
+                    </Td>
+                    <Td>
+                      {actif ? (
+                        <span className="rounded-full px-2 py-0.5 text-xs font-bold bg-green-500/20 text-green-400">
+                          🟢 En ligne / Actif aujourd'hui
+                        </span>
                       ) : (
-                        <button
-                          onClick={() => setSuspendModal({ clientId: c.id, raison: "" })}
-                          className="flex items-center gap-1 rounded-[10px] bg-red-500/15 px-2.5 py-1.5 text-xs font-bold text-red-400 transition hover:bg-red-500/25"
-                          title="Suspendre"
-                        >
-                          <Pause size={14} /> Suspendre
-                        </button>
+                        <span className="rounded-full px-2 py-0.5 text-xs font-bold bg-gray-500/20 text-gray-400">
+                          ⚪ Inactif (Dernière activité : {date})
+                        </span>
                       )}
-                    </div>
-                  </Td>
-                </tr>
-              ))}
+                    </Td>
+                    <Td>
+                      <div className="flex gap-2">
+                        {c.statutCompte === "suspendu" ? (
+                          <button
+                            onClick={() => toggleSuspension(c.id, false)}
+                            className="flex items-center gap-1 rounded-[10px] bg-green-500/15 px-2.5 py-1.5 text-xs font-bold text-green-400 transition hover:bg-green-500/25"
+                            title="Réactiver"
+                          >
+                            <Play size={14} /> Réactiver
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => setSuspendModal({ clientId: c.id, raison: "" })}
+                            className="flex items-center gap-1 rounded-[10px] bg-red-500/15 px-2.5 py-1.5 text-xs font-bold text-red-400 transition hover:bg-red-500/25"
+                            title="Suspendre"
+                          >
+                            <Pause size={14} /> Suspendre
+                          </button>
+                        )}
+                      </div>
+                    </Td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

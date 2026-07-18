@@ -25,6 +25,13 @@ import {
 import { rtdbGet, rtdbGetList, rtdbSet } from "@/lib/rtdb";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
+type Localisation = {
+  adresse?: string;
+  commune?: string;
+  quartier?: string;
+  ville?: string;
+};
+
 type Chantier = {
   id: string;
   client_id?: string;
@@ -44,12 +51,13 @@ type Chantier = {
   niveaux?: number;
   chambres?: number;
   salles_de_bain?: number;
-  localisation?: string;
+  localisation?: Localisation;
   type_terrain?: string;
   apport_personnel?: number;
   mode_financement?: string;
   dateActivation?: number;
   activePar?: string;
+  delai?: string;
   rdv_lieu?: string;
   rdv_date?: string;
   rdv_heure?: string;
@@ -64,6 +72,13 @@ type Chantier = {
   date_fin?: string;
 };
 
+type ClientInfo = {
+  id: string;
+  nom?: string;
+  displayName?: string;
+  email?: string;
+};
+
 export default function ChantierDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -74,6 +89,7 @@ export default function ChantierDetailPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [clientInfo, setClientInfo] = useState<ClientInfo | null>(null);
   
   // États pour l'édition rapide
   const [editNom, setEditNom] = useState("");
@@ -90,6 +106,11 @@ export default function ChantierDetailPage() {
       try {
         const data = await rtdbGet<Chantier>(`chantiers/${chantierId}`);
         setChantier(data);
+        // Charger les infos du client si userId présent
+        if (data?.userId) {
+          const userInfo = await rtdbGet<ClientInfo>(`users/${data.userId}`);
+          setClientInfo(userInfo || { id: data.userId });
+        }
         // Initialiser les champs d'édition
         if (data) {
           setEditNom(data.nom_projet || data.nom || "");
@@ -117,6 +138,12 @@ export default function ChantierDetailPage() {
     }
     loadMedias();
   }, [chantierId]);
+
+  // Helper pour formater la localisation
+  function formatLocalisation(loc?: Localisation): string {
+    if (!loc) return "—";
+    return loc.ville || loc.commune || loc.quartier || loc.adresse || "—";
+  }
 
   const getStatutBadge = (statut?: string) => {
     switch (statut) {
@@ -345,7 +372,46 @@ export default function ChantierDetailPage() {
           </div>
         )}
 
-        {/* SECTION 1: Édition rapide */}
+        {/* SECTION 1: Informations soumises par le client (PRÉ-ACTIVATION V2) */}
+        <Section title="📋 Informations soumises par le client" icon={FileText}>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <InfoItem label="Nom du projet" value={chantier.nom_projet || chantier.nom} icon={Building2} />
+            <InfoItem label="Type de projet" value={chantier.type} icon={Home} />
+            <InfoItem 
+              label="Client" 
+              value={clientInfo?.displayName || clientInfo?.nom || chantier.client_nom || (chantier.userId ? `ID: ${chantier.userId}` : undefined)} 
+              icon={User} 
+            />
+            {chantier.userId && (
+              <InfoItem label="Email du client" value={clientInfo?.email || chantier.client_email} icon={Mail} />
+            )}
+            <InfoItem label="Localisation" value={formatLocalisation(chantier.localisation)} icon={MapPin} />
+            <InfoItem label="Budget" value={formatBudget(chantier.budget)} icon={DollarSign} />
+            <InfoItem label="Apport personnel" value={formatBudget(chantier.apport_personnel)} icon={DollarSign} />
+            <InfoItem label="Délai estimé" value={chantier.delai} icon={Clock} />
+            <InfoItem label="Plan choisi" value={chantier.plan_choisi || "—"} icon={FileText} />
+            <InfoItem label="Statut actuel" value={chantier.statut} icon={Check} />
+          </div>
+          
+          {/* BOUTON ACTIVER - Visible uniquement pour en_attente ou en_attente_rdv */}
+          {(chantier.statut === "en_attente" || chantier.statut === "en_attente_rdv") && (
+            <div className="mt-6">
+              <button
+                onClick={handleActivate}
+                disabled={actionLoading}
+                className="flex items-center gap-3 rounded-[16px] bg-gradient-to-r from-green-500 to-green-600 px-8 py-4 text-lg font-black text-white shadow-lg transition hover:shadow-xl disabled:opacity-50"
+              >
+                <Check size={24} />
+                ✅ Activer le chantier (Passer en V2 / Suivi & Médias)
+              </button>
+              <p className="mt-2 text-xs text-white/50">
+                Cette action mettra le chantier en "En cours" et permettra au client d'accéder au suivi complet avec médias.
+              </p>
+            </div>
+          )}
+        </Section>
+
+        {/* SECTION 2: Édition rapide */}
         <Section title="✏️ Édition rapide" icon={Pencil}>
           <div className="grid gap-3 sm:grid-cols-2">
             <InputField label="Nom du projet" value={editNom} set={setEditNom} />
@@ -388,18 +454,6 @@ export default function ChantierDetailPage() {
           </div>
         </Section>
 
-        {/* SECTION 2: Informations générales */}
-        <Section title="Informations générales" icon={FileText}>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <InfoItem label="Nom du projet" value={chantier.nom_projet || chantier.nom} icon={Building2} />
-            <InfoItem label="Type de projet" value={chantier.type} icon={Home} />
-            <InfoItem label="Client" value={chantier.client_nom} icon={User} />
-            <InfoItem label="Email client" value={chantier.client_email} icon={Mail} />
-            <InfoItem label="Téléphone client" value={chantier.client_telephone} icon={Phone} />
-            <InfoItem label="Date de soumission" value={formatDate(chantier.date_soumission)} icon={Calendar} />
-          </div>
-        </Section>
-
         {/* SECTION 3: Détails techniques */}
         <Section title="Détails techniques" icon={Hammer}>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -408,7 +462,6 @@ export default function ChantierDetailPage() {
             <InfoItem label="Nombre de niveaux" value={chantier.niveaux?.toString()} icon={Layers} />
             <InfoItem label="Chambres" value={chantier.chambres?.toString()} icon={Home} />
             <InfoItem label="Salles de bain" value={chantier.salles_de_bain?.toString()} icon={Home} />
-            <InfoItem label="Localisation" value={chantier.localisation} icon={MapPin} />
             <InfoItem label="Type de terrain" value={chantier.type_terrain} icon={MapPin} />
           </div>
         </Section>
@@ -494,46 +547,7 @@ export default function ChantierDetailPage() {
           </Section>
         )}
 
-        {/* SECTION 8: Actions admin */}
-        <Section title="Actions admin" icon={Check}>
-          <div className="flex flex-wrap gap-3">
-            {(chantier.statut === "en_attente" || chantier.statut === "en_attente_rdv") && (
-              <>
-                <button
-                  onClick={handleActivate}
-                  disabled={actionLoading}
-                  className="flex items-center gap-2 rounded-[12px] bg-green-500 px-4 py-2.5 text-sm font-black transition hover:bg-green-500/80 disabled:opacity-50"
-                >
-                  <Check size={18} /> ✅ Activer le chantier (RDV effectué)
-                </button>
-                <button
-                  onClick={handleCancel}
-                  disabled={actionLoading}
-                  className="flex items-center gap-2 rounded-[12px] bg-red-500 px-4 py-2.5 text-sm font-black transition hover:bg-red-500/80 disabled:opacity-50"
-                >
-                  <X size={18} /> Annuler le chantier
-                </button>
-              </>
-            )}
-            {chantier.statut === "en_cours" && (
-              <button
-                onClick={handleMarkAsCompleted}
-                disabled={actionLoading}
-                className="flex items-center gap-2 rounded-[12px] bg-blue-500 px-4 py-2.5 text-sm font-black transition hover:bg-blue-500/80 disabled:opacity-50"
-              >
-                <Check size={18} /> Marquer comme terminé
-              </button>
-            )}
-            <button
-              onClick={handleContactClient}
-              className="flex items-center gap-2 rounded-[12px] bg-[#25D366] px-4 py-2.5 text-sm font-black transition hover:bg-[#25D366]/80"
-            >
-              <MessageCircle size={18} /> Contacter le client (WhatsApp)
-            </button>
-          </div>
-        </Section>
-
-        {/* SECTION 9: Médias & Avancement */}
+        {/* SECTION 8: Médias & Avancement */}
         <Section title="📁 Médias & Avancement" icon={Building2}>
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-3">

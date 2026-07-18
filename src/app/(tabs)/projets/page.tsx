@@ -5,23 +5,48 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { PremiumHeader } from "@/components/layout/PremiumHeader";
 import { ScreenWrapper } from "@/components/layout/ScreenWrapper";
 import { PremiumButton } from "@/components/ui/PremiumButton";
-import { FolderKanban, HardHat } from "lucide-react";
+import { HardHat } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { getDatabase, ref, onValue } from "firebase/database";
 import Link from "next/link";
 import ChatBot from "@/components/ChatBot";
+
+/* ------------------------------------------------------------------ */
+/* Types                                                              */
+/* ------------------------------------------------------------------ */
+
+type Localisation = {
+  adresse?: string;
+  commune?: string;
+  quartier?: string;
+  ville?: string;
+};
 
 type Chantier = {
   id: string;
   nom?: string;
   nom_projet?: string;
   type?: string;
-  localisation?: string;
+  localisation?: Localisation; // ✅ CORRIGÉ : était "string", maintenant c'est l'objet correct
   statut?: string;
   status?: string;
   progression?: number;
   progress?: number;
+  userId?: string; // Ajouté pour que le filtre TypeScript soit heureux
 };
+
+/* ------------------------------------------------------------------ */
+/* Helpers                                                            */
+/* ------------------------------------------------------------------ */
+
+function formatLocalisation(loc?: Localisation): string {
+  if (!loc) return "—";
+  return loc.ville || loc.commune || loc.quartier || loc.adresse || "—";
+}
+
+/* ------------------------------------------------------------------ */
+/* Page                                                               */
+/* ------------------------------------------------------------------ */
 
 export default function ProjectsPage() {
   const { user } = useAuthContext();
@@ -53,7 +78,7 @@ export default function ProjectsPage() {
           .map(([id, chantier]) => ({ id, ...(chantier as object) })) as Chantier[];
 
         console.log("✅ Chantiers filtrés:", userChantiers);
-        console.log("� Nombre:", userChantiers.length);
+        console.log("📊 Nombre:", userChantiers.length);
         setChantiers(userChantiers);
       } else {
         console.log("⚠️ Aucune donnée dans Firebase");
@@ -81,7 +106,7 @@ export default function ProjectsPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-      <span className="rounded-full bg-[#EAF2FF] px-4 py-2 text-sm font-black text-[#0B5FFF]">
+          <span className="rounded-full bg-[#EAF2FF] px-4 py-2 text-sm font-black text-[#0B5FFF]">
             {chantiers.length} projet{chantiers.length !== 1 ? "s" : ""}
           </span>
           <PremiumButton href="/nouveau-chantier" className="shrink-0">
@@ -109,12 +134,15 @@ export default function ProjectsPage() {
         </div>
       ) : (
         <div className="grid gap-6 lg:grid-cols-2">
-          {chantiers.map((chantier, i) => (
+          {chantiers.map((chantier) => (
             <Link key={chantier.id} href={`/chantier/${chantier.id}`}>
               <div className="rounded-[20px] border border-white/50 bg-white/90 p-5 shadow-lg backdrop-blur-sm hover:shadow-xl transition cursor-pointer">
                 <h3 className="font-black text-[var(--navy)]">{chantier.nom_projet || chantier.nom || 'Chantier'}</h3>
                 <p className="text-xs text-[var(--muted)] mt-1">{chantier.type || '—'}</p>
-                <p className="text-xs text-[var(--muted)] mt-1">{chantier.localisation || '—'}</p>
+                
+                {/* ✅ CORRIGÉ : Utilisation du helper au lieu d'afficher l'objet brut */}
+                <p className="text-xs text-[var(--muted)] mt-1">{formatLocalisation(chantier.localisation)}</p>
+                
                 <span className={`inline-block mt-3 px-3 py-1 rounded-full text-xs font-bold ${
                   chantier.statut === 'en_cours' ? 'bg-green-100 text-green-700' :
                   chantier.statut === 'en_attente' || chantier.statut === 'en_attente_rdv' ? 'bg-orange-100 text-orange-700' :
@@ -129,6 +157,7 @@ export default function ProjectsPage() {
         </div>
       )}
 
+      <ChatBot />
       <BottomNav />
     </ScreenWrapper>
   );
