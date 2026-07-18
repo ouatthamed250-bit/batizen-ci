@@ -23,7 +23,8 @@ import {
 } from "recharts";
 import { subscribeToAdminNotifications, markAsRead, type Notification } from "@/lib/notifications";
 import { useAuthContext } from "@/contexts/AuthContext";
-import { getDatabase, ref as dbRef, onValue, update } from "firebase/database";
+import { getDatabase, ref as dbRef, onValue, update, push, set } from "firebase/database";
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 
 type Localisation = {
   adresse?: string;
@@ -62,6 +63,33 @@ type Chantier = {
   client_nom?: string;
   client_email?: string;
   client_telephone?: string;
+};
+
+type Partenaire = {
+  id: string;
+  nom: string;
+  description: string;
+  photo_url: string;
+  actif: boolean;
+};
+
+type Promotion = {
+  id: string;
+  titre: string;
+  description: string;
+  image_url: string;
+  date_debut: string;
+  date_fin: string;
+  active: boolean;
+};
+
+type Ouvrier = {
+  id: string;
+  nom: string;
+  specialite: string;
+  telephone: string;
+  chantierId: string;
+  actif: boolean;
 };
 
 function formatLocalisation(loc?: Localisation): string {
@@ -114,9 +142,13 @@ function AdminContent() {
   const { user, loading: authLoading } = useAuthContext();
   const [clients, setClients] = useState<Client[]>([]);
   const [chantiers, setChantiers] = useState<Chantier[]>([]);
+  const [partenaires, setPartenaires] = useState<Partenaire[]>([]);
+  const [promotions, setPromotions] = useState<Promotion[]>([]);
+  const [ouvriers, setOuvriers] = useState<Ouvrier[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   if (authLoading) return <div className="min-h-screen bg-[#111827] flex items-center justify-center"><p className="text-white">Chargement...</p></div>;
@@ -157,9 +189,33 @@ function AdminContent() {
       setLoading(false);
     });
 
+    // Partenaires - Listener temps réel
+    const partenairesRef = dbRef(db, 'partenaires');
+    const unsubPartenaires = onValue(partenairesRef, (snapshot) => {
+      const data = snapshot.val();
+      setPartenaires(data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : []);
+    });
+
+    // Promotions - Listener temps réel
+    const promotionsRef = dbRef(db, 'promotions');
+    const unsubPromotions = onValue(promotionsRef, (snapshot) => {
+      const data = snapshot.val();
+      setPromotions(data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : []);
+    });
+
+    // Ouvriers - Listener temps réel
+    const ouvriersRef = dbRef(db, 'ouvriers');
+    const unsubOuvriers = onValue(ouvriersRef, (snapshot) => {
+      const data = snapshot.val();
+      setOuvriers(data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : []);
+    });
+
     return () => {
       unsubClients();
       unsubChantiers();
+      unsubPartenaires();
+      unsubPromotions();
+      unsubOuvriers();
     };
   }, []);
 
@@ -185,6 +241,84 @@ function AdminContent() {
 
   const handleModifier = async (id: string) => {
     alert("Fonctionnalité Modifier en cours de développement");
+  };
+
+  // Fonction d'upload d'image vers Firebase Storage
+  const handleImageUpload = async (file: File, path: string): Promise<string> => {
+    setUploading(true);
+    try {
+      const storage = getStorage();
+      const fileRef = storageRef(storage, `${path}/${Date.now()}_${file.name}`);
+      await uploadBytes(fileRef, file);
+      const url = await getDownloadURL(fileRef);
+      return url;
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // États pour les formulaires
+  const [partenaireForm, setPartenaireForm] = useState({ nom: "", description: "", photo: null as File | null, actif: true });
+  const [promoForm, setPromoForm] = useState({ titre: "", description: "", image: null as File | null, date_debut: "", date_fin: "", active: true });
+  const [ouvrierForm, setOuvrierForm] = useState({ nom: "", specialite: "", telephone: "", chantierId: "" });
+
+  // Handlers pour ajouter partenaire
+  const handleAddPartenaire = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!partenaireForm.nom) return;
+    let photo_url = "";
+    if (partenaireForm.photo) {
+      photo_url = await handleImageUpload(partenaireForm.photo, "partenaires");
+    }
+    const db = getDatabase();
+    const newRef = push(dbRef(db, 'partenaires'));
+    await set(newRef, {
+      nom: partenaireForm.nom,
+      description: partenaireForm.description,
+      photo_url,
+      actif: partenaireForm.actif
+    });
+    setPartenaireForm({ nom: "", description: "", photo: null, actif: true });
+    setMessage({ type: "success", text: "Partenaire ajouté !" });
+  };
+
+  // Handlers pour ajouter promotion
+  const handleAddPromotion = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!promoForm.titre) return;
+    let image_url = "";
+    if (promoForm.image) {
+      image_url = await handleImageUpload(promoForm.image, "promotions");
+    }
+    const db = getDatabase();
+    const newRef = push(dbRef(db, 'promotions'));
+    await set(newRef, {
+      titre: promoForm.titre,
+      description: promoForm.description,
+      image_url,
+      date_debut: promoForm.date_debut,
+      date_fin: promoForm.date_fin,
+      active: promoForm.active
+    });
+    setPromoForm({ titre: "", description: "", image: null, date_debut: "", date_fin: "", active: true });
+    setMessage({ type: "success", text: "Promotion ajoutée !" });
+  };
+
+  // Handlers pour ajouter ouvrier
+  const handleAddOuvrier = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!ouvrierForm.nom || !ouvrierForm.specialite) return;
+    const db = getDatabase();
+    const newRef = push(dbRef(db, 'ouvriers'));
+    await set(newRef, {
+      nom: ouvrierForm.nom,
+      specialite: ouvrierForm.specialite,
+      telephone: ouvrierForm.telephone,
+      chantierId: ouvrierForm.chantierId,
+      actif: true
+    });
+    setOuvrierForm({ nom: "", specialite: "", telephone: "", chantierId: "" });
+    setMessage({ type: "success", text: "Ouvrier ajouté !" });
   };
 
   return (
@@ -291,6 +425,97 @@ function AdminContent() {
                     <Bar dataKey="value" fill="#FF7A00" radius={[6, 6, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
+              </div>
+            )}
+            {section === "partenaires" && (
+              <div className="space-y-4">
+                {/* Formulaire ajout partenaire */}
+                <form onSubmit={handleAddPartenaire} className="rounded-[16px] border border-white/10 bg-white/5 p-4">
+                  <h3 className="mb-3 font-black text-[#FF7A00]">➕ Ajouter un partenaire</h3>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <input type="text" placeholder="Nom" value={partenaireForm.nom} onChange={e => setPartenaireForm({ ...partenaireForm, nom: e.target.value })} className="h-10 rounded-[10px] bg-white/5 px-3 text-sm outline-none" required />
+                    <input type="text" placeholder="Description" value={partenaireForm.description} onChange={e => setPartenaireForm({ ...partenaireForm, description: e.target.value })} className="h-10 rounded-[10px] bg-white/5 px-3 text-sm outline-none" />
+                    <input type="file" accept="image/*" onChange={e => setPartenaireForm({ ...partenaireForm, photo: e.target.files?.[0] || null })} className="text-xs text-white/70" />
+                    <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={partenaireForm.actif} onChange={e => setPartenaireForm({ ...partenaireForm, actif: e.target.checked })} /> Actif</label>
+                    <button type="submit" disabled={uploading} className="h-10 rounded-[10px] bg-[#FF7A00] font-bold disabled:opacity-50 sm:col-span-2">Ajouter</button>
+                  </div>
+                </form>
+                {/* Grille des partenaires */}
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {partenaires.map((p) => (
+                    <div key={p.id} className="rounded-[16px] border border-white/10 bg-white/5 p-4">
+                      {p.photo_url && <img src={p.photo_url} alt={p.nom} className="mb-2 h-32 w-full rounded-lg object-cover" />}
+                      <h4 className="font-bold">{p.nom}</h4>
+                      <p className="text-xs text-white/60">{p.description}</p>
+                      <span className={`mt-2 inline-block rounded-full px-2 py-0.5 text-xs ${p.actif ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>{p.actif ? "Actif" : "Inactif"}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {section === "promotions" && (
+              <div className="space-y-4">
+                {/* Formulaire ajout promotion */}
+                <form onSubmit={handleAddPromotion} className="rounded-[16px] border border-white/10 bg-white/5 p-4">
+                  <h3 className="mb-3 font-black text-[#FF7A00]">➕ Ajouter une promotion</h3>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <input type="text" placeholder="Titre" value={promoForm.titre} onChange={e => setPromoForm({ ...promoForm, titre: e.target.value })} className="h-10 rounded-[10px] bg-white/5 px-3 text-sm outline-none" required />
+                    <input type="text" placeholder="Description" value={promoForm.description} onChange={e => setPromoForm({ ...promoForm, description: e.target.value })} className="h-10 rounded-[10px] bg-white/5 px-3 text-sm outline-none" />
+                    <input type="date" value={promoForm.date_debut} onChange={e => setPromoForm({ ...promoForm, date_debut: e.target.value })} className="h-10 rounded-[10px] bg-white/5 px-3 text-sm outline-none" />
+                    <input type="date" value={promoForm.date_fin} onChange={e => setPromoForm({ ...promoForm, date_fin: e.target.value })} className="h-10 rounded-[10px] bg-white/5 px-3 text-sm outline-none" />
+                    <input type="file" accept="image/*" onChange={e => setPromoForm({ ...promoForm, image: e.target.files?.[0] || null })} className="text-xs text-white/70" />
+                    <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={promoForm.active} onChange={e => setPromoForm({ ...promoForm, active: e.target.checked })} /> Active</label>
+                    <button type="submit" disabled={uploading} className="h-10 rounded-[10px] bg-[#FF7A00] font-bold disabled:opacity-50 sm:col-span-2">Ajouter</button>
+                  </div>
+                </form>
+                {/* Grille des promotions */}
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {promotions.map((promo) => (
+                    <div key={promo.id} className="rounded-[16px] border border-white/10 bg-white/5 p-4">
+                      {promo.image_url && <img src={promo.image_url} alt={promo.titre} className="mb-2 h-32 w-full rounded-lg object-cover" />}
+                      <h4 className="font-bold">{promo.titre}</h4>
+                      <p className="text-xs text-white/60">{promo.description}</p>
+                      <p className="text-xs mt-1">Du {promo.date_debut} au {promo.date_fin}</p>
+                      <span className={`mt-2 inline-block rounded-full px-2 py-0.5 text-xs ${promo.active ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>{promo.active ? "Active" : "Inactive"}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {section === "ouvriers" && (
+              <div className="space-y-4">
+                {/* Formulaire ajout ouvrier */}
+                <form onSubmit={handleAddOuvrier} className="rounded-[16px] border border-white/10 bg-white/5 p-4">
+                  <h3 className="mb-3 font-black text-[#FF7A00]">➕ Ajouter un ouvrier</h3>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <input type="text" placeholder="Nom" value={ouvrierForm.nom} onChange={e => setOuvrierForm({ ...ouvrierForm, nom: e.target.value })} className="h-10 rounded-[10px] bg-white/5 px-3 text-sm outline-none" required />
+                    <input type="text" placeholder="Spécialité" value={ouvrierForm.specialite} onChange={e => setOuvrierForm({ ...ouvrierForm, specialite: e.target.value })} className="h-10 rounded-[10px] bg-white/5 px-3 text-sm outline-none" required />
+                    <input type="tel" placeholder="Téléphone" value={ouvrierForm.telephone} onChange={e => setOuvrierForm({ ...ouvrierForm, telephone: e.target.value })} className="h-10 rounded-[10px] bg-white/5 px-3 text-sm outline-none" />
+                    <select value={ouvrierForm.chantierId} onChange={e => setOuvrierForm({ ...ouvrierForm, chantierId: e.target.value })} className="h-10 rounded-[10px] bg-white/5 px-3 text-sm outline-none">
+                      <option value="">Affecter à un chantier</option>
+                      {chantiers.map(c => (
+                        <option key={c.id} value={c.id}>{c.nom_projet || c.nom}</option>
+                      ))}
+                    </select>
+                    <button type="submit" className="h-10 rounded-[10px] bg-[#FF7A00] font-bold sm:col-span-2">Ajouter</button>
+                  </div>
+                </form>
+                {/* Liste des ouvriers */}
+                <div className="space-y-3">
+                  {ouvriers.map((o) => {
+                    const chantier = chantiers.find(c => c.id === o.chantierId);
+                    return (
+                      <div key={o.id} className="rounded-[16px] border border-white/10 bg-white/5 p-4 flex justify-between items-center">
+                        <div>
+                          <h4 className="font-bold">{o.nom}</h4>
+                          <p className="text-xs text-white/60">Spécialité: {o.specialite}</p>
+                          {o.chantierId && <p className="text-xs text-white/60">📍 Affecté à: {chantier?.nom_projet || chantier?.nom || "—"}</p>}
+                        </div>
+                        <span className={`rounded-full px-2 py-0.5 text-xs ${o.actif ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>{o.actif ? "Actif" : "Inactif"}</span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </>
