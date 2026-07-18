@@ -312,6 +312,22 @@ function AdminContent() {
     setMessage({ type: "success", text: "Promotion ajoutée !" });
   };
 
+  const handleDeletePromo = async (id: string) => {
+    if (!confirm("Supprimer cette promotion ?")) return;
+    const db = getDatabase();
+    await update(dbRef(db, `promotions/${id}`), { active: false, supprime: true });
+    setMessage({ type: "success", text: "Promotion supprimée !" });
+  };
+
+  const handleEditPromo = async (promo: Promotion) => {
+    const nouveauTitre = prompt("Nouveau titre :", promo.titre);
+    if (nouveauTitre && nouveauTitre.trim()) {
+      const db = getDatabase();
+      await update(dbRef(db, `promotions/${promo.id}`), { titre: nouveauTitre.trim() });
+      setMessage({ type: "success", text: "Titre de la promotion modifié !" });
+    }
+  };
+
   const handleAddOuvrier = async (e: FormEvent) => {
     e.preventDefault();
     if (!ouvrierForm.nom || !ouvrierForm.specialite) return;
@@ -408,12 +424,12 @@ function AdminContent() {
               </div>
             )}
             
-            {section === "chantiers" && (
+{section === "chantiers" && (
               <div className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {chantiers.map((c) => (
                     <div key={c.id} className="rounded-[16px] border border-white/10 bg-white/5 p-4 flex flex-col h-full">
-                      <h3 className="font-bold mb-2">{c.nom_projet || c.nom}</h3>
+                      <Link href={`/admin/chantier/${c.id}`} className="font-bold mb-2 hover:text-[#FF7A00] transition">{c.nom_projet || c.nom}</Link>
                       <p className="text-xs text-white/60 mb-1">{formatLocalisation(c.localisation)}</p>
                       <p className="text-xs mb-3">Statut: {c.statut || "—"}</p>
                       
@@ -492,13 +508,21 @@ function AdminContent() {
                   </div>
                 </form>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {promotions.map((promo) => (
-                    <div key={promo.id} className="rounded-[16px] border border-white/10 bg-white/5 p-4">
-                      {promo.image_url && <img src={promo.image_url} alt={promo.titre} className="mb-2 h-32 w-full rounded-lg object-cover" />}
-                      <h4 className="font-bold">{promo.titre}</h4>
-                      <p className="text-xs text-white/60">{promo.description}</p>
-                      <p className="text-xs mt-1">Du {promo.date_debut} au {promo.date_fin}</p>
-                      <span className={`mt-2 inline-block rounded-full px-2 py-0.5 text-xs ${promo.active ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>{promo.active ? "Active" : "Inactive"}</span>
+{promotions.map((p) => (
+                    <div key={p.id} className="rounded-[16px] border border-white/10 bg-white/5 p-4 flex flex-col h-full">
+                      {p.image_url && <img src={p.image_url} alt={p.titre} className="mb-2 h-32 w-full rounded-lg object-cover" />}
+                      <h4 className="font-bold">{p.titre}</h4>
+                      <p className="text-xs text-white/60">{p.description}</p>
+                      <p className="text-xs mt-1">Du {p.date_debut} au {p.date_fin}</p>
+                      <span className={`mt-2 inline-block rounded-full px-2 py-0.5 text-xs ${p.active ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>{p.active ? "Active" : "Inactive"}</span>
+                      <div className="mt-auto flex gap-2 pt-3">
+                        <button onClick={() => handleEditPromo(p)} className="flex-1 rounded-[10px] bg-blue-500/20 px-3 py-2 text-xs font-bold text-blue-400 hover:bg-blue-500/30 transition">
+                          ✏️ Modifier
+                        </button>
+                        <button onClick={() => handleDeletePromo(p.id)} className="flex-1 rounded-[10px] bg-red-500/20 px-3 py-2 text-xs font-bold text-red-400 hover:bg-red-500/30 transition">
+                          🗑️ Supprimer
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>

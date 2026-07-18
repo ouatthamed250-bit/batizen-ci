@@ -289,11 +289,12 @@ export default function ChantierDetailClient() {
   const [albumIndex, setAlbumIndex] = useState<number | null>(null);
 
   // Nouvelles données
-  const [planning, setPlanning] = useState<Etape[]>([]);
+const [planning, setPlanning] = useState<Etape[]>([]);
   const [rendezvous, setRendezvous] = useState<RendezVous[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [album, setAlbum] = useState<Photo[]>([]);
   const [rapports, setRapports] = useState<Rapport[]>([]);
+  const [ouvriersList, setOuvriersList] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState("");
 
   useEffect(() => {
@@ -580,12 +581,34 @@ export default function ChantierDetailClient() {
                         <p className="text-sm font-black text-[#0D2B6B]">{pct}%</p>
                       </div>
                     </div>
-                    {chantier?.description && (
+{chantier?.description && (
                       <div className="mt-3">
                         <p className="text-xs font-bold text-[#6B7280]">Description</p>
                         <p className="text-sm text-[#374151]">{chantier.description}</p>
                       </div>
                     )}
+
+{/* SECTION "MON ÉQUIPE" - Ouvriers affectés à ce chantier */}
+                    <div className="mt-6 p-4 bg-white/90 rounded-2xl border border-white/50">
+                      <h3 className="font-bold text-[var(--navy)] mb-3 flex items-center gap-2">👷 Mon Équipe sur ce chantier</h3>
+                      {ouvriers.length === 0 ? (
+                        <p className="text-sm text-gray-500">L'équipe sera assignée prochainement par l'administration.</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {ouvriers.map((ouvrier: Membre) => (
+                            <div key={ouvrier.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                              <div>
+                                <p className="font-bold text-sm text-[var(--navy)]">{ouvrier.nom}</p>
+                                <p className="text-xs text-gray-600">{ouvrier.role || "Membre"}</p>
+                              </div>
+                              {(ouvrier.type === "chef" || ouvrier.type === "chef_de_chantier") && (
+                                <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full font-bold">👑 Chef</span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                     <div className="mt-4">
                       <a
                         href={waLink(chef?.telephone)}
