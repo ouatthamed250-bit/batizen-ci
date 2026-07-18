@@ -16,6 +16,7 @@ import { formatFcfa } from "@/utils/currency";
 import PlanGenerator2D from "@/components/simulation/PlanGenerator2D";
 import PlanGenerator3D from "@/components/simulation/PlanGenerator3D";
 import SuperCalculateur from "@/components/btp/SuperCalculateur";
+import ChatBot from "@/components/ChatBot";
 
 type FormData = {
   nom?: string;
