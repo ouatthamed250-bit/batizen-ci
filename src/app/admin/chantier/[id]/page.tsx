@@ -25,6 +25,8 @@ import {
 import { rtdbGet, rtdbGetList, rtdbSet } from "@/lib/rtdb";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { GestionEquipe } from "@/components/admin/ChantierMessaging";
+import { ref, push, type Unsubscribe } from "firebase/database";
+import { getFirebaseServices } from "@/lib/firebase";
 
 type Localisation = {
   adresse?: string;
@@ -84,6 +86,7 @@ export default function ChantierDetailPage() {
   const params = useParams();
   const router = useRouter();
   const chantierId = params.id as string;
+  const { database } = getFirebaseServices();
 
   const [chantier, setChantier] = useState<Chantier | null>(null);
   const [loading, setLoading] = useState(true);
@@ -101,6 +104,22 @@ export default function ChantierDetailPage() {
   const [medias, setMedias] = useState<{ id: string; type: string; url: string; nom: string; dateAjout: number }[]>([]);
   const [mediaType, setMediaType] = useState<"photo" | "video" | "pdf">("photo");
   const [mediaLoading, setMediaLoading] = useState(false);
+
+  // États pour le formulaire de rapport hebdomadaire
+  const [showRapportForm, setShowRapportForm] = useState(false);
+  const [rapportForm, setRapportForm] = useState({
+    semaine: "",
+    dateDebut: "",
+    dateFin: "",
+    etape: "fondations",
+    avancement: 0,
+    statut: "dans_delais",
+    commentaires: "",
+    problemes: "",
+    prochaine_etape: ""
+  });
+  const [mediasRapport, setMediasRapport] = useState<any[]>([]);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     async function loadChantier() {
@@ -168,6 +187,95 @@ export default function ChantierDetailPage() {
   const formatBudget = (budget?: number) => {
     if (!budget) return "—";
     return new Intl.NumberFormat("fr-FR").format(budget) + " F";
+  };
+
+  // Fonction pour obtenir le numéro de semaine
+  const getWeekNumber = (date: Date): number => {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+  };
+
+  // Génération automatique du rapport hebdomadaire
+  const genererRapportAuto = () => {
+    const today = new Date();
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - today.getDay() + 1); // Lundi
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6); // Dimanche
+    
+    const weekNumber = getWeekNumber(today);
+    const semaine = `${today.getFullYear()}-S${weekNumber.toString().padStart(2, '0')}`;
+    
+    setRapportForm({
+      ...rapportForm,
+      semaine,
+      dateDebut: weekStart.toISOString().split('T')[0],
+      dateFin: weekEnd.toISOString().split('T')[0],
+      commentaires: `Semaine du ${weekStart.toLocaleDateString('fr-FR')} au ${weekEnd.toLocaleDateString('fr-FR')}\n\nAvancement de la semaine :\n- \n\nProblèmes rencontrés :\n- Aucun\n\nProchaine étape :\n- `
+    });
+  };
+
+  // Upload médias pour le rapport
+  const handleUploadMediaRapport = async (file: File, type: "photo" | "video", legende: string, categorie: "avant" | "pendant" | "apres") => {
+    setUploading(true);
+    try {
+      const url = await uploadToCloudinary(file);
+      const media = {
+        id: `media_${Date.now()}`,
+        url,
+        type,
+        legende,
+        categorie,
+        dateUpload: Date.now()
+      };
+      setMediasRapport([...mediasRapport, media]);
+    } catch (error) {
+      console.error("Erreur upload média:", error);
+      alert("Erreur lors de l'upload du média");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // Sauvegarde du rapport hebdomadaire
+  const handleCreerRapport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!rapportForm.commentaires.trim()) {
+      alert("Veuillez ajouter un commentaire");
+      return;
+    }
+
+    try {
+      await push(ref(database, 'rapports'), {
+        chantierId,
+        ...rapportForm,
+        medias: mediasRapport,
+        creePar: "admin",
+        dateCreation: Date.now(),
+        actif: true
+      });
+
+      alert("✅ Rapport hebdomadaire créé avec succès !");
+      setShowRapportForm(false);
+      setRapportForm({
+        semaine: "",
+        dateDebut: "",
+        dateFin: "",
+        etape: "fondations",
+        avancement: 0,
+        statut: "dans_delais",
+        commentaires: "",
+        problemes: "",
+        prochaine_etape: ""
+      });
+      setMediasRapport([]);
+    } catch (error) {
+      console.error("Erreur création rapport:", error);
+      alert("Erreur lors de la création du rapport");
+    }
   };
 
   // Sauvegarde de l'édition rapide
@@ -585,6 +693,205 @@ export default function ChantierDetailPage() {
 
         {/* SECTION 9: Gestion de l'équipe */}
         <GestionEquipe chantierId={chantierId} />
+
+        {/* SECTION 10: Rapport Hebdomadaire */}
+        <div className="mt-6 p-4 bg-white/5 rounded-2xl border border-white/10">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-white flex items-center gap-2">
+              📝 Rapports Hebdomadaires
+            </h3>
+            <button 
+              onClick={() => { setShowRapportForm(!showRapportForm); if (!showRapportForm) genererRapportAuto(); }}
+              className="px-4 py-2 bg-[#FF7A00] text-white rounded-xl font-bold hover:bg-[#e66e00] transition"
+            >
+              {showRapportForm ? "✖️ Annuler" : "+ Nouveau Rapport"}
+            </button>
+          </div>
+
+          {showRapportForm && (
+            <form onSubmit={handleCreerRapport} className="space-y-4">
+              {/* Semaine (auto-générée) */}
+              <div>
+                <label className="text-sm text-white/70 mb-1 block">Semaine</label>
+                <input 
+                  type="text" 
+                  value={rapportForm.semaine || ""} 
+                  readOnly 
+                  className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-white text-sm"
+                />
+              </div>
+
+              {/* Étape de construction */}
+              <div>
+                <label className="text-sm text-white/70 mb-1 block">Étape de construction</label>
+                <select 
+                  value={rapportForm.etape}
+                  onChange={(e) => setRapportForm({...rapportForm, etape: e.target.value})}
+                  className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-white text-sm"
+                >
+                  <option value="fondations">Fondations</option>
+                  <option value="murs">Murs / Gros œuvre</option>
+                  <option value="toiture">Toiture</option>
+                  <option value="finitions">Finitions</option>
+                  <option value="autre">Autre</option>
+                </select>
+              </div>
+
+              {/* Avancement */}
+              <div>
+                <label className="text-sm text-white/70 mb-1 block">Avancement (%)</label>
+                <input 
+                  type="number" 
+                  min="0" 
+                  max="100"
+                  value={rapportForm.avancement}
+                  onChange={(e) => setRapportForm({...rapportForm, avancement: parseInt(e.target.value)})}
+                  className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-white text-sm"
+                />
+              </div>
+
+              {/* Statut */}
+              <div>
+                <label className="text-sm text-white/70 mb-1 block">Statut</label>
+                <select 
+                  value={rapportForm.statut}
+                  onChange={(e) => setRapportForm({...rapportForm, statut: e.target.value})}
+                  className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-white text-sm"
+                >
+                  <option value="dans_delais">🟢 Dans les délais</option>
+                  <option value="retard">🟠 Retard</option>
+                  <option value="avance">🔵 En avance</option>
+                </select>
+              </div>
+
+              {/* Commentaires (pré-rempli) */}
+              <div>
+                <label className="text-sm text-white/70 mb-1 block">Commentaires</label>
+                <textarea 
+                  value={rapportForm.commentaires}
+                  onChange={(e) => setRapportForm({...rapportForm, commentaires: e.target.value})}
+                  rows={6}
+                  className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-white text-sm"
+                  placeholder="Décrivez l'avancement de la semaine..."
+                />
+              </div>
+
+              {/* Problèmes */}
+              <div>
+                <label className="text-sm text-white/70 mb-1 block">Problèmes rencontrés (optionnel)</label>
+                <textarea 
+                  value={rapportForm.problemes}
+                  onChange={(e) => setRapportForm({...rapportForm, problemes: e.target.value})}
+                  rows={3}
+                  className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-white text-sm"
+                  placeholder="Aucun problème majeur..."
+                />
+              </div>
+
+              {/* Prochaine étape */}
+              <div>
+                <label className="text-sm text-white/70 mb-1 block">Prochaine étape</label>
+                <textarea 
+                  value={rapportForm.prochaine_etape}
+                  onChange={(e) => setRapportForm({...rapportForm, prochaine_etape: e.target.value})}
+                  rows={2}
+                  className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-white text-sm"
+                  placeholder="La semaine prochaine, nous allons..."
+                />
+              </div>
+
+              {/* Upload Médias */}
+              <div>
+                <label className="text-sm text-white/70 mb-2 block">Photos & Vidéos</label>
+                
+                {/* Photos */}
+                <div className="mb-3">
+                  <label className="text-xs text-white/60 mb-1 block">📸 Ajouter une photo</label>
+                  <input 
+                    type="file" 
+                    accept="image/*"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const legende = prompt("Légende de la photo :") || "";
+                        const categorie = prompt("Catégorie : avant / pendant / apres ?") as "avant" | "pendant" | "apres" || "pendant";
+                        await handleUploadMediaRapport(file, "photo", legende, categorie);
+                      }
+                    }}
+                    className="hidden"
+                    id="photo-upload-rapport"
+                  />
+                  <label htmlFor="photo-upload-rapport" className="inline-block px-3 py-2 bg-blue-500/20 text-blue-400 rounded-lg cursor-pointer hover:bg-blue-500/30 transition text-sm">
+                    + Ajouter Photo
+                  </label>
+                </div>
+
+                {/* Vidéos */}
+                <div className="mb-3">
+                  <label className="text-xs text-white/60 mb-1 block">🎥 Ajouter une vidéo</label>
+                  <input 
+                    type="file" 
+                    accept="video/*"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const legende = prompt("Légende de la vidéo :") || "";
+                        const categorie = prompt("Catégorie : avant / pendant / apres ?") as "avant" | "pendant" | "apres" || "pendant";
+                        await handleUploadMediaRapport(file, "video", legende, categorie);
+                      }
+                    }}
+                    className="hidden"
+                    id="video-upload-rapport"
+                  />
+                  <label htmlFor="video-upload-rapport" className="inline-block px-3 py-2 bg-purple-500/20 text-purple-400 rounded-lg cursor-pointer hover:bg-purple-500/30 transition text-sm">
+                    + Ajouter Vidéo
+                  </label>
+                </div>
+
+                {/* Liste des médias ajoutés */}
+                {mediasRapport.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    {mediasRapport.map((media, idx) => (
+                      <div key={idx} className="flex items-center gap-2 p-2 bg-white/10 rounded-lg">
+                        {media.type === "photo" ? (
+                          <img src={media.url} alt={media.legende} className="w-12 h-12 object-cover rounded" />
+                        ) : (
+                          <div className="w-12 h-12 bg-purple-500/20 rounded flex items-center justify-center">
+                            <span className="text-2xl">🎥</span>
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <p className="text-xs text-white font-bold">{media.legende || "Sans légende"}</p>
+                          <p className="text-xs text-white/60">{media.type} - {media.categorie}</p>
+                        </div>
+                        <button 
+                          type="button"
+                          onClick={() => setMediasRapport(mediasRapport.filter((_, i) => i !== idx))}
+                          className="text-xs text-red-400 hover:text-red-300"
+                        >
+                          ✖️
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {uploading && (
+                  <p className="text-xs text-white/60 mt-2">⏳ Upload en cours...</p>
+                )}
+              </div>
+
+              {/* Bouton Soumettre */}
+              <button 
+                type="submit"
+                disabled={uploading}
+                className="w-full px-4 py-3 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600 transition disabled:opacity-50"
+              >
+                ✅ Créer le rapport
+              </button>
+            </form>
+          )}
+        </div>
       </div>
     </div>
   );

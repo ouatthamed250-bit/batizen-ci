@@ -156,6 +156,23 @@ type Rapport = {
   contenu?: string;
   statut?: string; // lu | non_lu
   url?: string;
+  // Nouvelles propriétés V2
+  semaine?: string;
+  dateDebut?: string;
+  dateFin?: string;
+  etape?: string;
+  avancement?: number;
+  problemes?: string;
+  prochaine_etape?: string;
+  commentaires?: string;
+  medias?: Array<{
+    id: string;
+    url: string;
+    type: "photo" | "video";
+    legende: string;
+    categorie: "avant" | "pendant" | "apres";
+    dateUpload: number;
+  }>;
 };
 
 /* ------------------------------------------------------------------ */
@@ -1122,32 +1139,84 @@ const [ouvriersList, setOuvriersList] = useState<any[]>([]);
                 </section>
               )}
 
-              {/* ONGLET 11 - RAPPORTS */}
+              {/* ONGLET 11 - RAPPORTS HEBDOMADAIRES */}
               {activeTab === "rapports" && (
-                <section aria-label="Rapports">
+                <section aria-label="Rapports Hebdomadaires">
                   {isTabLocked("rapports") ? (
                     <LockedTab />
                   ) : rapports.length === 0 ? (
-                    <EmptyState text="Aucun rapport disponible" />
+                    <EmptyState text="Aucun rapport disponible pour le moment. L'administration en créera bientôt." />
                   ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       {rapports.map((r) => (
-                        <div key={r.id} className="flex items-start gap-3 rounded-[20px] border border-[#E7EBF5] bg-white p-4 shadow-[0_8px_24px_rgba(16,24,40,0.06)]">
-                          <div className="grid size-11 place-items-center rounded-[14px] bg-[#0B5FFF]/10 text-[#0B5FFF]">
-                            <FileText size={20} />
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between gap-2">
-                              <h3 className="font-black text-[#0D2B6B]">{r.titre || "Rapport"}</h3>
-                              <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${r.statut === "lu" ? "bg-[#22C55E]/10 text-[#22C55E]" : "bg-[#FEF3C7] text-[#B45309]"}`}>
-                                {r.statut === "lu" ? "Lu" : "Non lu"}
+                        <div key={r.id} className="rounded-[20px] border border-[#E7EBF5] bg-white p-4 shadow-[0_8px_24px_rgba(16,24,40,0.06)]">
+                          {/* En-tête du rapport */}
+                          <div className="flex items-center justify-between mb-3">
+                            <div>
+                              <p className="text-xs text-[#6B7280] font-bold">
+                                {r.semaine} ({r.dateDebut} → {r.dateFin})
+                              </p>
+                              <p className="text-sm font-bold text-[#0D2B6B] mt-1">
+                                Étape : {r.etape ? r.etape.charAt(0).toUpperCase() + r.etape.slice(1) : "—"}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-2xl font-black text-[#0D2B6B]">{r.avancement || 0}%</p>
+                              <span className={`text-xs px-2 py-1 rounded-full font-bold ${
+                                r.statut === "dans_delais" ? "bg-green-100 text-green-700" :
+                                r.statut === "retard" ? "bg-orange-100 text-orange-700" :
+                                "bg-blue-100 text-blue-700"
+                              }`}>
+                                {r.statut === "dans_delais" ? "🟢 Dans les délais" :
+                                 r.statut === "retard" ? "🟠 Retard" : "🔵 En avance"}
                               </span>
                             </div>
-                            <p className="mt-0.5 text-xs text-[#6B7280]">
-                              {formatDateFr(r.date)} · {r.auteur || "—"}
-                            </p>
-                            {r.resume && <p className="mt-2 text-sm text-[#374151]">{r.resume}</p>}
                           </div>
+
+                          {/* Commentaires */}
+                          <div className="mb-3">
+                            <p className="text-xs text-[#6B7280] font-bold mb-1">Commentaires :</p>
+                            <p className="text-sm text-[#374151] whitespace-pre-line">{r.commentaires}</p>
+                          </div>
+
+                          {/* Problèmes */}
+                          {r.problemes && (
+                            <div className="mb-3">
+                              <p className="text-xs text-[#6B7280] font-bold mb-1">Problèmes :</p>
+                              <p className="text-sm text-[#374151]">{r.problemes}</p>
+                            </div>
+                          )}
+
+                          {/* Prochaine étape */}
+                          {r.prochaine_etape && (
+                            <div className="mb-3">
+                              <p className="text-xs text-[#6B7280] font-bold mb-1">Prochaine étape :</p>
+                              <p className="text-sm text-[#374151]">{r.prochaine_etape}</p>
+                            </div>
+                          )}
+
+                          {/* Galerie médias du rapport */}
+                          {r.medias && r.medias.length > 0 && (
+                            <div className="mt-3">
+                              <p className="text-xs text-[#6B7280] font-bold mb-2">📸 Médias ({r.medias.length})</p>
+                              <div className="grid grid-cols-3 gap-2">
+                                {r.medias.map((media: any) => (
+                                  <div key={media.id} className="relative aspect-square rounded-lg overflow-hidden border border-[#E7EBF5]">
+                                    {media.type === "photo" ? (
+                                      <Image src={media.url} alt={media.legende || "Photo"} fill className="object-cover" />
+                                    ) : (
+                                      <video src={media.url} controls className="w-full h-full object-cover" />
+                                    )}
+                                    {media.legende && (
+                                      <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs p-1">
+                                        {media.legende}
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
