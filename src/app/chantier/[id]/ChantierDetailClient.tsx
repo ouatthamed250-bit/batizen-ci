@@ -285,6 +285,8 @@ export default function ChantierDetailClient() {
   const [equipe, setEquipe] = useState<Membre[]>([]);
   const [paiements, setPaiements] = useState<Paiement[]>([]);
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
+  const [allDocuments, setAllDocuments] = useState<any[]>([]);
+  const [notes, setNotes] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<TabKey>("resume");
   const [lightbox, setLightbox] = useState<string | null>(null);
   const [albumIndex, setAlbumIndex] = useState<number | null>(null);
@@ -293,8 +295,9 @@ export default function ChantierDetailClient() {
 const [planning, setPlanning] = useState<Etape[]>([]);
   const [rendezvous, setRendezvous] = useState<RendezVous[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [album, setAlbum] = useState<Photo[]>([]);
-  const [rapports, setRapports] = useState<Rapport[]>([]);
+  const [medias, setMedias] = useState<any[]>([]);
+   const [album, setAlbum] = useState<Photo[]>([]);
+   const [rapports, setRapports] = useState<Rapport[]>([]);
 const [ouvriersList, setOuvriersList] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState("");
 
@@ -342,15 +345,15 @@ const [ouvriersList, setOuvriersList] = useState<any[]>([]);
 
       // Charger les nouvelles collections en parallèle
       if (!cancelled) {
-        const [plan, rdv, alb, rap] = await Promise.all([
+        const [plan, rdv, med, rap] = await Promise.all([
           rtdbGetList<Etape>(`chantiers/${id}/planning`),
           rtdbGetList<RendezVous>(`chantiers/${id}/rendezvous`),
-          rtdbGetList<Photo>(`chantiers/${id}/album`),
+          rtdbGetList<any>(`chantiers/${id}/medias`),
           rtdbGetList<Rapport>(`chantiers/${id}/rapports`),
         ]);
         setPlanning(plan);
         setRendezvous(rdv);
-        setAlbum(alb);
+        setMedias(med);
         setRapports(rap);
       }
     }
@@ -797,33 +800,34 @@ const [ouvriersList, setOuvriersList] = useState<any[]>([]);
                 <section aria-label="Album">
                   {isTabLocked("album") ? (
                     <LockedTab />
-                  ) : album.length === 0 ? (
+                  ) : medias.length === 0 ? (
                     <EmptyState text="Aucune photo dans l album" />
                   ) : (
                     <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-                      {album.map((p, idx) => (
+                      {medias.map((m, idx) => (
                         <button
-                          key={p.id}
+                          key={m.id}
                           type="button"
-                          onClick={() => { setAlbumIndex(idx); setLightbox(p.url || null); }}
+                          onClick={() => { setAlbumIndex(idx); setLightbox(m.url || null); }}
                           className="group relative aspect-square overflow-hidden rounded-[18px] border border-[#E7EBF5] bg-[#E7EBF5] shadow-sm"
                         >
-                          {p.url ? (
-                            <Image src={p.url} alt={p.titre || "Photo album"} fill className="object-cover transition group-hover:scale-105" />
+                          {m.url ? (
+                            <Image src={m.url} alt={m.description || m.nom || "Photo album"} fill className="object-cover transition group-hover:scale-105" />
                           ) : null}
 <span className="absolute bottom-0 left-0 right-0 bg-black/50 px-2 py-1 text-[10px] font-bold text-white line-clamp-1">
-                            {p.titre || `Photo ${idx + 1}`}
+                            {m.description || m.nom || `Photo ${idx + 1}`}
                           </span>
                           <span className="absolute right-2 top-2 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-black text-[#0D2B6B]">
-                            {p.categorie === "avant" ? "Avant" : p.categorie === "apres" ? "Après" : "Pendant"}
+                            {m.type === "photo" ? "Photo" : m.type === "video" ? "Vidéo" : "PDF"}
                           </span>
-                          {p.url && (
+                          {m.url && (
                             <button
                               type="button"
-                              onClick={(e) => { e.stopPropagation(); handleTelechargerFichier(p.url!, `photo_${p.id}.jpg`); }}
-                              className="absolute top-2 left-2 rounded-full bg-white/90 p-1.5 text-[#0D2B6B] hover:bg-white"
+                              onClick={(e) => { e.stopPropagation(); handleTelechargerFichier(m.url!, `media_${m.id}`); }}
+                              className="absolute top-2 left-2 rounded-full bg-black/60 p-2 text-white hover:bg-black/80 transition"
+                              title="Télécharger"
                             >
-                              <Download size={14} />
+                              <Download size={16} />
                             </button>
                           )}
                         </button>
@@ -961,15 +965,12 @@ const [ouvriersList, setOuvriersList] = useState<any[]>([]);
                               >
                                 <Eye size={16} />
                               </a>
-                              <a
-                                href={d.url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="grid size-9 place-items-center rounded-full bg-[#0D2B6B] text-white"
-                                aria-label="Télécharger"
+                              <button
+                                onClick={() => d.url && handleTelechargerFichier(d.url, `${d.nom || 'document'}.pdf`)}
+                                className="px-3 py-2 bg-[#0B5FFF] text-white rounded-xl text-xs font-bold hover:bg-[#0D2B6B] transition"
                               >
-                                <Download size={16} />
-                              </a>
+                                📥 Télécharger
+                              </button>
                             </div>
                           )}
                         </div>
@@ -1127,18 +1128,18 @@ const [ouvriersList, setOuvriersList] = useState<any[]>([]);
         >
           <div className="relative">
             <Image src={lightbox} alt="Photo plein écran" width={800} height={800} className="max-h-[90vh] w-auto rounded-[16px] object-contain" />
-            {albumIndex !== null && album.length > 1 && (
+            {albumIndex !== null && medias.length > 1 && (
               <div className="absolute inset-x-0 top-1/2 flex -translate-y-1/2 justify-between px-2">
                 <button
                   type="button"
-                  onClick={(e) => { e.stopPropagation(); setAlbumIndex((albumIndex - 1 + album.length) % album.length); setLightbox(album[(albumIndex - 1 + album.length) % album.length].url || null); }}
+                  onClick={(e) => { e.stopPropagation(); setAlbumIndex((albumIndex - 1 + medias.length) % medias.length); setLightbox(medias[(albumIndex - 1 + medias.length) % medias.length].url || null); }}
                   className="grid size-10 place-items-center rounded-full bg-white/90 text-[#0D2B6B] shadow"
                 >
                   <ChevronLeft size={20} />
                 </button>
                 <button
                   type="button"
-                  onClick={(e) => { e.stopPropagation(); setAlbumIndex((albumIndex + 1) % album.length); setLightbox(album[(albumIndex + 1) % album.length].url || null); }}
+                  onClick={(e) => { e.stopPropagation(); setAlbumIndex((albumIndex + 1) % medias.length); setLightbox(medias[(albumIndex + 1) % medias.length].url || null); }}
                   className="grid size-10 place-items-center rounded-full bg-white/90 text-[#0D2B6B] shadow"
                 >
                   <ChevronRightIcon size={20} />
