@@ -23,9 +23,10 @@ import {
   Pencil,
 } from "lucide-react";
 import { rtdbGet, rtdbGetList, rtdbSet } from "@/lib/rtdb";
+import { useAuthContext } from "@/contexts/AuthContext";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { GestionEquipe } from "@/components/admin/ChantierMessaging";
-import { ref, push, type Unsubscribe } from "firebase/database";
+import { ref, push, update, onValue, type Unsubscribe } from "firebase/database";
 import { getFirebaseServices } from "@/lib/firebase";
 
 type Localisation = {
@@ -892,7 +893,393 @@ export default function ChantierDetailPage() {
             </form>
           )}
         </div>
+
+        {/* SECTION 11: Notes & Checklists */}
+        <NotesSection chantierId={chantierId} />
       </div>
+    </div>
+  );
+}
+
+function NotesSection({ chantierId }: { chantierId: string }) {
+  const { database } = getFirebaseServices();
+  const { user } = useAuthContext();
+  
+  const [showNoteForm, setShowNoteForm] = useState(false);
+  const [noteType, setNoteType] = useState<"note" | "checklist">("note");
+  const [noteForm, setNoteForm] = useState({
+    titre: "",
+    contenu: "",
+    priorite: "importante",
+    statut: "a_faire",
+    assigneA: "",
+    dateRappel: ""
+  });
+  const [checklistItems, setChecklistItems] = useState<{id: string; texte: string; coche: boolean}[]>([]);
+  const [newItemText, setNewItemText] = useState("");
+  const [notes, setNotes] = useState<any[]>([]);
+
+  useEffect(() => {
+    const notesRef = ref(database, 'notes');
+    const unsub = onValue(notesRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const notesChantier = Object.entries(data)
+          .filter(([id, n]: [string, any]) => n.chantierId === chantierId && n.actif)
+          .map(([id, n]: [string, any]) => ({ id, ...n }))
+          .sort((a: any, b: any) => b.dateCreation - a.dateCreation);
+        setNotes(notesChantier);
+      } else {
+        setNotes([]);
+      }
+    });
+    return () => unsub();
+  }, [chantierId, database]);
+
+  const handleAjouterItemChecklist = () => {
+    if (!newItemText.trim()) return;
+    setChecklistItems([...checklistItems, {
+      id: `item_${Date.now()}`,
+      texte: newItemText,
+      coche: false
+    }]);
+    setNewItemText("");
+  };
+
+  const handleSupprimerItemChecklist = (itemId: string) => {
+    setChecklistItems(checklistItems.filter(item => item.id !== itemId));
+  };
+
+  const handleCreerNote = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!noteForm.titre.trim()) {
+      alert("Veuillez ajouter un titre");
+      return;
+    }
+
+    try {
+      const noteData = {
+        chantierId,
+        type: noteType,
+        titre: noteForm.titre,
+        contenu: noteForm.contenu,
+        priorite: noteForm.priorite,
+        statut: noteForm.statut,
+        creePar: "admin",
+        creeParNom: user?.displayName || "Admin",
+        creeParRole: "admin",
+        assigneA: noteForm.assigneA || "",
+        dateRappel: noteForm.dateRappel || "",
+        dateCreation: Date.now(),
+        dateModification: Date.now(),
+        actif: true
+      };
+
+      if (noteType === "checklist") {
+        (noteData as any).items = checklistItems;
+      }
+
+      await push(ref(database, 'notes'), noteData);
+
+      alert("✅ Note créée avec succès !");
+      setShowNoteForm(false);
+      setNoteForm({
+        titre: "",
+        contenu: "",
+        priorite: "importante",
+        statut: "a_faire",
+        assigneA: "",
+        dateRappel: ""
+      });
+      setChecklistItems([]);
+    } catch (error) {
+      console.error("Erreur création note:", error);
+      alert("Erreur lors de la création de la note");
+    }
+  };
+
+  const handleChangerStatutNote = async (noteId: string, nouveauStatut: string) => {
+    await update(ref(database, `notes/${noteId}`), {
+      statut: nouveauStatut,
+      dateModification: Date.now()
+    });
+  };
+
+  const handleCocherItem = async (noteId: string, itemId: string, coche: boolean) => {
+    const note = notes.find(n => n.id === noteId);
+    if (!note || !note.items) return;
+
+    const updatedItems = note.items.map((item: any) => {
+      if (item.id === itemId) {
+        return {
+          ...item,
+          coche,
+          cochePar: coche ? "admin" : "",
+          cocheLe: coche ? Date.now() : 0
+        };
+      }
+      return item;
+    });
+
+    await update(ref(database, `notes/${noteId}`), {
+      items: updatedItems,
+      dateModification: Date.now()
+    });
+  };
+
+  const handleSupprimerNote = async (noteId: string) => {
+    if (!confirm("Supprimer cette note ?")) return;
+    await update(ref(database, `notes/${noteId}`), {
+      actif: false,
+      dateModification: Date.now()
+    });
+  };
+
+  return (
+    <div className="mt-6 p-4 bg-white/5 rounded-2xl border border-white/10">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-bold text-white flex items-center gap-2">
+          📝 Notes & Checklists
+        </h3>
+        <button 
+          onClick={() => setShowNoteForm(!showNoteForm)}
+          className="px-4 py-2 bg-[#FF7A00] text-white rounded-xl font-bold hover:bg-[#e66e00] transition"
+        >
+          {showNoteForm ? "✖️ Annuler" : "+ Nouvelle Note"}
+        </button>
+      </div>
+
+      {showNoteForm && (
+        <form onSubmit={handleCreerNote} className="space-y-4">
+          {/* Type de note */}
+          <div>
+            <label className="text-sm text-white/70 mb-1 block">Type</label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setNoteType("note")}
+                className={`flex-1 px-3 py-2 rounded-xl font-bold transition ${
+                  noteType === "note" ? "bg-blue-500 text-white" : "bg-white/10 text-white/70"
+                }`}
+              >
+                📝 Note simple
+              </button>
+              <button
+                type="button"
+                onClick={() => setNoteType("checklist")}
+                className={`flex-1 px-3 py-2 rounded-xl font-bold transition ${
+                  noteType === "checklist" ? "bg-green-500 text-white" : "bg-white/10 text-white/70"
+                }`}
+              >
+                ✅ Checklist
+              </button>
+            </div>
+          </div>
+
+          {/* Titre */}
+          <div>
+            <label className="text-sm text-white/70 mb-1 block">Titre</label>
+            <input 
+              type="text"
+              value={noteForm.titre}
+              onChange={(e) => setNoteForm({...noteForm, titre: e.target.value})}
+              className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-white text-sm"
+              placeholder="Ex: Choisir la couleur des murs"
+            />
+          </div>
+
+          {/* Contenu (pour notes simples uniquement) */}
+          {noteType === "note" && (
+            <div>
+              <label className="text-sm text-white/70 mb-1 block">Contenu</label>
+              <textarea 
+                value={noteForm.contenu}
+                onChange={(e) => setNoteForm({...noteForm, contenu: e.target.value})}
+                rows={4}
+                className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-white text-sm"
+                placeholder="Détails de la note..."
+              />
+            </div>
+          )}
+
+          {/* Items checklist (pour checklists uniquement) */}
+          {noteType === "checklist" && (
+            <div>
+              <label className="text-sm text-white/70 mb-1 block">Éléments de la checklist</label>
+              <div className="flex gap-2 mb-2">
+                <input 
+                  type="text"
+                  value={newItemText}
+                  onChange={(e) => setNewItemText(e.target.value)}
+                  onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), handleAjouterItemChecklist())}
+                  className="flex-1 px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-white text-sm"
+                  placeholder="Ajouter un élément..."
+                />
+                <button 
+                  type="button"
+                  onClick={handleAjouterItemChecklist}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-xl font-bold"
+                >
+                  +
+                </button>
+              </div>
+              {checklistItems.length > 0 && (
+                <div className="space-y-1">
+                  {checklistItems.map((item) => (
+                    <div key={item.id} className="flex items-center justify-between p-2 bg-white/10 rounded-lg">
+                      <span className="text-sm text-white">{item.texte}</span>
+                      <button 
+                        type="button"
+                        onClick={() => handleSupprimerItemChecklist(item.id)}
+                        className="text-xs text-red-400 hover:text-red-300"
+                      >
+                        ✖️
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Priorité */}
+          <div>
+            <label className="text-sm text-white/70 mb-1 block">Priorité</label>
+            <select 
+              value={noteForm.priorite}
+              onChange={(e) => setNoteForm({...noteForm, priorite: e.target.value})}
+              className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-white text-sm"
+            >
+              <option value="urgente">🔴 Urgente</option>
+              <option value="importante">🟡 Importante</option>
+              <option value="info">🟢 Info</option>
+            </select>
+          </div>
+
+          {/* Statut initial */}
+          <div>
+            <label className="text-sm text-white/70 mb-1 block">Statut</label>
+            <select 
+              value={noteForm.statut}
+              onChange={(e) => setNoteForm({...noteForm, statut: e.target.value})}
+              className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-white text-sm"
+            >
+              <option value="a_faire">⏳ À faire</option>
+              <option value="en_cours">🔄 En cours</option>
+              <option value="fait">✅ Fait</option>
+            </select>
+          </div>
+
+          {/* Date de rappel (optionnel) */}
+          <div>
+            <label className="text-sm text-white/70 mb-1 block">Date de rappel (optionnel)</label>
+            <input 
+              type="date"
+              value={noteForm.dateRappel}
+              onChange={(e) => setNoteForm({...noteForm, dateRappel: e.target.value})}
+              className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-white text-sm"
+            />
+          </div>
+
+          {/* Bouton Soumettre */}
+          <button 
+            type="submit"
+            className="w-full px-4 py-3 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600 transition"
+          >
+            ✅ Créer la note
+          </button>
+        </form>
+      )}
+
+      {/* Liste des notes existantes */}
+      {notes.length > 0 && (
+        <div className="space-y-3 mt-4">
+          {notes.map((note) => (
+            <div key={note.id} className={`p-4 rounded-xl border ${
+              note.priorite === "urgente" ? "bg-red-500/10 border-red-500/30" :
+              note.priorite === "importante" ? "bg-yellow-500/10 border-yellow-500/30" :
+              "bg-green-500/10 border-green-500/30"
+            }`}>
+              <div className="flex items-start justify-between mb-2">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-lg">
+                      {note.type === "checklist" ? "✅" : "📝"}
+                    </span>
+                    <h4 className="font-bold text-white">{note.titre}</h4>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
+                      note.statut === "fait" ? "bg-green-500/20 text-green-400" :
+                      note.statut === "en_cours" ? "bg-blue-500/20 text-blue-400" :
+                      note.statut === "annule" ? "bg-gray-500/20 text-gray-400" :
+                      "bg-orange-500/20 text-orange-400"
+                    }`}>
+                      {note.statut === "a_faire" ? "⏳ À faire" :
+                       note.statut === "en_cours" ? "🔄 En cours" :
+                       note.statut === "fait" ? "✅ Fait" : "❌ Annulé"}
+                    </span>
+                  </div>
+                  <p className="text-xs text-white/60">
+                    Par {note.creeParNom} • {new Date(note.dateCreation).toLocaleDateString('fr-FR')}
+                  </p>
+                </div>
+                <div className="flex gap-1">
+                  <select 
+                    value={note.statut}
+                    onChange={(e) => handleChangerStatutNote(note.id, e.target.value)}
+                    className="text-xs bg-white/10 border border-white/20 rounded px-2 py-1 text-white"
+                  >
+                    <option value="a_faire">⏳ À faire</option>
+                    <option value="en_cours">🔄 En cours</option>
+                    <option value="fait">✅ Fait</option>
+                    <option value="annule">❌ Annulé</option>
+                  </select>
+                  <button 
+                    onClick={() => handleSupprimerNote(note.id)}
+                    className="text-xs text-red-400 hover:text-red-300 px-2"
+                  >
+                    🗑️
+                  </button>
+                </div>
+              </div>
+
+              {/* Contenu pour notes simples */}
+              {note.type === "note" && note.contenu && (
+                <p className="text-sm text-white/80 mt-2 whitespace-pre-line">{note.contenu}</p>
+              )}
+
+              {/* Items pour checklists */}
+              {note.type === "checklist" && note.items && note.items.length > 0 && (
+                <div className="mt-3 space-y-1">
+                  {note.items.map((item: any) => (
+                    <div key={item.id} className="flex items-center gap-2">
+                      <input 
+                        type="checkbox"
+                        checked={item.coche}
+                        onChange={(e) => handleCocherItem(note.id, item.id, e.target.checked)}
+                        className="w-4 h-4"
+                      />
+                      <span className={`text-sm ${item.coche ? "text-white/50 line-through" : "text-white"}`}>
+                        {item.texte}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Date de rappel */}
+              {note.dateRappel && (
+                <p className="text-xs text-white/60 mt-2">
+                  📅 Rappel : {new Date(note.dateRappel).toLocaleDateString('fr-FR')}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {notes.length === 0 && !showNoteForm && (
+        <p className="text-sm text-white/60 text-center py-4">Aucune note pour ce chantier.</p>
+      )}
     </div>
   );
 }
