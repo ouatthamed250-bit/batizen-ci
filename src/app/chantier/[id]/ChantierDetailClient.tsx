@@ -243,6 +243,7 @@ const TABS = [
   { key: "equipe", label: "Équipe", icon: Users },
   { key: "paiements", label: "Paiements", icon: CreditCard },
   { key: "documents", label: "Documents", icon: FileText },
+  { key: "notes", label: "Notes", icon: FileDown },
   { key: "messages", label: "Messages", icon: MessageSquare },
   { key: "passeport", label: "Passeport", icon: BookOpen },
   { key: "rapports", label: "Rapports", icon: BarChart3 },
@@ -343,19 +344,30 @@ const [ouvriersList, setOuvriersList] = useState<any[]>([]);
       setDocuments(d);
       setLoading(false);
 
-      // Charger les nouvelles collections en parallèle
-      if (!cancelled) {
-        const [plan, rdv, med, rap] = await Promise.all([
-          rtdbGetList<Etape>(`chantiers/${id}/planning`),
-          rtdbGetList<RendezVous>(`chantiers/${id}/rendezvous`),
-          rtdbGetList<any>(`chantiers/${id}/medias`),
-          rtdbGetList<Rapport>(`chantiers/${id}/rapports`),
-        ]);
-        setPlanning(plan);
-        setRendezvous(rdv);
-        setMedias(med);
-        setRapports(rap);
-      }
+       // Charger les nouvelles collections en parallèle (V2)
+       // Documents et notes depuis chemins globaux, filtrés par chantierId
+       if (!cancelled) {
+         const [plan, rdv, med, rap, allDocs, allNotes] = await Promise.all([
+           rtdbGetList<Etape>(`chantiers/${id}/planning`),
+           rtdbGetList<RendezVous>(`chantiers/${id}/rendezvous`),
+           rtdbGetList<any>(`chantiers/${id}/medias`),
+           rtdbGetList<Rapport>(`chantiers/${id}/rapports`),
+           rtdbGetList<any>(`documents/`),
+           rtdbGetList<any>(`notes/`),
+         ]);
+         setPlanning(plan);
+         setRendezvous(rdv);
+         setMedias(med);
+         setRapports(rap);
+         // Filtrer documents et notes par chantierId pour V2
+         const docsFiltered = allDocs.filter((doc: any) => doc?.chantierId === id);
+         const notesFiltered = allNotes.filter((note: any) => note?.chantierId === id);
+         // Prioriser les documents du chemin global V2, fallback sur chantier local
+         if (docsFiltered.length > 0) {
+           setDocuments(docsFiltered);
+         }
+         setNotes(notesFiltered);
+       }
     }
 
     load();
@@ -980,7 +992,34 @@ const [ouvriersList, setOuvriersList] = useState<any[]>([]);
                 </section>
               )}
 
-              {/* ONGLET 9 - MESSAGES */}
+              {/* ONGLET 9 - NOTES */}
+              {activeTab === "notes" && (
+                <section aria-label="Notes">
+                  {notes.length === 0 ? (
+                    <EmptyState text="Aucune note disponible" />
+                  ) : (
+                    <div className="space-y-3">
+                      {notes.map((n) => (
+                        <div key={n.id} className="rounded-[18px] border border-[#E7EBF5] bg-white p-4 shadow-sm">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1">
+                              <h3 className="font-black text-[#0D2B6B]">{n.titre || "Note"}</h3>
+                              <p className="text-xs text-[#6B7280]">📅 {formatDateFr(n.dateCreation ? new Date(n.dateCreation).toISOString() : n.date)}</p>
+                            </div>
+                            <span className="rounded-full bg-[#0B5FFF]/10 px-2 py-0.5 text-[10px] font-black text-[#0B5FFF]">
+                              {n.type || "Note"}
+                            </span>
+                          </div>
+                          {n.contenu && <p className="mt-2 text-sm text-[#374151]">{n.contenu}</p>}
+                          {n.auteur && <p className="mt-2 text-xs text-[#9CA3AF]">Par {n.auteur}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              )}
+
+              {/* ONGLET 10 - MESSAGES */}
               {activeTab === "messages" && (
                 <section aria-label="Messages">
                   {isTabLocked("messages") ? (
