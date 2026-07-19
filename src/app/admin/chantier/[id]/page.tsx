@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, useRef, type FormEvent } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -1277,9 +1277,278 @@ function NotesSection({ chantierId }: { chantierId: string }) {
         </div>
       )}
 
-      {notes.length === 0 && !showNoteForm && (
-        <p className="text-sm text-white/60 text-center py-4">Aucune note pour ce chantier.</p>
-      )}
+  {notes.length === 0 && !showNoteForm && (
+    <p className="text-sm text-white/60 text-center py-4">Aucune note pour ce chantier.</p>
+  )}
+    </div>
+  );
+}
+
+function MessagerieSection({ chantierId, clientUserId }: { chantierId: string; clientUserId?: string }) {
+  const { database } = getFirebaseServices();
+  const { user } = useAuthContext();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  const [messages, setMessages] = useState<any[]>([]);
+  const [newMessage, setNewMessage] = useState("");
+  const [recording, setRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  useEffect(() => {
+    if (!chantierId) return;
+    const messagesRef = ref(database, 'messages');
+    const unsub = onValue(messagesRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const msgsChantier = Object.entries(data)
+          .filter(([id, m]: [string, any]) => m.chantierId === chantierId)
+          .map(([id, m]: [string, any]) => ({ id, ...m }))
+          .sort((a: any, b: any) => a.dateEnvoi - b.dateEnvoi);
+        setMessages(msgsChantier);
+        
+        // Marquer comme lus les messages du client
+        msgsChantier.forEach(async (msg) => {
+          if (msg.expediteurRole === "client" && !msg.lu) {
+            await update(ref(database, `messages/${msg.id}`), {
+              lu: true,
+              dateLecture: Date.now()
+            });
+          }
+        });
+      } else {
+        setMessages([]);
+      }
+    });
+    return () => unsub();
+  }, [chantierId, database]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const handleEnvoyerMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMessage.trim()) return;
+
+    try {
+      await push(ref(database, 'messages'), {
+        chantierId,
+        expediteurId: user?.uid || "admin",
+        expediteurNom: user?.displayName || "Admin",
+        expediteurRole: "admin",
+        destinataireId: clientUserId,
+        type: "texte",
+        contenu: newMessage,
+        dateEnvoi: Date.now(),
+        lu: false
+      });
+
+      setNewMessage("");
+    } catch (error) {
+      console.error("Erreur envoi message:", error);
+      alert("Erreur lors de l'envoi du message");
+    }
+  };
+
+  const handleDemarrerEnregistrement = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      setMediaRecorder(recorder);
+      const chunks: Blob[] = [];
+      
+      recorder.ondataavailable = (e) => {
+        chunks.push(e.data);
+      };
+
+      recorder.onstop = async () => {
+        const blob = new Blob(chunks, { type: 'audio/webm' });
+        await handleUploadVocal(blob);
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      recorder.start();
+      setRecording(true);
+    } catch (error) {
+      console.error("Erreur enregistrement:", error);
+      alert("Impossible d'accéder au microphone. Vérifiez les permissions.");
+    }
+  };
+
+  const handleArreterEnregistrement = () => {
+    if (mediaRecorder && recording) {
+      mediaRecorder.stop();
+      setRecording(false);
+    }
+  };
+
+  const handleUploadVocal = async (blob: Blob) => {
+    setUploading(true);
+    try {
+      const file = new File([blob], `vocal_${Date.now()}.webm`, { type: 'audio/webm' });
+      const url = await uploadToCloudinary(file);
+      const dureeApprox = Math.round(blob.size / 16000);
+
+      await push(ref(database, 'messages'), {
+        chantierId,
+        expediteurId: user?.uid || "admin",
+        expediteurNom: user?.displayName || "Admin",
+        expediteurRole: "admin",
+        destinataireId: clientUserId,
+        type: "vocal",
+        url,
+        dureeVocal: dureeApprox,
+        dateEnvoi: Date.now(),
+        lu: false
+      });
+    } catch (error) {
+      console.error("Erreur upload vocal:", error);
+      alert("Erreur lors de l'upload du message vocal");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleEnvoyerPieceJointe = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const url = await uploadToCloudinary(file);
+
+      await push(ref(database, 'messages'), {
+        chantierId,
+        expediteurId: user?.uid || "admin",
+        expediteurNom: user?.displayName || "Admin",
+        expediteurRole: "admin",
+        destinataireId: clientUserId,
+        type: "piece_jointe",
+        url,
+        nomFichier: file.name,
+        tailleFichier: file.size,
+        dateEnvoi: Date.now(),
+        lu: false
+      });
+
+      e.target.value = "";
+    } catch (error) {
+      console.error("Erreur upload pièce jointe:", error);
+      alert("Erreur lors de l'upload du fichier");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="mt-6 p-4 bg-white/5 rounded-2xl border border-white/10">
+      <h3 className="font-bold text-white mb-4 flex items-center gap-2">
+        💬 Messagerie avec le client
+      </h3>
+
+      {/* Zone de messages */}
+      <div className="h-96 overflow-y-auto space-y-3 mb-4 p-3 bg-white/5 rounded-xl">
+        {messages.length === 0 ? (
+          <p className="text-sm text-white/60 text-center py-8">Aucun message. Commencez la conversation !</p>
+        ) : (
+          messages.map((msg) => (
+            <div key={msg.id} className={`flex ${msg.expediteurRole === "admin" ? "justify-end" : "justify-start"}`}>
+              <div className={`max-w-[70%] rounded-2xl p-3 ${
+                msg.expediteurRole === "admin" 
+                  ? "bg-[#FF7A00] text-white" 
+                  : "bg-white/10 text-white"
+              }`}>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-bold opacity-70">{msg.expediteurNom}</span>
+                  <span className="text-xs opacity-50">
+                    {new Date(msg.dateEnvoi).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                  {msg.expediteurRole === "admin" && msg.lu && (
+                    <span className="text-xs">✓✓</span>
+                  )}
+                </div>
+
+                {msg.type === "texte" && (
+                  <p className="text-sm whitespace-pre-line">{msg.contenu}</p>
+                )}
+
+                {msg.type === "vocal" && (
+                  <div className="flex items-center gap-2">
+                    <audio controls src={msg.url} className="h-8" />
+                    <span className="text-xs opacity-70">{msg.dureeVocal}s</span>
+                  </div>
+                )}
+
+                {msg.type === "piece_jointe" && (
+                  <a 
+                    href={msg.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-sm underline"
+                  >
+                    📎 {msg.nomFichier} ({(msg.tailleFichier / 1024).toFixed(1)} KB)
+                  </a>
+                )}
+              </div>
+            </div>
+          ))
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Zone de saisie */}
+      <div className="space-y-2">
+        <form onSubmit={handleEnvoyerMessage} className="flex gap-2">
+          <input 
+            type="text"
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            placeholder="Votre message..."
+            className="flex-1 px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-white text-sm"
+          />
+          <button 
+            type="submit"
+            disabled={uploading}
+            className="px-4 py-2 bg-[#FF7A00] text-white rounded-xl font-bold hover:bg-[#e66e00] transition disabled:opacity-50"
+          >
+            Envoyer
+          </button>
+        </form>
+
+        <div className="flex gap-2">
+          <button 
+            onClick={recording ? handleArreterEnregistrement : handleDemarrerEnregistrement}
+            disabled={uploading}
+            className={`flex-1 px-3 py-2 rounded-xl font-bold transition ${
+              recording 
+                ? "bg-red-500 text-white animate-pulse" 
+                : "bg-purple-500/20 text-purple-400 hover:bg-purple-500/30"
+            }`}
+          >
+            {recording ? "⏹️ Arrêter" : "🎤 Vocal"}
+          </button>
+
+          <label className={`flex-1 px-3 py-2 rounded-xl font-bold text-center cursor-pointer transition ${
+            uploading 
+              ? "bg-gray-500/20 text-gray-400" 
+              : "bg-blue-500/20 text-blue-400 hover:bg-blue-500/30"
+          }`}>
+            📎 Fichier
+            <input 
+              type="file"
+              onChange={handleEnvoyerPieceJointe}
+              className="hidden"
+              disabled={uploading}
+            />
+          </label>
+        </div>
+
+        {uploading && (
+          <p className="text-xs text-white/60 text-center">⏳ Upload en cours...</p>
+        )}
+      </div>
     </div>
   );
 }
