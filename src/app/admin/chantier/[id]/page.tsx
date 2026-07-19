@@ -28,6 +28,7 @@ import { uploadToCloudinary } from "@/lib/cloudinary";
 import GestionEquipe from "@/components/admin/GestionEquipeHierarchique";
 import AlbumChantierAdmin from "@/components/admin/AlbumChantierAdmin";
 import PaiementsSection from "./PaiementsSection";
+import DocumentsSection from "./DocumentsSection";
 import { ref, push, update, onValue, type Unsubscribe, getDatabase } from "firebase/database";
 import { getFirebaseServices } from "@/lib/firebase";
 import { getContratTemplate } from "@/lib/documents-templates";
@@ -936,6 +937,9 @@ export default function ChantierDetailPage() {
 
 {/* SECTION 13: Paiements & Finances */}
         <PaiementsSection chantierId={chantierId} chantier={chantier} />
+
+        {/* SECTION 14: Documents du chantier */}
+        <DocumentsSection chantierId={chantierId} />
 
         {/* BOUTON GÉNÉRER CONTRAT */}
         <div className="mt-4 flex justify-end">
