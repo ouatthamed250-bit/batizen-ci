@@ -45,6 +45,7 @@ type Client = {
   isOnline?: boolean;
   lastSeen?: number;
   chantierIds?: string[];
+  chantiers?: Chantier[];
 };
 
 type Chantier = {
@@ -188,6 +189,7 @@ useEffect(() => {
     });
 
     const usersRef = dbRef(db, 'users');
+    const chantiersRef = dbRef(db, 'chantiers');
     
     // Vérification du rôle admin au montage
     onValue(usersRef, (snapshot) => {
@@ -244,15 +246,30 @@ useEffect(() => {
         }));
 
       console.log(`✅ [DIAG] Clients filtrés: ${clientsList.length}`);
-      console.log("📋 [DIAG] Liste finale:", clientsList.map(c => ({ id: c.id, nom: c.displayName, role: c.role })));
-      
-      setClients(clientsList);
+
+      // ✅ NOUVEAU : Pour chaque client, charger ses chantiers
+      if (clientsList.length > 0) {
+        Promise.all(clientsList.map(async (client) => {
+          const chantiersSnap = await get(chantiersRef);
+          const allChantiers = chantiersSnap.val() || {};
+          
+          const clientChantiers = Object.entries(allChantiers)
+            .filter(([_, c]: [string, any]) => c.userId === client.id || c.client_id === client.id)
+            .map(([id, c]: [string, any]) => ({ id, ...c }));
+          
+          return { ...client, chantiers: clientChantiers };
+        })).then(clientsWithChantiers => {
+          console.log("✅ Clients avec chantiers:", clientsWithChantiers.length);
+          setClients(clientsWithChantiers);
+        });
+      } else {
+        setClients([]);
+      }
     }, (error) => {
       console.error("❌ [DIAG] Erreur Firebase:", error);
     });
 
     console.log("🔓 ADMIN MODE - Chargement de TOUS les chantiers sans filtre");
-    const chantiersRef = dbRef(db, 'chantiers');
     const unsubChantiers = onValue(chantiersRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
@@ -499,52 +516,75 @@ const promotionsRef = dbRef(db, 'promotions');
         
         {loading ? <div className="animate-pulse space-y-3"><div className="h-12 rounded bg-white/5" /><div className="h-64 rounded bg-white/5" /></div> : (
           <>
-            {section === "clients" && (
+{section === "clients" && (
               <div className="space-y-4">
                 <div className="flex items-center gap-3 rounded-[14px] bg-white/5 px-4">
                   <Search size={18} className="text-white/40" />
                   <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Rechercher..." className="h-12 flex-1 bg-transparent text-sm outline-none placeholder:text-white/40" />
                 </div>
-                <div className="overflow-x-auto rounded-[16px] border border-white/10">
-                  <table className="w-full min-w-[800px] text-left text-sm">
-                    <thead className="bg-white/5 text-xs uppercase text-white/50">
-                      <tr>
-                        <th className="px-4 py-3 font-bold">Nom</th>
-                        <th className="px-4 py-3 font-bold">Email</th>
-                        <th className="px-4 py-3 font-bold">Téléphone</th>
-                        <th className="px-4 py-3 font-bold">Inscription</th>
-                        <th className="px-4 py-3 font-bold">Activité</th>
-                        <th className="px-4 py-3 font-bold">Statut</th>
-                        <th className="px-4 py-3 font-bold">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredClients.map((c) => {
-                        const act = statutActivite(c.lastLogin);
-                        return (
-                          <tr key={c.id} className="border-t border-white/10">
-                            <td className="px-4 py-3 font-bold">{c.nom || "—"}</td>
-                            <td className="px-4 py-3">{c.email || "—"}</td>
-                            <td className="px-4 py-3">{c.telephone || "—"}</td>
-                            <td className="px-4 py-3">{c.date_inscription || "—"}</td>
-                            <td className="px-4 py-3">
-                              <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${act.couleur} text-white`}>{act.texte}</span>
-                            </td>
-                            <td className="px-4 py-3">
-                              <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${c.statut === "inactif" ? "bg-red-500/20 text-red-400" : "bg-green-500/20 text-green-400"}`}>{c.statut || "actif"}</span>
-                            </td>
-                            <td className="px-4 py-3">
-                              <div className="flex gap-1">
-                                <button onClick={() => {}} className="flex items-center gap-1 rounded-[10px] px-2.5 py-1.5 text-xs font-bold bg-white/10 text-white/70">
-                                  <Eye size={14} /> Voir
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2">
+                  {filteredClients.map((client) => {
+                    const act = statutActivite(client.lastLogin);
+                    const getInitials = (name: string) => {
+                      if (!name || name === "Sans nom") return "CL";
+                      const parts = name.split(' ');
+                      return (parts[0]?.charAt(0) || '') + (parts[1]?.charAt(0) || '').toUpperCase();
+                    };
+                    return (
+                      <div key={client.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 hover:shadow-md transition">
+                        {/* Infos client existantes */}
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="w-12 h-12 rounded-full bg-[#FF7A00]/10 flex items-center justify-center text-[#FF7A00] font-black text-lg">
+                            {getInitials(client.displayName || client.nom || "Sans nom")}
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-[var(--navy)]">{client.displayName || client.nom || "Sans nom"}</h4>
+                            <p className="text-xs text-gray-500">{client.email || "—"}</p>
+                          </div>
+                        </div>
+
+                        {/* ✅ NOUVEAU : Liste des chantiers du client */}
+                        <div className="mt-4 pt-4 border-t border-gray-100">
+                          <p className="text-xs font-semibold text-gray-600 mb-2 flex items-center gap-1">
+                            🏗️ Ses chantiers ({client.chantiers?.length || 0})
+                          </p>
+                          
+                          {(!client.chantiers || client.chantiers.length === 0) ? (
+                            <p className="text-xs text-gray-400 italic">Aucun chantier assigné</p>
+                          ) : (
+                            <div className="space-y-2">
+                              {client.chantiers.slice(0, 3).map((chantier: any) => (
+                                <Link 
+                                  key={chantier.id} 
+                                  href={`/admin/chantier/${chantier.id}`}
+                                  className="flex items-center justify-between p-2 bg-gray-50 rounded-lg hover:bg-[#FF7A00]/5 hover:border-[#FF7A00]/30 border border-transparent transition group"
+                                >
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-[var(--navy)] truncate group-hover:text-[#FF7A00]">
+                                      {chantier.nom_projet || chantier.nom || "Sans nom"}
+                                    </p>
+                                    <p className="text-xs text-gray-500 truncate">
+                                      {chantier.localisation?.ville || "Localisation inconnue"}
+                                    </p>
+                                  </div>
+                                  <span className="text-xs text-gray-400 ml-2">→</span>
+                                </Link>
+                              ))}
+                              
+                              {client.chantiers.length > 3 && (
+                                <Link 
+                                  href={`/admin/clients/${client.id}/chantiers`}
+                                  className="text-xs text-[#FF7A00] font-medium hover:underline mt-1 block"
+                                >
+                                  Voir les {client.chantiers.length - 3} autres chantiers...
+                                </Link>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
