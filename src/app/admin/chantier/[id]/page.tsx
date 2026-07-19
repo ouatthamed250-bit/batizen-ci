@@ -29,6 +29,7 @@ import { GestionEquipe } from "@/components/admin/ChantierMessaging";
 import PaiementsSection from "./PaiementsSection";
 import { ref, push, update, onValue, type Unsubscribe, getDatabase } from "firebase/database";
 import { getFirebaseServices } from "@/lib/firebase";
+import { getContratTemplate } from "@/lib/documents-templates";
 
 type Localisation = {
   adresse?: string;
@@ -51,6 +52,7 @@ type Chantier = {
   budget?: number;
   plan_choisi?: string;
   date_soumission?: string;
+  date_debut?: string;
   surface_terrain?: number;
   surface_construite?: number;
   niveaux?: number;
@@ -901,8 +903,56 @@ export default function ChantierDetailPage() {
         {/* SECTION 12: Messagerie avec le client */}
         <MessagerieSection chantierId={chantierId} clientUserId={chantier?.userId} />
 
-        {/* SECTION 13: Paiements & Finances */}
+{/* SECTION 13: Paiements & Finances */}
         <PaiementsSection chantierId={chantierId} chantier={chantier} />
+
+        {/* BOUTON GÉNÉRER CONTRAT */}
+        <div className="mt-4 flex justify-end">
+          <button 
+            onClick={() => {
+              const template = getContratTemplate({
+                numeroContrat: `BZ-${chantierId.substring(0, 8).toUpperCase()}`,
+                date: new Date().toLocaleDateString('fr-FR'),
+                clientNom: chantier?.client_nom || "Client",
+                clientTelephone: chantier?.client_telephone || "",
+                clientEmail: chantier?.client_email || "",
+                clientAdresse: chantier?.localisation?.adresse || "",
+                clientVille: chantier?.localisation?.ville || "Abidjan",
+                chantierLieu: chantier?.localisation?.adresse || "",
+                chantierType: chantier?.type || "Construction",
+                surface: chantier?.surface_terrain || "100",
+                descriptionTravaux: chantier?.description || chantier?.nom_projet || "",
+                prestations: ['Étude', 'Plans', 'Gros œuvre', 'Second œuvre', 'Finitions'],
+                dateDebut: chantier?.date_debut || '',
+                dateFin: chantier?.date_fin || '',
+                duree: chantier?.delai || '6 mois',
+                montantTotal: chantier?.budget || 0,
+                acomptePourcentage: 30,
+                acompteMontant: Math.round((chantier?.budget || 0) * 0.3),
+                resteAPayer: Math.round((chantier?.budget || 0) * 0.7),
+                echeancier: [
+                  { description: 'Acompte à la signature', date: new Date().toLocaleDateString('fr-FR'), montant: Math.round((chantier?.budget || 0) * 0.3) },
+                  { description: 'Avancement 50%', date: '', montant: Math.round((chantier?.budget || 0) * 0.4) },
+                  { description: 'Livraison finale', date: '', montant: Math.round((chantier?.budget || 0) * 0.3) }
+                ],
+                notesParticulieres: '',
+                agentNom: "Administrateur"
+              });
+              
+              const nouvelleFenetre = window.open('', '_blank');
+              if (nouvelleFenetre) {
+                nouvelleFenetre.document.write(template);
+                nouvelleFenetre.document.close();
+                setTimeout(() => {
+                  nouvelleFenetre.print();
+                }, 500);
+              }
+            }}
+            className="px-4 py-2 bg-blue-500 text-white rounded-xl font-bold hover:bg-blue-600 transition"
+          >
+            📄 Générer le contrat
+          </button>
+        </div>
       </div>
     </div>
   );

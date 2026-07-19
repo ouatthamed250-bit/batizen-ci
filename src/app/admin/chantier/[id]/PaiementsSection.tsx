@@ -6,11 +6,26 @@ import { getFirebaseServices } from "@/lib/firebase";
 import { useAuthContext } from "@/contexts/AuthContext";
 
 type Chantier = {
+  id?: string;
   userId?: string;
   nom_projet?: string;
   nom?: string;
   client_nom?: string;
+  client_telephone?: string;
+  client_email?: string;
   budget?: number;
+  type?: string;
+  delai?: string;
+  surface?: number | string;
+  description?: string;
+  date_debut?: string;
+  date_fin?: string;
+  localisation?: {
+    adresse?: string;
+    ville?: string;
+    commune?: string;
+    quartier?: string;
+  };
 };
 
 export default function PaiementsSection({ chantierId, chantier }: { chantierId: string; chantier: Chantier | null }) {
@@ -110,49 +125,40 @@ export default function PaiementsSection({ chantierId, chantier }: { chantierId:
     alert("❌ Paiement rejeté.");
   };
 
-  // Générer un reçu PDF
+  // Générer un reçu PDF - VERSION AMÉLIORÉE
   const handleGenererRecuPDF = (paiement: any) => {
-    const contenu = `
-      <html>
-        <head>
-          <title>Reçu de paiement - BÂTIZEN.CI</title>
-          <style>
-            body { font-family: Arial, sans-serif; padding: 40px; }
-            .header { text-align: center; border-bottom: 2px solid #FF7A00; padding-bottom: 20px; margin-bottom: 30px; }
-            .title { font-size: 24px; font-weight: bold; color: #FF7A00; }
-            .info { margin: 10px 0; }
-            .montant { font-size: 32px; font-weight: bold; color: #22C55E; text-align: center; margin: 30px 0; }
-            .footer { margin-top: 50px; text-align: center; font-size: 12px; color: #666; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <div class="title">BÂTIZEN.CI</div>
-            <div>Reçu de paiement</div>
-          </div>
-          <div class="info"><strong>Chantier :</strong> ${chantier?.nom_projet || chantier?.nom}</div>
-          <div class="info"><strong>Client :</strong> ${chantier?.client_nom || "Client"}</div>
-          <div class="info"><strong>Date :</strong> ${new Date(paiement.datePaiement).toLocaleDateString('fr-FR')}</div>
-          <div class="info"><strong>Mode :</strong> ${paiement.mode.toUpperCase()}</div>
-          <div class="info"><strong>Référence :</strong> ${paiement.reference || "N/A"}</div>
-          <div class="montant">${paiement.montant?.toLocaleString('fr-FR') || 0} FCFA</div>
-          ${paiement.description ? `<div class="info"><strong>Note :</strong> ${paiement.description}</div>` : ""}
-          <div class="footer">
-            <p>Ce reçu confirme la réception du paiement ci-dessus.</p>
-            <p>BÂTIZEN.CI - Votre partenaire BTP de confiance</p>
-            <p>Généré le ${new Date().toLocaleDateString('fr-FR')}</p>
-          </div>
-        </body>
-      </html>
-    `;
+    const { getRecuTemplate } = require("@/lib/documents-templates");
+    
+    const template = getRecuTemplate({
+      numeroRecu: paiement.id?.substring(0, 8).toUpperCase() || "BZ-RECU",
+      datePaiement: new Date(paiement.datePaiement).toLocaleDateString('fr-FR'),
+      modePaiement: paiement.mode?.toUpperCase() || "CASH",
+      numeroContrat: chantierId?.substring(0, 8).toUpperCase() || "",
+      clientNom: chantier?.client_nom || "Client",
+      clientTelephone: chantier?.client_telephone || "",
+      clientEmail: chantier?.client_email || "",
+      clientAdresse: chantier?.localisation?.adresse || "",
+      clientVille: chantier?.localisation?.ville || "Abidjan",
+      chantierLieu: chantier?.localisation?.adresse || "",
+      chantierType: chantier?.type || "Construction",
+      chantierDescription: chantier?.nom_projet || chantier?.nom || "",
+      depotNumero: "1",
+      depotDesignation: paiement.description || "Paiement",
+      depotMontant: paiement.montant || 0,
+      depotObservations: paiement.reference || "",
+      montantTotal: paiement.montant || 0,
+      montantLettres: `${paiement.montant?.toLocaleString('fr-FR') || 0} Francs CFA`,
+      agentNom: user?.displayName || "Administrateur",
+      agentFonction: "Directeur de projet"
+    });
     
     const nouvelleFenetre = window.open('', '_blank');
     if (nouvelleFenetre) {
-      nouvelleFenetre.document.write(contenu);
+      nouvelleFenetre.document.write(template);
       nouvelleFenetre.document.close();
       setTimeout(() => {
         nouvelleFenetre.print();
-      }, 250);
+      }, 500);
     }
   };
 
