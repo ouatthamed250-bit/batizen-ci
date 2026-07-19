@@ -355,7 +355,7 @@ const [medias, setMedias] = useState<any[]>([]);
    const [album, setAlbum] = useState<Photo[]>([]);
    const [rapports, setRapports] = useState<Rapport[]>([]);
    const [clientDocuments, setClientDocuments] = useState<any[]>([]);
-  const [ouvriersList, setOuvriersList] = useState<any[]>([]);
+ const [ouvriersList, setOuvriersList] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [uploading, setUploading] = useState(false);
   const [recording, setRecording] = useState(false);
@@ -380,6 +380,37 @@ const [medias, setMedias] = useState<any[]>([]);
       alert("Impossible de télécharger le fichier.");
     }
   };
+
+  // 🔍 LISTENER TEMPS RÉEL POUR LES DOCUMENTS CÔTÉ CLIENT - CORRECTION CHEMIN FIREBASE
+  useEffect(() => {
+    if (!id) return;
+
+    console.log("🔍 CLIENT - Chargement documents pour chantier:", id);
+    
+    const docsRef = ref(database, `documents/${id}`);
+    const unsubDocs = onValue(docsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const docsList = Object.entries(data)
+          .filter(([_, d]: [string, any]) => d.actif !== false)
+          .map(([docId, d]: [string, any]) => ({ id: docId, ...d }))
+          .sort((a, b) => b.dateUpload - a.dateUpload);
+        
+        console.log("✅ Documents trouvés:", docsList.length);
+        setClientDocuments(docsList);
+      } else {
+        console.log("⚠️ Aucun document pour ce chantier");
+        setClientDocuments([]);
+      }
+    }, (error) => {
+      console.error("❌ Erreur lecture documents:", error);
+    });
+
+    return () => {
+      console.log("🧹 Nettoyage listener documents");
+      unsubDocs();
+    };
+  }, [id, database]);
 
   useEffect(() => {
     if (!id) return;
@@ -1108,45 +1139,50 @@ const [plan, med, allDocs, allNotes, allRapports] = await Promise.all([
                 </section>
               )}
 
-              {/* ONGLET 8 - DOCUMENTS */}
+              {/* ONGLET 8 - DOCUMENTS - CORRECTION SYNCHRONISATION */}
               {activeTab === "documents" && (
                 <section aria-label="Documents">
-                  {documents.length === 0 ? (
-                    <EmptyState text="Aucun document disponible" />
+                  {isTabLocked("documents") ? (
+                    <LockedTab />
                   ) : (
-                    <div className="space-y-3">
-                      {documents.map((d) => (
-                        <div key={d.id} className="flex items-center gap-3 rounded-[18px] border border-[#E7EBF5] bg-white p-4 shadow-sm">
-                          <div className="grid size-11 place-items-center rounded-[14px] bg-[#8B5CF6]/10 text-[#8B5CF6]">
-                            <FileText size={20} />
-                          </div>
-                          <div className="flex-1">
-                            <p className="font-black text-[#0D2B6B]">{d.nom}</p>
-                            <p className="text-xs text-[#6B7280]">
-                              {d.type ? `${d.type} · ` : ""}{formatDateFr(d.date)}
-                            </p>
-                          </div>
-                          {d.url && (
-                            <div className="flex gap-2">
-                              <a
-                                href={d.url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="grid size-9 place-items-center rounded-full bg-[#0D2B6B] text-white"
-                                aria-label="Voir en ligne"
-                              >
-                                <Eye size={16} />
-                              </a>
-                              <button
-                                onClick={() => d.url && handleTelechargerFichier(d.url, `${d.nom || 'document'}.pdf`)}
-                                className="px-3 py-2 bg-[#0B5FFF] text-white rounded-xl text-xs font-bold hover:bg-[#0D2B6B] transition"
-                              >
-                                📥 Télécharger
-                              </button>
-                            </div>
-                          )}
+                    <div className="mt-6 p-5 bg-white rounded-2xl border border-gray-200 shadow-sm">
+                      <h3 className="font-black text-[var(--navy)] text-lg mb-4 flex items-center gap-2">
+                        📄 Documents du chantier
+                      </h3>
+
+                      {clientDocuments.length === 0 ? (
+                        <div className="text-center py-8 bg-gray-50 rounded-xl">
+                          <p className="text-gray-500">Aucun document disponible pour le moment.</p>
+                          <p className="text-sm text-gray-400 mt-2">L'administration ajoutera bientôt les devis, factures et plans.</p>
                         </div>
-                      ))}
+                      ) : (
+                        <div className="space-y-3">
+                          {clientDocuments.map((doc: any) => (
+                            <div key={doc.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200 hover:border-[#FF7A00] transition">
+                              <div className="flex items-center gap-3">
+                                <span className="text-2xl">
+                                  {doc.type === "devis" && "📋"}
+                                  {doc.type === "facture" && "💰"}
+                                  {doc.type === "plan" && "📐"}
+                                  {doc.type === "autre" && "📁"}
+                                </span>
+                                <div>
+                                  <p className="font-bold text-[var(--navy)]">{doc.nom}</p>
+                                  <p className="text-xs text-gray-500">{(doc.taille / 1024).toFixed(1)} KB • {new Date(doc.dateUpload).toLocaleDateString('fr-FR')}</p>
+                                </div>
+                              </div>
+                              <a 
+                                href={doc.url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="px-4 py-2 bg-[#FF7A00] text-white rounded-xl text-sm font-bold hover:bg-[#e66e00] transition"
+                              >
+                                ⬇️ Télécharger
+                              </a>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                 </section>
