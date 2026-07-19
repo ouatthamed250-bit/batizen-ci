@@ -44,6 +44,9 @@ import { ProgressBar } from "@/components/ui/ProgressBar";
 import { rtdbGet, rtdbGetList, rtdbSubscribeList } from "@/lib/rtdb";
 import { formatFcfa } from "@/utils/currency";
 import { AffichageEquipe } from "@/components/admin/ChantierMessaging";
+import EquipeHierarchiqueClient from "@/components/chantier/EquipeHierarchiqueClient";
+import AvancementParEtapes from "@/components/chantier/AvancementParEtapes";
+import AlbumChantier from "@/components/chantier/AlbumChantier";
 import { ref, push, onValue, type Unsubscribe } from "firebase/database";
 import { getFirebaseServices } from "@/lib/firebase";
 import SuperCalculateur from "@/components/btp/SuperCalculateur";
@@ -894,73 +897,20 @@ const [planning, setPlanning] = useState<Etape[]>([]);
                         <p className="text-sm font-black text-[#0D2B6B]">{pct}%</p>
                       </div>
                     </div>
-{chantier?.description && (
-                      <div className="mt-3">
-                        <p className="text-xs font-bold text-[#6B7280]">Description</p>
-                        <p className="text-sm text-[#374151]">{chantier.description}</p>
-                      </div>
-                    )}
-
-{/* SECTION "MON ÉQUIPE" - Ouvriers affectés à ce chantier (VERSION AMÉLIORÉE) */}
-                    <div className="mt-6 p-5 bg-white rounded-2xl border border-gray-200 shadow-sm">
-                      <h3 className="font-black text-[var(--navy)] text-lg mb-4 flex items-center gap-2">
-                        👷 Mon Équipe sur ce chantier
-                      </h3>
-                      {ouvriers.length === 0 ? (
-                        <div className="text-center py-6 bg-gray-50 rounded-xl">
-                          <p className="text-sm text-gray-500">L'équipe sera assignée prochainement par l'administration.</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                          {ouvriers.map((membre: any) => {
-                            const isChef = membre.type === "chef_de_chantier" || membre.type === "chef" || (chef && membre.id === chef.id);
-                            return (
-                              <div key={membre.id} className={`p-4 rounded-xl border flex items-start gap-4 transition ${
-                                isChef 
-                                  ? "bg-yellow-50 border-yellow-300 shadow-md" 
-                                  : "bg-gray-50 border-gray-200"
-                              }`}>
-                                {/* Avatar / Icône */}
-                                <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-2xl ${
-                                  isChef ? "bg-yellow-200" : "bg-blue-200"
-                                }`}>
-                                  {isChef ? "👑" : "👷"}
-                                </div>
-                                
-                                {/* Infos */}
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <p className={`font-black text-base ${isChef ? "text-yellow-800" : "text-[var(--navy)]"}`}>
-                                      {membre.nom}
-                                    </p>
-                                    {isChef && (
-                                      <span className="text-[10px] uppercase tracking-wider bg-yellow-400 text-yellow-900 px-2 py-0.5 rounded-full font-black">
-                                        Chef de chantier
-                                      </span>
-                                    )}
-                                  </div>
-                                  <p className="text-sm text-gray-600 font-medium">🔧 {membre.role || "Membre"}</p>
-                                  {membre.telephone && (
-                                    <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-                                      📞 <a href={`tel:${membre.telephone}`} className="hover:text-[var(--navy)] underline">{membre.telephone}</a>
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
+{/* Informations supplémentées du résumé */}
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 mt-4">
+                      {chantier?.date_debut && (
+                        <div className="p-3 bg-gray-50 rounded-xl">
+                          <p className="text-xs font-bold text-[#6B7280]">Date de début prévue</p>
+                          <p className="text-sm font-black text-[var(--navy)]">{formatDateFr(chantier.date_debut)}</p>
                         </div>
                       )}
-                    </div>
-                    <div className="mt-4">
-                      <a
-                        href={waLink(chef?.telephone)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center justify-center gap-2 rounded-[16px] bg-[#25D366] px-5 py-3 text-sm font-black text-white transition active:scale-95"
-                      >
-                        Contacter l expert <MessageCircle size={16} />
-                      </a>
+                      {chantier?.date_fin && (
+                        <div className="p-3 bg-gray-50 rounded-xl">
+                          <p className="text-xs font-bold text-[#6B7280]">Date de fin prévue</p>
+                          <p className="text-sm font-black text-[var(--navy)]">{formatDateFr(chantier.date_fin)}</p>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -1158,63 +1108,10 @@ const [planning, setPlanning] = useState<Etape[]>([]);
               )}
 
 
-              {/* ONGLET 6 - ÉQUIPE */}
+{/* ONGLET 6 - ÉQUIPE HIÉRARCHIQUE */}
               {activeTab === "equipe" && (
                 <section aria-label="Équipe">
-                  {equipe.length === 0 ? (
-                    <EmptyState text="Équipe non renseignée" />
-                  ) : (
-                    <div className="space-y-3">
-                      {chef && (
-                        <div className="rounded-[20px] border border-[#E7EBF5] bg-white p-4 shadow-[0_8px_24px_rgba(16,24,40,0.06)]">
-                          <p className="mb-2 text-xs font-black uppercase tracking-wide text-[#6B7280]">Chef de chantier</p>
-                          <div className="flex items-center gap-3">
-                            <div className="relative size-14 overflow-hidden rounded-full bg-[#E7EBF5]">
-                              {chef.photo ? <Image src={chef.photo} alt={chef.nom || ""} fill className="object-cover" /> : <Users className="m-3 size-8 text-[#9CA3AF]" />}
-                            </div>
-                            <div className="flex-1">
-                              <h3 className="font-black text-[#0D2B6B]">{chef.nom}</h3>
-                              {chef.telephone && <p className="text-xs text-[#6B7280]">📞 {chef.telephone}</p>}
-                            </div>
-                            {chef.telephone && (
-                              <a
-                                href={waLink(chef.telephone)}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="grid size-10 place-items-center rounded-full bg-[#25D366] text-white"
-                                aria-label="Contacter sur WhatsApp"
-                              >
-                                <MessageCircle size={18} />
-                              </a>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {ouvriers.map((o) => (
-                        <div key={o.id} className="flex items-center gap-3 rounded-[18px] border border-[#E7EBF5] bg-white p-3 shadow-sm">
-                          <div className="relative size-11 overflow-hidden rounded-full bg-[#E7EBF5]">
-                            {o.photo ? <Image src={o.photo} alt={o.nom || ""} fill className="object-cover" /> : <Users className="m-2.5 size-6 text-[#9CA3AF]" />}
-                          </div>
-                          <div className="flex-1">
-                            <h4 className="text-sm font-black text-[#0D2B6B]">{o.nom}</h4>
-                            <p className="text-xs text-[#6B7280]">{o.role}{o.telephone ? ` · 📞 ${o.telephone}` : ""}</p>
-                          </div>
-                          {o.telephone && (
-                            <a
-                              href={waLink(o.telephone)}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="grid size-9 place-items-center rounded-full bg-[#25D366] text-white"
-                              aria-label="Contacter sur WhatsApp"
-                            >
-                              <MessageCircle size={16} />
-                            </a>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  <EquipeHierarchiqueClient chantierId={id!} />
                 </section>
               )}
 
