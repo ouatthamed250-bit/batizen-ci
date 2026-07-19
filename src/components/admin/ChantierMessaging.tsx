@@ -114,30 +114,36 @@ export function GestionEquipe({ chantierId }: { chantierId: string }) {
     const ouvrier = ouvriersList.find((o: any) => o.id === ouvrierSelectionne);
     if (!ouvrier) return;
 
-    // 🔍 LOGS DE DIAGNOSTIC
-    console.log("🔍 DIAGNOSTIC ADMIN - Écriture équipe:");
-    console.log("  - chantierId utilisé:", chantierId);
-    console.log("  - Type de chantierId:", typeof chantierId);
-    console.log("  - ouvrierId:", ouvrier.id);
-    console.log("  - ouvrierNom:", ouvrier.nom);
+    console.log(" ADMIN - Écriture équipe:", {
+      chantierId,
+      chantierIdType: typeof chantierId,
+      ouvrierId: ouvrier.id,
+      ouvrierNom: ouvrier.nom,
+      fonction: ouvrier.fonction
+    });
 
     try {
       const { database } = getFirebaseServices();
-      await push(ref(database, "equipes"), {
-        chantierId,
-        ouvrierId: ouvrier.id,
-        ouvrierNom: ouvrier.nom,
-        specialite: ouvrier.specialite,
-        fonction: ouvrier.fonction || "ouvrier",
+      const equipeData = {
+        chantierId: String(chantierId), // ⚠️ FORCER EN STRING
+        ouvrierId: String(ouvrier.id),
+        ouvrierNom: ouvrier.nom || ouvrier.name || "Ouvrier",
+        specialite: ouvrier.specialite || ouvrier.metier || "Non spécifié",
+        fonction: ouvrier.fonction || ouvrier.role || "ouvrier",
+        telephone: ouvrier.telephone || ouvrier.phone || "",
         dateAffectation: Date.now(),
         actif: true
-      });
+      };
 
-      console.log("✅ Écriture équipe réussie !");
-      alert(`✅ ${ouvrier.nom} a été ajouté à l'équipe`);
+      console.log(" Données équipe à écrire:", equipeData);
+
+      await push(ref(database, "equipes"), equipeData);
+
+      console.log("✅ Équipe écrite avec succès !");
+      alert(`✅ ${ouvrier.nom} ajouté à l'équipe`);
       setOuvrierSelectionne("");
     } catch (error) {
-      console.error("❌ Erreur ajout équipe:", error);
+      console.error("❌ Erreur:", error);
       alert("Erreur lors de l'ajout");
     }
   };
@@ -196,15 +202,31 @@ export function GestionEquipe({ chantierId }: { chantierId: string }) {
 export function AffichageEquipe({ chantierId }: { chantierId: string }) {
   const [equipe, setEquipe] = useState<any[]>([]);
 
-  useEffect(() => {
+useEffect(() => {
     const { database } = getFirebaseServices();
     const unsub = onValue(ref(database, "equipes"), (snapshot) => {
+      console.log("🔍 CLIENT - Lecture équipes pour chantierId:", chantierId, "type:", typeof chantierId);
+      
       const data = snapshot.val();
+      console.log(" Données brutes équipes:", data);
+      
       if (data) {
         const eq = Object.keys(data)
           .map(key => ({ id: key, ...data[key] }))
-          .filter((e: any) => e.chantierId === chantierId && e.actif);
+          .filter((e: any) => {
+            console.log(`  Vérif équipe ${e.id}:`, {
+              chantierIdEcrit: e.chantierId,
+              chantierIdAttendu: chantierId,
+              match: String(e.chantierId) === String(chantierId),
+              actif: e.actif
+            });
+            return String(e.chantierId) === String(chantierId) && e.actif === true;
+          });
+        console.log("✅ Équipes filtrées:", eq.length, eq);
         setEquipe(eq);
+      } else {
+        console.log("⚠️ Aucune donnée dans equipes/");
+        setEquipe([]);
       }
     });
     return () => unsub();
