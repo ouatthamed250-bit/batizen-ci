@@ -27,7 +27,7 @@ import { useAuthContext } from "@/contexts/AuthContext";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { GestionEquipe } from "@/components/admin/ChantierMessaging";
 import PaiementsSection from "./PaiementsSection";
-import { ref, push, update, onValue, type Unsubscribe } from "firebase/database";
+import { ref, push, update, onValue, type Unsubscribe, getDatabase } from "firebase/database";
 import { getFirebaseServices } from "@/lib/firebase";
 
 type Localisation = {
@@ -1304,8 +1304,17 @@ function MessagerieSection({ chantierId, clientUserId }: { chantierId: string; c
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
-    if (!chantierId) return;
+    // ⚠️ IMPORTANT : Ne pas lancer le listener si l'utilisateur n'est pas connecté
+    if (!user || !chantierId) {
+      console.log("⏳ Attente authentification ou chantierId pour la messagerie...");
+      return;
+    }
+
+    console.log("🔌 Connexion messagerie établie pour le chantier:", chantierId);
+    
+    const db = getDatabase();
     const messagesRef = ref(database, 'messages');
+    
     const unsub = onValue(messagesRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
@@ -1318,7 +1327,7 @@ function MessagerieSection({ chantierId, clientUserId }: { chantierId: string; c
         // Marquer comme lus les messages du client
         msgsChantier.forEach(async (msg) => {
           if (msg.expediteurRole === "client" && !msg.lu) {
-            await update(ref(database, `messages/${msg.id}`), {
+            await update(ref(db, `messages/${msg.id}`), {
               lu: true,
               dateLecture: Date.now()
             });
@@ -1327,9 +1336,15 @@ function MessagerieSection({ chantierId, clientUserId }: { chantierId: string; c
       } else {
         setMessages([]);
       }
+    }, (error) => {
+      console.error("❌ Erreur listener messages:", error);
     });
-    return () => unsub();
-  }, [chantierId, database]);
+
+    return () => {
+      console.log("🧹 Nettoyage listener messages admin");
+      unsub();
+    };
+  }, [user, chantierId, database]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });

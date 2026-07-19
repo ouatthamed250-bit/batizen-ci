@@ -427,18 +427,47 @@ const [planning, setPlanning] = useState<Etape[]>([]);
 
     load();
 
-    // Messages en temps réel
-    if (id) {
-      unsubMessages = rtdbSubscribeList<Message>(`chantiers/${id}/messages`, (data) => {
-        setMessages(data);
+    // Messages en temps réel - avec vérification auth
+    if (!user || !id) {
+      console.log("⏳ Attente authentification client pour la messagerie...");
+    } else {
+      console.log("🔌 Connexion messagerie client établie pour le chantier:", id);
+      unsubMessages = onValue(ref(database, 'messages'), (snapshot) => {
+        console.log("📩 Snapshot messages client reçu. Existe ?", snapshot.exists());
+        
+        const data = snapshot.val();
+        if (data) {
+          const msgsChantier = Object.entries(data)
+            .filter(([idMsg, m]: [string, any]) => m.chantierId === id)
+            .map(([idMsg, m]: [string, any]) => ({ id: idMsg, ...m }))
+            .sort((a: any, b: any) => a.dateEnvoi - b.dateEnvoi);
+          
+          console.log("✅ Messages client filtrés:", msgsChantier.length);
+          setMessages(msgsChantier);
+          
+          // Marquer comme lus les messages de l'admin
+          msgsChantier.forEach(async (msg) => {
+            if (msg.expediteurRole === "admin" && !msg.lu) {
+              await update(ref(database, `messages/${msg.id}`), {
+                lu: true,
+                dateLecture: Date.now()
+              });
+            }
+          });
+        } else {
+          setMessages([]);
+        }
+      }, (error) => {
+        console.error("❌ Erreur listener messages client:", error);
       });
     }
 
     return () => {
+      console.log("🧹 Nettoyage listener messages client");
       cancelled = true;
       if (unsubMessages) unsubMessages();
     };
-  }, [id]);
+  }, [user, id]);
 
   const nom = chantier?.nom_projet || chantier?.nom || "Chantier";
   const pct = Number(chantier?.progression ?? chantier?.progress ?? 0);
