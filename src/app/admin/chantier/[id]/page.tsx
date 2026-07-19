@@ -26,6 +26,7 @@ import { rtdbGet, rtdbGetList, rtdbSet } from "@/lib/rtdb";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { GestionEquipe } from "@/components/admin/ChantierMessaging";
+import PaiementsSection from "./PaiementsSection";
 import { ref, push, update, onValue, type Unsubscribe } from "firebase/database";
 import { getFirebaseServices } from "@/lib/firebase";
 

@@ -113,11 +113,33 @@ type Membre = {
 };
 
 type Paiement = {
-  id: string;
-  date?: string;
-  montant?: number;
-  mode?: string;
-  statut?: string; // paye | en_attente | en_retard
+  id: string,
+  date?: string,
+  montant?: number,
+  mode?: string,
+  statut?: string, // "valide" | "en_attente" | "rejete"
+  reference?: string,
+  preuveUrl?: string,
+  description?: string,
+};
+
+type PaiementV2 = {
+  id: string,
+  chantierId: string,
+  clientId: string,
+  montant: number,
+  datePaiement: string,
+  mode: "wave" | "orange" | "mtn" | "cash" | "autre",
+  statut: "en_attente" | "valide" | "rejete",
+  reference: string,
+  preuveUrl: string,
+  description: string,
+  creePar: string,
+  creeParRole: "admin" | "client",
+  validePar?: string,
+  dateValidation?: number,
+  dateCreation: number,
+  actif: boolean,
 };
 
 type DocumentItem = {
@@ -1034,40 +1056,13 @@ const [planning, setPlanning] = useState<Etape[]>([]);
                 </section>
               )}
 
-              {/* ONGLET 7 - PAIEMENTS */}
+              {/* ONGLET 7 - PAIEMENTS - NOUVELLE VERSION */}
               {activeTab === "paiements" && (
                 <section aria-label="Paiements">
-                  {paiements.length === 0 ? (
-                    <EmptyState text="Aucun paiement enregistré" />
+                  {isTabLocked("paiements") ? (
+                    <LockedTab />
                   ) : (
-                    <div className="space-y-3">
-                      {paiements.map((p) => (
-                        <div key={p.id} className="flex items-center gap-3 rounded-[18px] border border-[#E7EBF5] bg-white p-4 shadow-sm">
-                          <div className="grid size-11 place-items-center rounded-[14px] bg-[#0D2B6B]/10 text-[#0D2B6B]">
-                            <CreditCard size={20} />
-                          </div>
-                          <div className="flex-1">
-                            <p className="font-black text-[#0D2B6B]">{formatFcfa(Number(p.montant) || 0)}</p>
-                            <p className="text-xs text-[#6B7280]">
-                              {formatDateFr(p.date)}{p.mode ? ` · ${p.mode}` : ""}{p.statut ? ` · ${p.statut}` : ""}
-                            </p>
-                          </div>
-                          {p.statut === "paye" && <CheckCircle className="size-5 text-[#22C55E]" />}
-                          {p.statut === "en_retard" && <AlertTriangle className="size-5 text-[#EF4444]" />}
-                          {p.statut === "en_attente" && <Clock3 className="size-5 text-[#9CA3AF]" />}
-                        </div>
-                      ))}
-                      <div className="flex items-center justify-between rounded-[18px] bg-[#0D2B6B] p-4 text-white">
-                        <span className="text-sm font-black">Total payé</span>
-                        <span className="text-lg font-black">{formatFcfa(totalPaye)}</span>
-                      </div>
-                      <Link
-                        href="/paiement"
-                        className="flex items-center justify-center gap-1.5 rounded-[16px] bg-[linear-gradient(135deg,#FF7A00,#FF9500)] py-3 text-sm font-black text-white transition active:scale-95"
-                      >
-                        Effectuer un paiement <ChevronRight size={16} />
-                      </Link>
-                    </div>
+                    <PaiementsSection chantierId={id!} chantier={chantier!} />
                   )}
                 </section>
               )}
@@ -1524,6 +1519,299 @@ function LockedTab() {
   return (
     <div className="rounded-[22px] border border-dashed border-[#E7EBF5] bg-[#F9FAFB] p-10 text-center">
       <p className="text-sm font-bold text-[#6B7280]">🔒 Cet onglet sera disponible une fois le chantier activé par nos experts.</p>
+    </div>
+  );
+}
+
+function PaiementsSection({ chantierId, chantier }: { chantierId: string; chantier: Chantier }) {
+  const { database } = getFirebaseServices();
+  const { user } = useAuthContext();
+  
+  const [paiements, setPaiements] = useState<any[]>([]);
+  const [showPaiementForm, setShowPaiementForm] = useState(false);
+  const [paiementForm, setPaiementForm] = useState({
+    montant: 0,
+    mode: "wave",
+    reference: "",
+    description: "",
+    preuveUrl: ""
+  });
+  const [uploading, setUploading] = useState(false);
+
+  // Listener pour les paiements V2
+  useEffect(() => {
+    const paiementsRef = ref(database, 'paiements');
+    const unsubPaiements = onValue(paiementsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const paiementsChantier = Object.entries(data)
+          .filter(([id, p]: [string, any]) => p.chantierId === chantierId && p.actif)
+          .map(([id, p]: [string, any]) => ({ id, ...p }))
+          .sort((a: any, b: any) => new Date(b.datePaiement).getTime() - new Date(a.datePaiement).getTime());
+        setPaiements(paiementsChantier);
+      } else {
+        setPaiements([]);
+      }
+    });
+    return () => unsubPaiements();
+  }, [chantierId, database]);
+
+  // Calculs financiers
+  const totalPaye = paiements
+    .filter(p => p.statut === "valide")
+    .reduce((sum, p) => sum + p.montant, 0);
+  
+  const budgetTotal = chantier?.budget || 0;
+  const resteAPayer = budgetTotal - totalPaye;
+  const pourcentagePaye = budgetTotal > 0 ? Math.round((totalPaye / budgetTotal) * 100) : 0;
+
+  // Upload preuve vers Cloudinary
+  const handleUploadPreuve = async (file: File): Promise<string> => {
+    setUploading(true);
+    try {
+      const url = await uploadToCloudinary(file);
+      return url;
+    } catch (error) {
+      console.error("Erreur upload preuve:", error);
+      throw error;
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // Envoyer un paiement (Client)
+  const handleEnvoyerPaiement = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (paiementForm.montant <= 0) {
+      alert("Veuillez entrer un montant valide");
+      return;
+    }
+
+    try {
+      await push(ref(database, 'paiements'), {
+        chantierId,
+        clientId: user?.uid,
+        montant: paiementForm.montant,
+        datePaiement: new Date().toISOString().split('T')[0],
+        mode: paiementForm.mode,
+        statut: "en_attente",
+        reference: paiementForm.reference,
+        preuveUrl: paiementForm.preuveUrl,
+        description: paiementForm.description,
+        creePar: user?.uid,
+        creeParRole: "client",
+        dateCreation: Date.now(),
+        actif: true
+      });
+
+      alert("✅ Paiement envoyé ! L'administration va le valider.");
+      setShowPaiementForm(false);
+      setPaiementForm({
+        montant: 0,
+        mode: "wave",
+        reference: "",
+        description: "",
+        preuveUrl: ""
+      });
+    } catch (error) {
+      console.error("Erreur envoi paiement:", error);
+      alert("Erreur lors de l'envoi du paiement");
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Tableau de bord financier */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="p-4 bg-green-50 rounded-xl border border-green-200">
+          <p className="text-xs text-green-700 mb-1">Total payé</p>
+          <p className="text-2xl font-black text-green-700">{totalPaye.toLocaleString('fr-FR')} F</p>
+          <p className="text-xs text-green-600">{pourcentagePaye}% du budget</p>
+        </div>
+        <div className="p-4 bg-orange-50 rounded-xl border border-orange-200">
+          <p className="text-xs text-orange-700 mb-1">Reste à payer</p>
+          <p className="text-2xl font-black text-orange-700">{resteAPayer.toLocaleString('fr-FR')} F</p>
+          <p className="text-xs text-orange-600">sur {budgetTotal.toLocaleString('fr-FR')} F</p>
+        </div>
+        <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+          <p className="text-xs text-blue-700 mb-1">Paiements</p>
+          <p className="text-2xl font-black text-blue-700">{paiements.length}</p>
+          <p className="text-xs text-blue-600">{paiements.filter(p => p.statut === "valide").length} validés</p>
+        </div>
+      </div>
+
+      {/* Instructions de paiement */}
+      <div className="mb-4 p-4 bg-blue-50 rounded-xl border border-blue-200">
+        <h4 className="font-bold text-[var(--navy)] mb-2">💳 Comment payer ?</h4>
+        <div className="space-y-2 text-sm text-gray-700">
+          <p><strong>📱 Wave :</strong> Envoyez au numéro <strong>+225 XX XX XX XX XX</strong></p>
+          <p><strong>📱 Orange Money :</strong> Envoyez au numéro <strong>+225 XX XX XX XX XX</strong></p>
+          <p><strong>📱 MTN MoMo :</strong> Envoyez au numéro <strong>+225 XX XX XX XX XX</strong></p>
+          <p className="text-xs text-gray-600 mt-2">
+            Après l'envoi, cliquez sur "Déclarer un paiement" ci-dessous et joignez la capture d'écran.
+          </p>
+        </div>
+      </div>
+
+      {/* Bouton déclarer paiement */}
+      <button 
+        onClick={() => setShowPaiementForm(!showPaiementForm)}
+        className="w-full mb-4 px-4 py-3 bg-[#0B5FFF] text-white rounded-xl font-bold hover:bg-[#0a4fd9] transition"
+      >
+        {showPaiementForm ? "✖️ Annuler" : "💳 Déclarer un paiement"}
+      </button>
+
+      {/* Formulaire de déclaration */}
+      {showPaiementForm && (
+        <form onSubmit={handleEnvoyerPaiement} className="mb-4 p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-3">
+          <div>
+            <label className="text-sm text-gray-700 mb-1 block">Montant (FCFA) *</label>
+            <input 
+              type="number"
+              value={paiementForm.montant}
+              onChange={(e) => setPaiementForm({...paiementForm, montant: parseInt(e.target.value) || 0})}
+              className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm"
+              placeholder="Ex: 500000"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="text-sm text-gray-700 mb-1 block">Mode de paiement</label>
+            <select 
+              value={paiementForm.mode}
+              onChange={(e) => setPaiementForm({...paiementForm, mode: e.target.value})}
+              className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm"
+            >
+              <option value="wave">📱 Wave</option>
+              <option value="orange">📱 Orange Money</option>
+              <option value="mtn">📱 MTN MoMo</option>
+              <option value="autre">📌 Autre</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="text-sm text-gray-700 mb-1 block">Numéro de transaction *</label>
+            <input 
+              type="text"
+              value={paiementForm.reference}
+              onChange={(e) => setPaiementForm({...paiementForm, reference: e.target.value})}
+              className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm"
+              placeholder="Ex: WAVE123456"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="text-sm text-gray-700 mb-1 block">Capture d'écran (preuve)</label>
+            <input 
+              type="file"
+              accept="image/*"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  try {
+                    const url = await handleUploadPreuve(file);
+                    setPaiementForm({...paiementForm, preuveUrl: url});
+                  } catch (error) {
+                    alert("Erreur lors de l'upload de la capture");
+                  }
+                }
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm"
+            />
+            {paiementForm.preuveUrl && (
+              <p className="text-xs text-green-600 mt-1">✅ Capture uploadée</p>
+            )}
+          </div>
+
+          <div>
+            <label className="text-sm text-gray-700 mb-1 block">Description (optionnel)</label>
+            <textarea 
+              value={paiementForm.description}
+              onChange={(e) => setPaiementForm({...paiementForm, description: e.target.value})}
+              rows={2}
+              className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm"
+              placeholder="Acompte, solde, etc."
+            />
+          </div>
+
+          <button 
+            type="submit"
+            disabled={uploading}
+            className="w-full px-4 py-3 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600 transition disabled:opacity-50"
+          >
+            {uploading ? "⏳ Upload en cours..." : "✅ Envoyer le paiement"}
+          </button>
+        </form>
+      )}
+
+      {/* Liste des paiements */}
+      {paiements.length > 0 && (
+        <div className="space-y-3">
+          <h4 className="font-bold text-[var(--navy)]">Historique des paiements</h4>
+          {paiements.map((paiement) => (
+            <div 
+              key={paiement.id}
+              className={`p-4 rounded-xl border ${
+                paiement.statut === "valide" ? "bg-green-50 border-green-200" :
+                paiement.statut === "rejete" ? "bg-red-50 border-red-200" :
+                "bg-orange-50 border-orange-200"
+              }`}
+            >
+              <div className="flex items-start justify-between mb-2">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-2xl">
+                      {paiement.mode === "wave" ? "📱" :
+                       paiement.mode === "orange" ? "📱" :
+                       paiement.mode === "mtn" ? "📱" : "📌"}
+                    </span>
+                    <p className="text-2xl font-black text-[var(--navy)]">
+                      {paiement.montant?.toLocaleString('fr-FR') || 0} FCFA
+                    </p>
+                  </div>
+                  <p className="text-sm text-gray-700">
+                    📅 {new Date(paiement.datePaiement).toLocaleDateString('fr-FR')}
+                  </p>
+                  <p className="text-sm text-gray-700">Mode : {paiement.mode?.toUpperCase()}</p>
+                  {paiement.reference && (
+                    <p className="text-sm text-gray-700">Réf : {paiement.reference}</p>
+                  )}
+                  {paiement.description && (
+                    <p className="text-sm text-gray-600 mt-1 italic">{paiement.description}</p>
+                  )}
+                </div>
+
+                <span className={`text-xs px-3 py-1 rounded-full font-bold ${
+                  paiement.statut === "valide" ? "bg-green-100 text-green-700" :
+                  paiement.statut === "rejete" ? "bg-red-100 text-red-700" :
+                  "bg-orange-100 text-orange-700"
+                }`}>
+                  {paiement.statut === "valide" ? "✅ Validé" :
+                   paiement.statut === "rejete" ? "❌ Rejeté" : "⏳ En attente"}
+                </span>
+              </div>
+
+              {/* Afficher la preuve si disponible */}
+              {paiement.preuveUrl && (
+                <div className="mt-2 pt-2 border-t border-gray-200">
+                  <p className="text-xs text-gray-600 mb-1">📸 Preuve de paiement :</p>
+                  <img 
+                    src={paiement.preuveUrl} 
+                    alt="Preuve" 
+                    className="max-w-full h-auto rounded-lg border border-gray-300"
+                  />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {paiements.length === 0 && !showPaiementForm && (
+        <p className="text-center text-gray-500 py-4">Aucun paiement enregistré pour ce chantier.</p>
+      )}
     </div>
   );
 }
