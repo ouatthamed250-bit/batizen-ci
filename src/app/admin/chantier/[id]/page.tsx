@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { rtdbGet, rtdbGetList, rtdbSet } from "@/lib/rtdb";
 import { uploadToCloudinary } from "@/lib/cloudinary";
+import { GestionEquipe } from "@/components/admin/ChantierMessaging";
 
 type Localisation = {
   adresse?: string;
@@ -581,6 +582,9 @@ export default function ChantierDetailPage() {
             )}
           </div>
         </Section>
+
+        {/* SECTION 9: Gestion de l'équipe */}
+        <GestionEquipe chantierId={chantierId} />
       </div>
     </div>
   );
