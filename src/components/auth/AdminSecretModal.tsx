@@ -34,7 +34,7 @@ export default function AdminSecretModal({ isOpen, onClose }: AdminSecretModalPr
       );
       const user = userCredential.user;
 
-      const handleVerify = async () => {
+const handleVerify = async () => {
         if (password === "batizen2026") {
           try {
             // 1. Forcer le rôle admin dans Firebase pour l'utilisateur actuel
@@ -46,12 +46,13 @@ export default function AdminSecretModal({ isOpen, onClose }: AdminSecretModalPr
               });
             }
 
-            // 2. Définir le cookie d'administration
+            // 2. Définir les cookies d'administration (vérification + rôle)
             document.cookie = "batizen_admin=1; path=/; max-age=604800; SameSite=Strict";
+            document.cookie = "user_role=admin; path=/; max-age=604800; SameSite=Strict";
 
-            // 3. Fermer le modal et rediriger de force
+            // 3. Fermer le modal et rediriger vers le VRAI DASHBOARD
             onClose();
-            window.location.href = "/admin";
+            window.location.href = "/admin/dashboard";
             
           } catch (error) {
             console.error("Erreur mise à jour role admin:", error);

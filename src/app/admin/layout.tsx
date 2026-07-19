@@ -23,6 +23,7 @@ import { getAuth, signOut } from "firebase/auth";
 import { useAuthContext } from "@/contexts/AuthContext";
 
 const SIDEBAR = [
+  { key: "dashboard", label: "Tableau de bord", icon: BarChart3, href: "/admin/dashboard" },
   { key: "clients", label: "Clients", icon: Users, href: "/admin/clients" },
   { key: "chantiers", label: "Chantiers", icon: HardHat, href: "/admin?section=chantiers" },
   { key: "ouvriers", label: "Ouvriers", icon: Hammer, href: "/admin?section=ouvriers" },
@@ -48,6 +49,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         const auth = getAuth();
         await signOut(auth);
         document.cookie = "batizen_admin=; path=/; max-age=0";
+        document.cookie = "user_role=; path=/; max-age=0";
         localStorage.removeItem("batizen_admin_session");
       } catch (error) {
         console.error("Logout error:", error);
