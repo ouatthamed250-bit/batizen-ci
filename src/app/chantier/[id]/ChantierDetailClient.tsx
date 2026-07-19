@@ -380,13 +380,13 @@ const [planning, setPlanning] = useState<Etape[]>([]);
     if (!id) return;
     let cancelled = false;
     let unsubMessages: Unsubscribe | null = null;
+    let unsubEquipes: Unsubscribe | null = null;
 
     async function load() {
-      const [c, e, p, eq, pa, d] = await Promise.all([
+      const [c, e, p, pa, d] = await Promise.all([
         rtdbGet<Chantier>(`chantiers/${id}`),
         rtdbGetList<Etape>(`chantiers/${id}/etapes`),
         rtdbGetList<Photo>(`chantiers/${id}/photos`),
-        rtdbGetList<Membre>(`chantiers/${id}/equipe`),
         rtdbGetList<Paiement>(`chantiers/${id}/paiements`),
         rtdbGetList<DocumentItem>(`chantiers/${id}/documents`),
       ]);
@@ -394,7 +394,6 @@ const [planning, setPlanning] = useState<Etape[]>([]);
       setChantier(c);
       setEtapes(e);
       setPhotos(p);
-      setEquipe(eq);
       setPaiements(pa);
       setDocuments(d);
       setLoading(false);
@@ -426,6 +425,50 @@ const [planning, setPlanning] = useState<Etape[]>([]);
     }
 
     load();
+
+    // 🔍 Listener temps réel pour l'équipe - DIAGNOSTIC
+    const chantierIdPourEquipe = id; // Capturer la valeur actuelle
+    unsubEquipes = onValue(ref(database, 'equipes'), (snapshot) => {
+      console.log("🔍 DIAGNOSTIC CLIENT - Lecture équipe:");
+      console.log("  - chantierId attendu:", chantierIdPourEquipe);
+      console.log("  - Type de chantierId:", typeof chantierIdPourEquipe);
+      
+      const data = snapshot.val();
+      console.log("  - Données brutes Firebase:", data);
+      
+      if (data) {
+        const equipeBrute = Object.entries(data)
+          .map(([idEq, e]: [string, any]) => {
+            console.log(`  - Vérif équipe ${idEq}: chantierId=${e.chantierId} (type: ${typeof e.chantierId}), actif=${e.actif}`);
+            return { id: idEq, ...e };
+          });
+        
+        console.log("  - Toutes les équipes trouvées:", equipeBrute.length);
+        
+        // ⚠️ CORRECTION : Comparaison stricte avec toString() pour éviter les problèmes de type
+        const equipeChantier = equipeBrute.filter(e => 
+          String(e.chantierId) === String(chantierIdPourEquipe) && e.actif === true
+        );
+        
+        console.log("  - Équipes filtrées pour CE chantier:", equipeChantier.length, equipeChantier);
+        
+        // Tri : Chef en premier
+        equipeChantier.sort((a: any, b: any) => {
+          const aIsChef = a.fonction === "chef_de_chantier" || a.type === "chef_de_chantier" || a.type === "chef";
+          const bIsChef = b.fonction === "chef_de_chantier" || b.type === "chef_de_chantier" || b.type === "chef";
+          if (aIsChef && !bIsChef) return -1;
+          if (!aIsChef && bIsChef) return 1;
+          return 0;
+        });
+        
+        setEquipe(equipeChantier);
+      } else {
+        console.log("  - Aucune donnée dans equipes/");
+        setEquipe([]);
+      }
+    }, (error) => {
+      console.error("❌ Erreur listener équipes:", error);
+    });
 
     // Messages en temps réel - avec vérification auth
     if (!user || !id) {
@@ -463,11 +506,12 @@ const [planning, setPlanning] = useState<Etape[]>([]);
     }
 
     return () => {
-      console.log("🧹 Nettoyage listener messages client");
+      console.log("🧹 Nettoyage listeners client");
       cancelled = true;
       if (unsubMessages) unsubMessages();
+      if (unsubEquipes) unsubEquipes();
     };
-  }, [user, id]);
+  }, [id]);
 
   const nom = chantier?.nom_projet || chantier?.nom || "Chantier";
   const pct = Number(chantier?.progression ?? chantier?.progress ?? 0);

@@ -106,21 +106,40 @@ export function GestionEquipe({ chantierId }: { chantierId: string }) {
 
   const handleAjouter = async (e: FormEvent) => {
     e.preventDefault();
-    if (!ouvrierSelectionne) return;
+    if (!ouvrierSelectionne) {
+      alert("Veuillez sélectionner un ouvrier");
+      return;
+    }
+
     const ouvrier = ouvriersList.find((o: any) => o.id === ouvrierSelectionne);
     if (!ouvrier) return;
-    const { database } = getFirebaseServices();
-    await push(ref(database, "equipes"), {
-      chantierId,
-      ouvrierId: ouvrier.id,
-      ouvrierNom: ouvrier.nom,
-      specialite: ouvrier.specialite,
-      fonction: ouvrier.fonction || "ouvrier",
-      dateAffectation: Date.now(),
-      actif: true
-    });
-    await update(ref(database, `ouvriers/${ouvrier.id}`), { chantierId });
-    setOuvrierSelectionne("");
+
+    // 🔍 LOGS DE DIAGNOSTIC
+    console.log("🔍 DIAGNOSTIC ADMIN - Écriture équipe:");
+    console.log("  - chantierId utilisé:", chantierId);
+    console.log("  - Type de chantierId:", typeof chantierId);
+    console.log("  - ouvrierId:", ouvrier.id);
+    console.log("  - ouvrierNom:", ouvrier.nom);
+
+    try {
+      const { database } = getFirebaseServices();
+      await push(ref(database, "equipes"), {
+        chantierId,
+        ouvrierId: ouvrier.id,
+        ouvrierNom: ouvrier.nom,
+        specialite: ouvrier.specialite,
+        fonction: ouvrier.fonction || "ouvrier",
+        dateAffectation: Date.now(),
+        actif: true
+      });
+
+      console.log("✅ Écriture équipe réussie !");
+      alert(`✅ ${ouvrier.nom} a été ajouté à l'équipe`);
+      setOuvrierSelectionne("");
+    } catch (error) {
+      console.error("❌ Erreur ajout équipe:", error);
+      alert("Erreur lors de l'ajout");
+    }
   };
 
   const handleRetirer = async (equipeId: string) => {
