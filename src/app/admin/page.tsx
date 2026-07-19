@@ -46,6 +46,8 @@ type Client = {
   lastSeen?: number;
   chantierIds?: string[];
   chantiers?: Chantier[];
+  rapports?: any[];
+  paiements?: any[];
 };
 
 type Chantier = {
@@ -143,6 +145,35 @@ function statutActivite(lastLogin?: string | number): { couleur: string; texte: 
   return { couleur: "bg-gray-500", texte: `⚪ Inactif (Dernière activité : ${formatDateActivite(lastLogin)})` };
 }
 
+// ✅ Fonction de calcul de santé d'un chantier
+function getSanteChantier(
+  chantier: any,
+  rapports: any[],
+  paiements: any[]
+): { couleur: "green" | "orange" | "red"; label: string; priorite: number } {
+  // Vérifier les retards dans les rapports
+  const rapportsEnRetard = rapports.filter(r => r.statut === "retard");
+  if (rapportsEnRetard.length > 0) {
+    return { couleur: "red", label: "⚠️ Retard signalé", priorite: 3 };
+  }
+
+  // Vérifier les paiements en attente
+  const paiementsEnAttente = paiements.filter(p => p.statut === "en_attente");
+  if (paiementsEnAttente.length > 0) {
+    return { couleur: "orange", label: "💰 Paiement en attente", priorite: 2 };
+  }
+
+  // Vérifier si le chantier est récent (moins de 7 jours sans rapport)
+  const rapportsTries = [...rapports].sort((a, b) => (b.dateCreation || 0) - (a.dateCreation || 0));
+  const dernierRapport = rapportsTries[0];
+  if (rapports.length > 0 && dernierRapport && (Date.now() - (dernierRapport.dateCreation || 0)) > 7 * 24 * 60 * 60 * 1000) {
+    return { couleur: "orange", label: "📋 Aucun rapport récent", priorite: 2 };
+  }
+
+  // Tout va bien
+  return { couleur: "green", label: "✅ Dans les délais", priorite: 1 };
+}
+
 async function updateChantier(chantierId: string, updates: Partial<Chantier>) {
   const db = getDatabase();
   try {
@@ -164,6 +195,8 @@ function AdminContent() {
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [ouvriers, setOuvriers] = useState<Ouvrier[]>([]);
   const [materiaux, setMateriaux] = useState<Materiau[]>([]);
+  const [allRapports, setAllRapports] = useState<any[]>([]);
+  const [allPaiements, setAllPaiements] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -190,6 +223,20 @@ useEffect(() => {
 
     const usersRef = dbRef(db, 'users');
     const chantiersRef = dbRef(db, 'chantiers');
+    const rapportsRef = dbRef(db, 'rapports');
+    const paiementsRef = dbRef(db, 'paiements');
+    
+    // Charger tous les rapports une fois
+    const unsubRapports = onValue(rapportsRef, (snapshot) => {
+      const data = snapshot.val();
+      setAllRapports(data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : []);
+    });
+
+    // Charger tous les paiements une fois
+    const unsubPaiements = onValue(paiementsRef, (snapshot) => {
+      const data = snapshot.val();
+      setAllPaiements(data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : []);
+    });
     
     // Vérification du rôle admin au montage
     onValue(usersRef, (snapshot) => {
@@ -247,7 +294,7 @@ useEffect(() => {
 
       console.log(`✅ [DIAG] Clients filtrés: ${clientsList.length}`);
 
-      // ✅ NOUVEAU : Pour chaque client, charger ses chantiers
+      // ✅ NOUVEAU : Pour chaque client, charger ses chantiers, rapports et paiements
       if (clientsList.length > 0) {
         Promise.all(clientsList.map(async (client) => {
           const chantiersSnap = await get(chantiersRef);
@@ -256,8 +303,22 @@ useEffect(() => {
           const clientChantiers = Object.entries(allChantiers)
             .filter(([_, c]: [string, any]) => c.userId === client.id || c.client_id === client.id)
             .map(([id, c]: [string, any]) => ({ id, ...c }));
+
+          // Charger les rapports liés aux chantiers du client
+          const rapportsSnap = await get(rapportsRef);
+          const allRapportsData = rapportsSnap.val() || {};
+          const clientRapports = Object.entries(allRapportsData)
+            .filter(([_, r]: [string, any]) => clientChantiers.some(ch => ch.id === r.chantierId))
+            .map(([id, r]: [string, any]) => ({ id, ...r }));
+
+          // Charger les paiements liés aux chantiers du client
+          const paiementsSnap = await get(paiementsRef);
+          const allPaiementsData = paiementsSnap.val() || {};
+          const clientPaiements = Object.entries(allPaiementsData)
+            .filter(([_, p]: [string, any]) => clientChantiers.some(ch => ch.id === p.chantierId))
+            .map(([id, p]: [string, any]) => ({ id, ...p }));
           
-          return { ...client, chantiers: clientChantiers };
+          return { ...client, chantiers: clientChantiers, rapports: clientRapports, paiements: clientPaiements };
         })).then(clientsWithChantiers => {
           console.log("✅ Clients avec chantiers:", clientsWithChantiers.length);
           setClients(clientsWithChantiers);
@@ -286,7 +347,7 @@ useEffect(() => {
       const data = snapshot.val();
       if (data) {
         const partenairesData = Object.entries(data)
-          .filter(([id, p]: [string, any]) => p.actif === true) // ⚠️ Filtre STRICT === true
+          .filter(([id, p]: [string, any]) => p.actif === true)
           .map(([id, p]: [string, any]) => ({ id, ...p }));
         setPartenaires(partenairesData);
       } else {
@@ -299,7 +360,7 @@ const promotionsRef = dbRef(db, 'promotions');
       const data = snapshot.val();
       if (data) {
         const promotionsData = Object.entries(data)
-          .filter(([id, p]: [string, any]) => p.active === true) // ⚠️ Filtre STRICT === true
+          .filter(([id, p]: [string, any]) => p.active === true)
           .map(([id, p]: [string, any]) => ({ id, ...p }));
         setPromotions(promotionsData);
       } else {
@@ -326,6 +387,8 @@ const promotionsRef = dbRef(db, 'promotions');
       unsubPromotions();
       unsubOuvriers();
       unsubMateriaux();
+      unsubRapports();
+      unsubPaiements();
     };
   }, []);
 
@@ -358,7 +421,6 @@ const promotionsRef = dbRef(db, 'promotions');
     }
   };
 
-  // Upload vers Cloudinary via fonction globale
   const handleImageUpload = async (file: File): Promise<string> => {
     return await uploadToCloudinary(file);
   };
@@ -543,7 +605,7 @@ const promotionsRef = dbRef(db, 'promotions');
                           </div>
                         </div>
 
-                        {/* ✅ NOUVEAU : Liste des chantiers du client */}
+                        {/* ✅ Section : Liste des chantiers du client */}
                         <div className="mt-4 pt-4 border-t border-gray-100">
                           <p className="text-xs font-semibold text-gray-600 mb-2 flex items-center gap-1">
                             🏗️ Ses chantiers ({client.chantiers?.length || 0})
@@ -553,25 +615,39 @@ const promotionsRef = dbRef(db, 'promotions');
                             <p className="text-xs text-gray-400 italic">Aucun chantier assigné</p>
                           ) : (
                             <div className="space-y-2">
-                              {client.chantiers.slice(0, 3).map((chantier: any) => (
-                                <Link 
-                                  key={chantier.id} 
-                                  href={`/admin/chantier/${chantier.id}`}
-                                  className="flex items-center justify-between p-2 bg-gray-50 rounded-lg hover:bg-[#FF7A00]/5 hover:border-[#FF7A00]/30 border border-transparent transition group"
-                                >
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-[var(--navy)] truncate group-hover:text-[#FF7A00]">
-                                      {chantier.nom_projet || chantier.nom || "Sans nom"}
-                                    </p>
-                                    <p className="text-xs text-gray-500 truncate">
-                                      {chantier.localisation?.ville || "Localisation inconnue"}
-                                    </p>
-                                  </div>
-                                  <span className="text-xs text-gray-400 ml-2">→</span>
-                                </Link>
-                              ))}
+                              {client.chantiers.slice(0, 3).map((chantier: any) => {
+                                const chantierRapports = client.rapports?.filter((r: any) => r.chantierId === chantier.id) || [];
+                                const chantierPaiements = client.paiements?.filter((p: any) => p.chantierId === chantier.id) || [];
+                                const sante = getSanteChantier(chantier, chantierRapports, chantierPaiements);
+                                
+                                return (
+                                  <Link 
+                                    key={chantier.id} 
+                                    href={`/admin/chantier/${chantier.id}`}
+                                    className="flex items-center justify-between p-2 bg-gray-50 rounded-lg hover:bg-[#FF7A00]/5 hover:border-[#FF7A00]/30 border border-transparent transition group"
+                                  >
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-medium text-[var(--navy)] truncate group-hover:text-[#FF7A00]">
+                                        {chantier.nom_projet || chantier.nom || "Sans nom"}
+                                      </p>
+                                      <p className="text-xs text-gray-500 truncate">
+                                        {chantier.localisation?.ville || "Localisation inconnue"}
+                                      </p>
+                                    </div>
+                                    
+                                    {/* Badge de santé visuel */}
+                                    <span className={`ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap ${
+                                      sante.couleur === "green" ? "bg-green-100 text-green-700" :
+                                      sante.couleur === "orange" ? "bg-orange-100 text-orange-700" :
+                                      "bg-red-100 text-red-700"
+                                    }`}>
+                                      {sante.label}
+                                    </span>
+                                  </Link>
+                                );
+                              })}
                               
-                              {client.chantiers.length > 3 && (
+                              {client.chantiers && client.chantiers.length > 3 && (
                                 <Link 
                                   href={`/admin/clients/${client.id}/chantiers`}
                                   className="text-xs text-[#FF7A00] font-medium hover:underline mt-1 block"
