@@ -280,23 +280,24 @@ function ChantierCard({ chantier, onModifier, onSupprimer }: {
 export default function DashboardClientPage() {
   const { user } = useAuthContext();
   const [loading, setLoading] = useState(true);
-  const [mesChantiers, setMesChantiers] = useState<Chantier[]>([]);
+  const [chantiers, setChantiers] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [promos, setPromos] = useState<Promo[]>([]);
 
   const nomClient = user?.displayName || user?.email?.split("@")[0] || "Client";
 
   // Calculer les stats depuis les vrais chantiers
-  const chantiersActifs = mesChantiers.filter(c => c.statut === "en_cours").length;
-  const prochainRdv = mesChantiers
+  const chantiersActifs = chantiers.filter(c => c.statut === "en_cours").length;
+  const prochainRdv = chantiers
     .filter(c => (c.statut === "en_attente" || c.statut === "en_attente_rdv") && c.rdv_date)
     .sort((a, b) => new Date(a.rdv_date!).getTime() - new Date(b.rdv_date!).getTime())[0];
 
   useEffect(() => {
-    console.log("🟢 [1] useEffect dashboard démarré. user?.uid =", user?.uid);
+    console.log(" [CLIENT] Début chargement chantiers...");
+    console.log("🔐 [CLIENT] User UID:", user?.uid);
     
     if (!user?.uid) {
-      console.log("🔴 [2] Pas d'utilisateur connecté, arrêt.");
+      console.warn("⚠️ [CLIENT] Pas d'UID utilisateur, arrêt du chargement");
       setLoading(false);
       return;
     }
@@ -313,21 +314,29 @@ export default function DashboardClientPage() {
         console.log("📦 [6] DONNÉES BRUTES FIREBASE:", data);
 
         if (data) {
-          // Filtrer pour ne garder que les chantiers du client connecté (HORS simulations)
+          // Filtrer pour ne garder que les chantiers du client connecté
+          // Support userId ET client_id pour compatibilité maximale + filtre actif !== false pour soft delete
           const liste = Object.keys(data)
             .map(key => ({
               id: key,
               ...data[key]
             }))
-            .filter((c: Chantier) => c.userId === user?.uid && c.statut !== 'simulation_brouillon');
+            .filter((c: any) => {
+              const isMyChantier = (c.userId === user?.uid || c.client_id === user?.uid);
+              const isActive = c.actif !== false; // Soft delete
+              
+              if (isMyChantier && isActive) {
+                console.log(`  ✅ Chantier validé: ${c.nom_projet || c.nom} (${c.id})`);
+              }
+              
+              return isMyChantier && isActive;
+            });
 
-          console.log("✅ [8] CHANTIERS LUS DEPUIS FIREBASE:", liste);
-          console.log("📊 [9] NOMBRE DE CHANTIERS TROUVÉS:", liste.length);
-
-          setMesChantiers(liste);
+          console.log(`📊 [8] Total chantiers après filtre: ${liste.length}`);
+          setChantiers(liste);
         } else {
           console.log("⚠️ [10] Aucune donnée dans le nœud 'chantiers'");
-          setMesChantiers([]);
+          setChantiers([]);
         }
         setLoading(false);
       });
@@ -533,7 +542,7 @@ const promosRef = ref(db, 'promotions');
           <div className="space-y-3">
             <SkeletonChantier /><SkeletonChantier />
           </div>
-        ) : mesChantiers.length === 0 ? (
+        ) : chantiers.length === 0 ? (
           <div className="rounded-[22px] border border-dashed border-white/50 bg-white/90 p-8 text-center backdrop-blur-sm">
             <HardHat size={48} className="mx-auto mb-3 text-[#9CA3AF]" />
             <p className="text-sm font-bold text-[var(--muted)]">Vous n'avez pas encore de chantier. Commencez par une simulation.</p>
@@ -545,7 +554,7 @@ const promosRef = ref(db, 'promotions');
           <div className="space-y-3">
             <h2 className="text-xs font-black uppercase tracking-[0.2em] text-[var(--muted)]">Mes chantiers</h2>
             <div className="grid gap-3 sm:grid-cols-2">
-              {mesChantiers.map((c) => (
+              {chantiers.map((c) => (
                 <ChantierCard 
                   key={c.id} 
                   chantier={c} 
