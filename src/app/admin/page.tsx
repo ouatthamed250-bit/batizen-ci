@@ -378,7 +378,7 @@ useEffect(() => {
       }
     }, { onlyOnce: true });
 
-    const unsubClients = onValue(usersRef, (snapshot) => {
+    const unsubClients = onValue(usersRef, async (snapshot) => {
       console.log("📦 [DIAG] Snapshot reçu. Existe ?", snapshot.exists());
       
       const data = snapshot.val();
@@ -390,15 +390,6 @@ useEffect(() => {
 
       const allUsers = Object.entries(data);
       console.log(`👥 [DIAG] Total users trouvés: ${allUsers.length}`);
-
-      allUsers.forEach(([id, u]: [string, any]) => {
-        console.log(`   User ${id}:`, {
-          role: u.role,
-          userRole: u.userRole,
-          displayName: u.displayName || u.nom,
-          email: u.email
-        });
-      });
 
       const clientsList = allUsers
         .filter(([id, u]: [string, any]) => {
@@ -420,51 +411,69 @@ useEffect(() => {
 
       console.log(`✅ [DIAG] Clients filtrés: ${clientsList.length}`);
 
-      if (clientsList.length > 0) {
-        Promise.all(clientsList.map(async (client) => {
-          const chantiersSnap = await get(chantiersRef);
-          const allChantiers = chantiersSnap.val() || {};
-          
-          const clientChantiers = Object.entries(allChantiers)
-            .filter(([_, c]: [string, any]) => c.userId === client.id || c.client_id === client.id)
-            .map(([id, c]: [string, any]) => ({ id, ...c }));
+      // 🔍 ÉTAPE 1 : Charger TOUS les chantiers en une seule fois
+      const chantiersSnap = await get(chantiersRef);
+      const allChantiers = chantiersSnap.val() || {};
+      console.log(`🏗️ [DIAG] ${Object.keys(allChantiers).length} chantiers totaux chargés`);
 
-          const rapportsSnap = await get(rapportsRef);
-          const allRapportsData = rapportsSnap.val() || {};
-          const clientRapports = Object.entries(allRapportsData)
-            .filter(([_, r]: [string, any]) => clientChantiers.some(ch => ch.id === r.chantierId))
-            .map(([id, r]: [string, any]) => ({ id, ...r }));
+      // 🔍 ÉTAPE 2 : Charger TOUS les rapports en une seule fois
+      const rapportsSnap = await get(rapportsRef);
+      const allRapportsData = rapportsSnap.val() || {};
+      const allRapportsList = Object.entries(allRapportsData).map(([id, r]: [string, any]) => ({ id, ...r }));
 
-          const paiementsSnap = await get(paiementsRef);
-          const allPaiementsData = paiementsSnap.val() || {};
-          const clientPaiements = Object.entries(allPaiementsData)
-            .filter(([_, p]: [string, any]) => clientChantiers.some(ch => ch.id === p.chantierId))
-            .map(([id, p]: [string, any]) => ({ id, ...p }));
+      // 🔍 ÉTAPE 3 : Charger TOUS les paiements en une seule fois
+      const paiementsSnap = await get(paiementsRef);
+      const allPaiementsData = paiementsSnap.val() || {};
+      const allPaiementsList = Object.entries(allPaiementsData).map(([id, p]: [string, any]) => ({ id, ...p }));
 
-          const messagesSnap = await get(messagesRef);
-          const allMessagesData = messagesSnap.val() || {};
-          const clientMessages = Object.entries(allMessagesData)
-            .filter(([_, m]: [string, any]) => m.clientId === client.id || m.senderId === client.id)
-            .map(([id, m]: [string, any]) => ({ id, ...m }));
-          const dernierMessage = clientMessages.sort((a: any, b: any) => (b.dateEnvoi || 0) - (a.dateEnvoi || 0))[0];
+      // 🔍 ÉTAPE 4 : Charger TOUS les messages en une seule fois
+      const messagesSnap = await get(messagesRef);
+      const allMessagesData = messagesSnap.val() || {};
+      const allMessagesList = Object.entries(allMessagesData).map(([id, m]: [string, any]) => ({ id, ...m }));
 
-          const rdvSnap = await get(rdvRef);
-          const allRdvData = rdvSnap.val() || {};
-          const clientRdvConfirmes = Object.entries(allRdvData)
-            .filter(([_, r]: [string, any]) => 
-              clientChantiers.some(ch => ch.id === r.chantierId) && 
-              (r.statut === "confirme_admin" || r.statut === "confirme_client")
-            )
-            .map(([id, r]: [string, any]) => ({ id, ...r }));
-          
-          return { ...client, chantiers: clientChantiers, rapports: clientRapports, paiements: clientPaiements, dernierMessage, rdvConfirmes: clientRdvConfirmes };
-        })).then(clientsWithChantiers => {
-          console.log("✅ Clients avec chantiers:", clientsWithChantiers.length);
-          setClients(clientsWithChantiers);
-        });
-      } else {
-        setClients([]);
-      }
+      // 🔍 ÉTAPE 5 : Charger TOUS les RDV en une seule fois
+      const rdvSnap = await get(rdvRef);
+      const allRdvData = rdvSnap.val() || {};
+      const allRdvList = Object.entries(allRdvData).map(([id, r]: [string, any]) => ({ id, ...r }));
+
+      // 🔍 ÉTAPE 6 : Jointure en mémoire JS - associer chaque chantier à son client
+      const clientsWithChantiers = clientsList.map((client) => {
+        // Filtrer les chantiers de ce client
+        const clientChantiers = Object.entries(allChantiers)
+          .filter(([_, c]: [string, any]) => c.userId === client.id || c.client_id === client.id)
+          .map(([id, c]: [string, any]) => ({ id, ...c }));
+
+        // Filtrer les rapports liés aux chantiers du client
+        const clientRapports = allRapportsList.filter((r: any) => 
+          clientChantiers.some(ch => ch.id === r.chantierId)
+        );
+
+        // Filtrer les paiements liés aux chantiers du client
+        const clientPaiements = allPaiementsList.filter((p: any) => 
+          clientChantiers.some(ch => ch.id === p.chantierId)
+        );
+
+        // Trouver le dernier message du client
+        const clientMessages = allMessagesList.filter((m: any) => 
+          m.clientId === client.id || m.senderId === client.id
+        );
+        const dernierMessage = clientMessages.sort((a: any, b: any) => (b.dateEnvoi || 0) - (a.dateEnvoi || 0))[0];
+
+        // Filtrer les RDV confirmés liés aux chantiers du client
+        const clientRdvConfirmes = allRdvList.filter((r: any) => 
+          clientChantiers.some(ch => ch.id === r.chantierId) && 
+          (r.statut === "confirme_admin" || r.statut === "confirme_client")
+        );
+
+        return { ...client, chantiers: clientChantiers, rapports: clientRapports, paiements: clientPaiements, dernierMessage, rdvConfirmes: clientRdvConfirmes };
+      });
+
+      console.log("✅ Clients enrichis avec chantiers:", clientsWithChantiers.map(c => ({
+        nom: c.displayName,
+        nbChantiers: c.chantiers.length
+      })));
+      
+      setClients(clientsWithChantiers);
     }, (error) => {
       console.error("❌ [DIAG] Erreur Firebase:", error);
     });
