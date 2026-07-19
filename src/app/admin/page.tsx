@@ -50,6 +50,8 @@ type Client = {
   paiements?: any[];
   prochainRDV?: string;
   rdvProche?: boolean;
+  dernierMessage?: any;
+  rdvConfirmes?: any[];
 };
 
 type Chantier = {
@@ -177,7 +179,6 @@ function getSanteChantier(
 const getPrioriteClient = (client: any): number => {
   let score = 0;
   
-  // RDV aujourd'hui ou demain (+100 points)
   const aujourdhui = new Date().toISOString().split('T')[0];
   const demain = new Date(Date.now() + 86400000).toISOString().split('T')[0];
   
@@ -185,26 +186,22 @@ const getPrioriteClient = (client: any): number => {
     score += 100;
   }
   
-  // Paiement en attente (+80 points)
   const paiementsEnAttente = client.paiements?.filter((p: any) => p.statut === "en_attente");
   if (paiementsEnAttente && paiementsEnAttente.length > 0) {
     score += 80;
   }
   
-  // Rapport en retard (+70 points)
   const rapportsEnRetard = client.rapports?.filter((r: any) => r.statut === "retard");
   if (rapportsEnRetard && rapportsEnRetard.length > 0) {
     score += 70;
   }
   
-  // Aucun rapport depuis > 14 jours (+50 points)
   const rapportsTries = [...(client.rapports || [])].sort((a: any, b: any) => (b.dateCreation || 0) - (a.dateCreation || 0));
   const dernierRapport = rapportsTries[0];
   if (dernierRapport && (Date.now() - (dernierRapport.dateCreation || 0)) > 14 * 24 * 60 * 60 * 1000) {
     score += 50;
   }
   
-  // Bonus : chantier actif récent (< 30 jours) (+20 points)
   if (client.chantiers && client.chantiers.length > 0) {
     const chantiersRecents = client.chantiers.filter((c: any) => 
       c.dateCreation && (Date.now() - c.dateCreation) < 30 * 24 * 60 * 60 * 1000
@@ -213,6 +210,70 @@ const getPrioriteClient = (client: any): number => {
   }
   
   return score;
+};
+
+// ✅ Fonction de formatage du temps relatif
+const getTempsRelatif = (timestamp: number): string => {
+  const secondes = Math.floor((Date.now() - timestamp) / 1000);
+  
+  if (secondes < 60) return "à l'instant";
+  if (secondes < 3600) return `il y a ${Math.floor(secondes / 60)} min`;
+  if (secondes < 86400) return `il y a ${Math.floor(secondes / 3600)} h`;
+  if (secondes < 604800) return `il y a ${Math.floor(secondes / 86400)} j`;
+  
+  return new Date(timestamp).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+};
+
+// ✅ Fonction pour trouver la dernière interaction
+const getLastInteraction = (client: any): { type: string; date: number; label: string } | null => {
+  const interactions: { type: string; date: number; label: string }[] = [];
+  
+  if (client.dernierMessage?.dateEnvoi) {
+    interactions.push({ 
+      type: "message", 
+      date: client.dernierMessage.dateEnvoi, 
+      label: "💬 Message" 
+    });
+  }
+  
+  const dernierPaiement = client.paiements
+    ?.filter((p: any) => p.statut === "valide")
+    .sort((a: any, b: any) => (b.dateValidation || 0) - (a.dateValidation || 0))[0];
+  if (dernierPaiement?.dateValidation) {
+    interactions.push({ 
+      type: "paiement", 
+      date: dernierPaiement.dateValidation, 
+      label: "💰 Paiement" 
+    });
+  }
+  
+  const rapportsTries = [...(client.rapports || [])].sort((a: any, b: any) => (b.dateCreation || 0) - (a.dateCreation || 0));
+  const dernierRapport = rapportsTries[0];
+  if (dernierRapport?.dateCreation) {
+    interactions.push({ 
+      type: "rapport", 
+      date: dernierRapport.dateCreation, 
+      label: "📋 Rapport" 
+    });
+  }
+  
+  const rdvTries = [...(client.rdvConfirmes || [])].sort((a: any, b: any) => {
+    const dateA = new Date(a.date).getTime();
+    const dateB = new Date(b.date).getTime();
+    return dateB - dateA;
+  });
+  const dernierRDV = rdvTries[0];
+  if (dernierRDV?.date) {
+    interactions.push({ 
+      type: "rdv", 
+      date: new Date(dernierRDV.date).getTime(), 
+      label: "📅 RDV" 
+    });
+  }
+  
+  if (interactions.length === 0) return null;
+  
+  return interactions.sort((a, b) => b.date - a.date)[0];
 };
 
 async function updateChantier(chantierId: string, updates: Partial<Chantier>) {
@@ -244,7 +305,6 @@ function AdminContent() {
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  // Fonction utilitaire pour normaliser le texte (sans accents, minuscules)
   const normalizeText = (text: string) => {
     return text
       .toLowerCase()
@@ -252,7 +312,6 @@ function AdminContent() {
       .replace(/[\u0300-\u036f]/g, "");
   };
 
-  // Filtrage des clients basé sur la recherche (nom, email, téléphone)
   const filteredClients = clients.filter((client: any) => {
     if (!searchTerm.trim()) return true;
     
@@ -264,15 +323,12 @@ function AdminContent() {
     return nom.includes(term) || email.includes(term) || telephone.includes(term);
   });
 
-  // Tri des clients par priorité et alphabétique
   const filteredAndSortedClients = [...filteredClients].sort((a: any, b: any) => {
     const scoreA = getPrioriteClient(a);
     const scoreB = getPrioriteClient(b);
     
-    // Tri décroissant par score de priorité
     if (scoreB !== scoreA) return scoreB - scoreA;
     
-    // Si même priorité, tri alphabétique par nom
     return (a.displayName || "").localeCompare(b.displayName || "");
   });
 
@@ -298,6 +354,8 @@ useEffect(() => {
     const chantiersRef = dbRef(db, 'chantiers');
     const rapportsRef = dbRef(db, 'rapports');
     const paiementsRef = dbRef(db, 'paiements');
+    const messagesRef = dbRef(db, 'messages');
+    const rdvRef = dbRef(db, 'rendezvous');
     
     const unsubRapports = onValue(rapportsRef, (snapshot) => {
       const data = snapshot.val();
@@ -382,8 +440,24 @@ useEffect(() => {
           const clientPaiements = Object.entries(allPaiementsData)
             .filter(([_, p]: [string, any]) => clientChantiers.some(ch => ch.id === p.chantierId))
             .map(([id, p]: [string, any]) => ({ id, ...p }));
+
+          const messagesSnap = await get(messagesRef);
+          const allMessagesData = messagesSnap.val() || {};
+          const clientMessages = Object.entries(allMessagesData)
+            .filter(([_, m]: [string, any]) => m.clientId === client.id || m.senderId === client.id)
+            .map(([id, m]: [string, any]) => ({ id, ...m }));
+          const dernierMessage = clientMessages.sort((a: any, b: any) => (b.dateEnvoi || 0) - (a.dateEnvoi || 0))[0];
+
+          const rdvSnap = await get(rdvRef);
+          const allRdvData = rdvSnap.val() || {};
+          const clientRdvConfirmes = Object.entries(allRdvData)
+            .filter(([_, r]: [string, any]) => 
+              clientChantiers.some(ch => ch.id === r.chantierId) && 
+              (r.statut === "confirme_admin" || r.statut === "confirme_client")
+            )
+            .map(([id, r]: [string, any]) => ({ id, ...r }));
           
-          return { ...client, chantiers: clientChantiers, rapports: clientRapports, paiements: clientPaiements };
+          return { ...client, chantiers: clientChantiers, rapports: clientRapports, paiements: clientPaiements, dernierMessage, rdvConfirmes: clientRdvConfirmes };
         })).then(clientsWithChantiers => {
           console.log("✅ Clients avec chantiers:", clientsWithChantiers.length);
           setClients(clientsWithChantiers);
@@ -685,6 +759,7 @@ const promotionsRef = dbRef(db, 'promotions');
                     };
                     
                     const prioriteScore = getPrioriteClient(client);
+                    const lastInteraction = getLastInteraction(client);
                     
                     return (
                       <div key={client.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 hover:shadow-md transition relative">
@@ -706,6 +781,21 @@ const promotionsRef = dbRef(db, 'promotions');
                             <p className="text-xs text-gray-500">{client.email || "—"}</p>
                           </div>
                         </div>
+
+                        {/* Historique d'interaction rapide */}
+                        {lastInteraction && (
+                          <div className="mt-3 pt-3 border-t border-gray-100 flex items-center gap-2">
+                            <span className="text-xs text-gray-500">Dernière activité :</span>
+                            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                              lastInteraction.type === "message" ? "bg-blue-50 text-blue-700" :
+                              lastInteraction.type === "paiement" ? "bg-green-50 text-green-700" :
+                              lastInteraction.type === "rapport" ? "bg-purple-50 text-purple-700" :
+                              "bg-orange-50 text-orange-700"
+                            }`}>
+                              {lastInteraction.label} • {getTempsRelatif(lastInteraction.date)}
+                            </span>
+                          </div>
+                        )}
 
                         {/* Section : Liste des chantiers du client */}
                         <div className="mt-4 pt-4 border-t border-gray-100">
