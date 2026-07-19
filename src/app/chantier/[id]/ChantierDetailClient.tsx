@@ -1009,26 +1009,75 @@ const [ouvriersList, setOuvriersList] = useState<any[]>([]);
                 </section>
               )}
 
-              {/* ONGLET 9 - NOTES */}
+              {/* ONGLET 9 - NOTES & CHECKLISTS COLLABORATIVES */}
               {activeTab === "notes" && (
-                <section aria-label="Notes">
-                  {notes.length === 0 ? (
-                    <EmptyState text="Aucune note disponible" />
+                <section aria-label="Notes & Checklists">
+                  {isTabLocked("notes") ? (
+                    <LockedTab />
+                  ) : notes.length === 0 ? (
+                    <EmptyState text="Aucune note disponible pour le moment." />
                   ) : (
                     <div className="space-y-3">
                       {notes.map((n) => (
-                        <div key={n.id} className="rounded-[18px] border border-[#E7EBF5] bg-white p-4 shadow-sm">
-                          <div className="flex items-start justify-between gap-2">
+                        <div key={n.id} className={`p-4 rounded-xl border ${
+                          n.priorite === "urgente" ? "bg-red-50 border-red-200" :
+                          n.priorite === "importante" ? "bg-yellow-50 border-yellow-200" :
+                          "bg-green-50 border-green-200"
+                        }`}>
+                          <div className="flex items-start justify-between mb-2">
                             <div className="flex-1">
-                              <h3 className="font-black text-[#0D2B6B]">{n.titre || "Note"}</h3>
-                              <p className="text-xs text-[#6B7280]">📅 {formatDateFr(n.dateCreation ? new Date(n.dateCreation).toISOString() : n.date)}</p>
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-lg">
+                                  {n.type === "checklist" ? "✅" : "📝"}
+                                </span>
+                                <h3 className="font-bold text-[var(--navy)]">{n.titre || "Note"}</h3>
+                                <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
+                                  n.statut === "fait" ? "bg-green-100 text-green-700" :
+                                  n.statut === "en_cours" ? "bg-blue-100 text-blue-700" :
+                                  n.statut === "annule" ? "bg-gray-100 text-gray-700" :
+                                  "bg-orange-100 text-orange-700"
+                                }`}>
+                                  {n.statut === "a_faire" ? "⏳ À faire" :
+                                   n.statut === "en_cours" ? "🔄 En cours" :
+                                   n.statut === "fait" ? "✅ Fait" : "❌ Annulé"}
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-600">
+                                Par {n.creeParNom} ({n.creeParRole === "admin" ? "Admin" : "Vous"}) • {formatDateFr(n.dateCreation ? new Date(n.dateCreation).toISOString() : n.date)}
+                              </p>
                             </div>
-                            <span className="rounded-full bg-[#0B5FFF]/10 px-2 py-0.5 text-[10px] font-black text-[#0B5FFF]">
-                              {n.type || "Note"}
-                            </span>
                           </div>
-                          {n.contenu && <p className="mt-2 text-sm text-[#374151]">{n.contenu}</p>}
-                          {n.auteur && <p className="mt-2 text-xs text-[#9CA3AF]">Par {n.auteur}</p>}
+
+                          {/* Contenu pour notes simples */}
+                          {n.type === "note" && n.contenu && (
+                            <p className="text-sm text-gray-800 mt-2 whitespace-pre-line">{n.contenu}</p>
+                          )}
+
+                          {/* Items pour checklists */}
+                          {n.type === "checklist" && n.items && n.items.length > 0 && (
+                            <div className="mt-3 space-y-1">
+                              {n.items.map((item: any) => (
+                                <div key={item.id} className="flex items-center gap-2">
+                                  <input 
+                                    type="checkbox"
+                                    checked={item.coche}
+                                    readOnly
+                                    className="w-4 h-4"
+                                  />
+                                  <span className={`text-sm ${item.coche ? "text-gray-500 line-through" : "text-gray-800"}`}>
+                                    {item.texte}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Date de rappel */}
+                          {n.dateRappel && (
+                            <p className="text-xs text-gray-600 mt-2">
+                              📅 Rappel : {new Date(n.dateRappel).toLocaleDateString('fr-FR')}
+                            </p>
+                          )}
                         </div>
                       ))}
                     </div>
