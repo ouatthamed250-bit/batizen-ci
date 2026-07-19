@@ -351,9 +351,10 @@ export default function ChantierDetailClient() {
 const [planning, setPlanning] = useState<Etape[]>([]);
   const [rendezvous, setRendezvous] = useState<RendezVous[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [medias, setMedias] = useState<any[]>([]);
+const [medias, setMedias] = useState<any[]>([]);
    const [album, setAlbum] = useState<Photo[]>([]);
    const [rapports, setRapports] = useState<Rapport[]>([]);
+   const [clientDocuments, setClientDocuments] = useState<any[]>([]);
   const [ouvriersList, setOuvriersList] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [uploading, setUploading] = useState(false);
