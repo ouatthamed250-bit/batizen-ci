@@ -247,22 +247,45 @@ export default function ChantierDetailPage() {
   // Sauvegarde du rapport hebdomadaire
   const handleCreerRapport = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!rapportForm.commentaires.trim()) {
-      alert("Veuillez ajouter un commentaire");
-      return;
-    }
+    
+    console.log("🔍 ADMIN - Création rapport:", {
+      chantierId,
+      chantierIdType: typeof chantierId,
+      rapportForm,
+      mediasCount: mediasRapport.length
+    });
 
     try {
-      await push(ref(database, 'rapports'), {
-        chantierId,
-        ...rapportForm,
-        medias: mediasRapport,
+      const rapportData = {
+        chantierId: String(chantierId), // ⚠️ FORCER EN STRING
+        semaine: rapportForm.semaine || `S${getWeekNumber(new Date())}`,
+        dateDebut: rapportForm.dateDebut || new Date().toISOString(),
+        dateFin: rapportForm.dateFin || new Date().toISOString(),
+        etape: rapportForm.etape || "fondations",
+        avancement: rapportForm.avancement || 0,
+        statut: rapportForm.statut || "dans_delais",
+        commentaires: rapportForm.commentaires || "",
+        problemes: rapportForm.problemes || "",
+        prochaine_etape: rapportForm.prochaine_etape || "",
+        medias: mediasRapport.map(m => ({
+          id: m.id,
+          url: m.url,
+          type: m.type || "photo",
+          legende: m.legende || "",
+          categorie: m.categorie || "pendant",
+          dateUpload: m.dateUpload || Date.now()
+        })),
         creePar: "admin",
         dateCreation: Date.now(),
         actif: true
-      });
+      };
 
-      alert("✅ Rapport hebdomadaire créé avec succès !");
+      console.log(" Données rapport à écrire:", rapportData);
+
+      await push(ref(database, 'rapports'), rapportData);
+
+      console.log("✅ Rapport écrit avec succès !");
+      alert("✅ Rapport créé !");
       setShowRapportForm(false);
       setRapportForm({
         semaine: "",
@@ -277,8 +300,8 @@ export default function ChantierDetailPage() {
       });
       setMediasRapport([]);
     } catch (error) {
-      console.error("Erreur création rapport:", error);
-      alert("Erreur lors de la création du rapport");
+      console.error("❌ Erreur:", error);
+      alert("Erreur lors de la création");
     }
   };
 
