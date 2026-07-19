@@ -420,10 +420,10 @@ const promosRef = ref(db, 'promotions');
       <div className="absolute inset-0 bg-cover bg-center bg-no-repeat z-0" style={{ backgroundImage: 'url(/images/villa-bg.jpg)' }}></div>
       <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10"></div>
       
-      {/* Contenu principal */}
-      <main className="relative z-20 flex flex-col gap-3 px-4 pb-4">
+{/* Contenu principal */}
+      <main className="relative z-20 flex flex-col gap-3 px-4 pt-20 pb-24 sm:pt-24 md:pb-28">
         {/* 1. HEADER PERSONNALISÉ */}
-        <header className="rounded-[22px] border border-white/50 bg-white/90 backdrop-blur-sm">
+        <header className="rounded-[22px] border border-white/50 bg-white/90 backdrop-blur-sm mb-6">
           <div className="px-4 pt-4 pb-2 sm:px-6">
             <h1 className="text-2xl font-black tracking-[-0.03em] text-[var(--navy)] sm:text-3xl">Bonjour {nomClient}</h1>
             <p className="mt-1 text-sm font-semibold text-[var(--muted)]">{formatDateFrancais(new Date())}</p>
@@ -617,26 +617,26 @@ const promosRef = ref(db, 'promotions');
         {/* 9. CHATBOT */}
         <ChatBot />
 
-        {/* 10. CADRE "NOS PARTENAIRES" - Affiché en bas du dashboard */}
+{/* 10. CADRE "NOS PARTENAIRES" - Dégradé BÂTIZEN pour un contraste parfait */}
         {partenaires.length > 0 && (
-          <div className="mt-8 pt-8 border-t border-white/10">
-            <h3 className="font-black text-xl text-white mb-6 flex items-center gap-2">
+          <div className="mt-8 pt-8 border-t border-gray-200">
+            <h3 className="font-black text-xl text-[var(--navy)] mb-6 flex items-center gap-2">
               🤝 Nos Partenaires de Confiance
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {partenaires.map((partenaire: any) => (
-                <div key={partenaire.id} className="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 p-4 flex flex-col items-center text-center hover:bg-white/15 transition">
+                <div key={partenaire.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 flex flex-col items-center text-center hover:shadow-md transition">
                   {partenaire.photo_url ? (
                     <div className="w-20 h-20 rounded-full overflow-hidden mb-3 border-2 border-[#FF7A00]">
                       <img src={partenaire.photo_url} alt={partenaire.nom} className="w-full h-full object-cover" />
                     </div>
                   ) : (
-                    <div className="w-20 h-20 rounded-full bg-[#FF7A00]/20 flex items-center justify-center mb-3 text-3xl">
+                    <div className="w-20 h-20 rounded-full bg-[#FF7A00]/10 flex items-center justify-center mb-3 text-3xl">
                       🏢
                     </div>
                   )}
-                  <h4 className="font-bold text-white text-lg mb-1">{partenaire.nom}</h4>
-                  <p className="text-sm text-white/70 line-clamp-3">{partenaire.description || "Partenaire certifié BÂTIZEN"}</p>
+                  <h4 className="font-bold text-[var(--navy)] text-lg mb-1">{partenaire.nom}</h4>
+                  <p className="text-sm text-gray-700 line-clamp-3">{partenaire.description || "Partenaire certifié BÂTIZEN"}</p>
                 </div>
               ))}
             </div>
