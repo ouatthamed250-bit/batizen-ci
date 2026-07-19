@@ -151,26 +151,22 @@ function getSanteChantier(
   rapports: any[],
   paiements: any[]
 ): { couleur: "green" | "orange" | "red"; label: string; priorite: number } {
-  // Vérifier les retards dans les rapports
   const rapportsEnRetard = rapports.filter(r => r.statut === "retard");
   if (rapportsEnRetard.length > 0) {
     return { couleur: "red", label: "⚠️ Retard signalé", priorite: 3 };
   }
 
-  // Vérifier les paiements en attente
   const paiementsEnAttente = paiements.filter(p => p.statut === "en_attente");
   if (paiementsEnAttente.length > 0) {
     return { couleur: "orange", label: "💰 Paiement en attente", priorite: 2 };
   }
 
-  // Vérifier si le chantier est récent (moins de 7 jours sans rapport)
   const rapportsTries = [...rapports].sort((a, b) => (b.dateCreation || 0) - (a.dateCreation || 0));
   const dernierRapport = rapportsTries[0];
   if (rapports.length > 0 && dernierRapport && (Date.now() - (dernierRapport.dateCreation || 0)) > 7 * 24 * 60 * 60 * 1000) {
     return { couleur: "orange", label: "📋 Aucun rapport récent", priorite: 2 };
   }
 
-  // Tout va bien
   return { couleur: "green", label: "✅ Dans les délais", priorite: 1 };
 }
 
@@ -198,10 +194,30 @@ function AdminContent() {
   const [allRapports, setAllRapports] = useState<any[]>([]);
   const [allPaiements, setAllPaiements] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [query, setQuery] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  // Fonction utilitaire pour normaliser le texte (sans accents, minuscules)
+  const normalizeText = (text: string) => {
+    return text
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+  };
+
+  // Filtrage des clients basé sur la recherche (nom, email, téléphone)
+  const filteredClients = clients.filter((client: any) => {
+    if (!searchTerm.trim()) return true;
+    
+    const term = normalizeText(searchTerm);
+    const nom = normalizeText(client.displayName || client.nom || "");
+    const email = normalizeText(client.email || "");
+    const telephone = normalizeText(client.telephone || client.phone || "");
+    
+    return nom.includes(term) || email.includes(term) || telephone.includes(term);
+  });
 
   if (authLoading) return <div className="min-h-screen bg-[#111827] flex items-center justify-center"><p className="text-white">Chargement...</p></div>;
   if (!user || user.role !== "admin") return <div className="min-h-screen bg-[#111827] flex items-center justify-center px-4"><div className="text-center"><h1 className="text-2xl font-bold text-red-600">Accès refusé</h1><p className="mt-4 text-white/60">Vous devez être administrateur.</p></div></div>;
@@ -226,19 +242,16 @@ useEffect(() => {
     const rapportsRef = dbRef(db, 'rapports');
     const paiementsRef = dbRef(db, 'paiements');
     
-    // Charger tous les rapports une fois
     const unsubRapports = onValue(rapportsRef, (snapshot) => {
       const data = snapshot.val();
       setAllRapports(data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : []);
     });
 
-    // Charger tous les paiements une fois
     const unsubPaiements = onValue(paiementsRef, (snapshot) => {
       const data = snapshot.val();
       setAllPaiements(data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : []);
     });
     
-    // Vérification du rôle admin au montage
     onValue(usersRef, (snapshot) => {
       const userData = snapshot.val();
       console.log("🔐 [AUTH] Données user Firebase:", userData);
@@ -263,7 +276,6 @@ useEffect(() => {
       const allUsers = Object.entries(data);
       console.log(`👥 [DIAG] Total users trouvés: ${allUsers.length}`);
 
-      // Log CHAQUE utilisateur pour voir son rôle exact
       allUsers.forEach(([id, u]: [string, any]) => {
         console.log(`   User ${id}:`, {
           role: u.role,
@@ -273,7 +285,6 @@ useEffect(() => {
         });
       });
 
-      // Filtre STRICT avec vérification multiple du champ rôle
       const clientsList = allUsers
         .filter(([id, u]: [string, any]) => {
           const roleValue = u.role || u.userRole || "";
@@ -294,7 +305,6 @@ useEffect(() => {
 
       console.log(`✅ [DIAG] Clients filtrés: ${clientsList.length}`);
 
-      // ✅ NOUVEAU : Pour chaque client, charger ses chantiers, rapports et paiements
       if (clientsList.length > 0) {
         Promise.all(clientsList.map(async (client) => {
           const chantiersSnap = await get(chantiersRef);
@@ -304,14 +314,12 @@ useEffect(() => {
             .filter(([_, c]: [string, any]) => c.userId === client.id || c.client_id === client.id)
             .map(([id, c]: [string, any]) => ({ id, ...c }));
 
-          // Charger les rapports liés aux chantiers du client
           const rapportsSnap = await get(rapportsRef);
           const allRapportsData = rapportsSnap.val() || {};
           const clientRapports = Object.entries(allRapportsData)
             .filter(([_, r]: [string, any]) => clientChantiers.some(ch => ch.id === r.chantierId))
             .map(([id, r]: [string, any]) => ({ id, ...r }));
 
-          // Charger les paiements liés aux chantiers du client
           const paiementsSnap = await get(paiementsRef);
           const allPaiementsData = paiementsSnap.val() || {};
           const clientPaiements = Object.entries(allPaiementsData)
@@ -391,11 +399,6 @@ const promotionsRef = dbRef(db, 'promotions');
       unsubPaiements();
     };
   }, []);
-
-  const filteredClients = clients.filter((c) => 
-    c.nom?.toLowerCase().includes(query.toLowerCase()) || 
-    c.email?.toLowerCase().includes(query.toLowerCase())
-  );
 
   const handleValider = async (id: string) => {
     if (!confirm("Valider et activer ce chantier ?")) return;
@@ -580,13 +583,44 @@ const promotionsRef = dbRef(db, 'promotions');
           <>
 {section === "clients" && (
               <div className="space-y-4">
-                <div className="flex items-center gap-3 rounded-[14px] bg-white/5 px-4">
-                  <Search size={18} className="text-white/40" />
-                  <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Rechercher..." className="h-12 flex-1 bg-transparent text-sm outline-none placeholder:text-white/40" />
+                {/* Barre de recherche intelligente */}
+                <div className="mb-6 relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Search size={20} className="text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Rechercher par nom, email ou téléphone..."
+                    className="w-full pl-12 pr-12 py-3 bg-white border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF7A00]/50 focus:border-[#FF7A00] transition shadow-sm"
+                  />
+                  {searchTerm && (
+                    <button
+                      onClick={() => setSearchTerm("")}
+                      className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition"
+                    >
+                      ✕
+                    </button>
+                  )}
                 </div>
+
+                {/* Indicateur de résultats */}
+                {searchTerm && (
+                  <p className="text-sm text-gray-500 mb-4">
+                    {filteredClients.length} résultat{filteredClients.length > 1 ? "s" : ""} pour "{searchTerm}"
+                  </p>
+                )}
+
+                {filteredClients.length === 0 && searchTerm && (
+                  <div className="text-center py-12 bg-white rounded-2xl border border-gray-200">
+                    <p className="text-gray-500 text-lg">Aucun client trouvé</p>
+                    <p className="text-sm text-gray-400 mt-2">Essayez avec un autre nom, email ou numéro de téléphone</p>
+                  </div>
+                )}
+
                 <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2">
                   {filteredClients.map((client) => {
-                    const act = statutActivite(client.lastLogin);
                     const getInitials = (name: string) => {
                       if (!name || name === "Sans nom") return "CL";
                       const parts = name.split(' ');
@@ -605,7 +639,7 @@ const promotionsRef = dbRef(db, 'promotions');
                           </div>
                         </div>
 
-                        {/* ✅ Section : Liste des chantiers du client */}
+                        {/* Section : Liste des chantiers du client */}
                         <div className="mt-4 pt-4 border-t border-gray-100">
                           <p className="text-xs font-semibold text-gray-600 mb-2 flex items-center gap-1">
                             🏗️ Ses chantiers ({client.chantiers?.length || 0})
