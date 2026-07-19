@@ -48,6 +48,8 @@ type Client = {
   chantiers?: Chantier[];
   rapports?: any[];
   paiements?: any[];
+  prochainRDV?: string;
+  rdvProche?: boolean;
 };
 
 type Chantier = {
@@ -62,6 +64,7 @@ type Chantier = {
   statut?: string;
   date_fin?: string;
   dateMiseAJour?: number;
+  dateCreation?: number;
   type?: string;
   budget?: number;
   plan_choisi?: string;
@@ -170,6 +173,48 @@ function getSanteChantier(
   return { couleur: "green", label: "✅ Dans les délais", priorite: 1 };
 }
 
+// ✅ Fonction de calcul du score de priorité d'un client
+const getPrioriteClient = (client: any): number => {
+  let score = 0;
+  
+  // RDV aujourd'hui ou demain (+100 points)
+  const aujourdhui = new Date().toISOString().split('T')[0];
+  const demain = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+  
+  if (client.rdvProche === true || client.prochainRDV === aujourdhui || client.prochainRDV === demain) {
+    score += 100;
+  }
+  
+  // Paiement en attente (+80 points)
+  const paiementsEnAttente = client.paiements?.filter((p: any) => p.statut === "en_attente");
+  if (paiementsEnAttente && paiementsEnAttente.length > 0) {
+    score += 80;
+  }
+  
+  // Rapport en retard (+70 points)
+  const rapportsEnRetard = client.rapports?.filter((r: any) => r.statut === "retard");
+  if (rapportsEnRetard && rapportsEnRetard.length > 0) {
+    score += 70;
+  }
+  
+  // Aucun rapport depuis > 14 jours (+50 points)
+  const rapportsTries = [...(client.rapports || [])].sort((a: any, b: any) => (b.dateCreation || 0) - (a.dateCreation || 0));
+  const dernierRapport = rapportsTries[0];
+  if (dernierRapport && (Date.now() - (dernierRapport.dateCreation || 0)) > 14 * 24 * 60 * 60 * 1000) {
+    score += 50;
+  }
+  
+  // Bonus : chantier actif récent (< 30 jours) (+20 points)
+  if (client.chantiers && client.chantiers.length > 0) {
+    const chantiersRecents = client.chantiers.filter((c: any) => 
+      c.dateCreation && (Date.now() - c.dateCreation) < 30 * 24 * 60 * 60 * 1000
+    );
+    if (chantiersRecents.length > 0) score += 20;
+  }
+  
+  return score;
+};
+
 async function updateChantier(chantierId: string, updates: Partial<Chantier>) {
   const db = getDatabase();
   try {
@@ -217,6 +262,18 @@ function AdminContent() {
     const telephone = normalizeText(client.telephone || client.phone || "");
     
     return nom.includes(term) || email.includes(term) || telephone.includes(term);
+  });
+
+  // Tri des clients par priorité et alphabétique
+  const filteredAndSortedClients = [...filteredClients].sort((a: any, b: any) => {
+    const scoreA = getPrioriteClient(a);
+    const scoreB = getPrioriteClient(b);
+    
+    // Tri décroissant par score de priorité
+    if (scoreB !== scoreA) return scoreB - scoreA;
+    
+    // Si même priorité, tri alphabétique par nom
+    return (a.displayName || "").localeCompare(b.displayName || "");
   });
 
   if (authLoading) return <div className="min-h-screen bg-[#111827] flex items-center justify-center"><p className="text-white">Chargement...</p></div>;
@@ -608,11 +665,11 @@ const promotionsRef = dbRef(db, 'promotions');
                 {/* Indicateur de résultats */}
                 {searchTerm && (
                   <p className="text-sm text-gray-500 mb-4">
-                    {filteredClients.length} résultat{filteredClients.length > 1 ? "s" : ""} pour "{searchTerm}"
+                    {filteredAndSortedClients.length} résultat{filteredAndSortedClients.length > 1 ? "s" : ""} pour "{searchTerm}"
                   </p>
                 )}
 
-                {filteredClients.length === 0 && searchTerm && (
+                {filteredAndSortedClients.length === 0 && searchTerm && (
                   <div className="text-center py-12 bg-white rounded-2xl border border-gray-200">
                     <p className="text-gray-500 text-lg">Aucun client trouvé</p>
                     <p className="text-sm text-gray-400 mt-2">Essayez avec un autre nom, email ou numéro de téléphone</p>
@@ -620,14 +677,25 @@ const promotionsRef = dbRef(db, 'promotions');
                 )}
 
                 <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2">
-                  {filteredClients.map((client) => {
+                  {filteredAndSortedClients.map((client) => {
                     const getInitials = (name: string) => {
                       if (!name || name === "Sans nom") return "CL";
                       const parts = name.split(' ');
                       return (parts[0]?.charAt(0) || '') + (parts[1]?.charAt(0) || '').toUpperCase();
                     };
+                    
+                    const prioriteScore = getPrioriteClient(client);
+                    
                     return (
-                      <div key={client.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 hover:shadow-md transition">
+                      <div key={client.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 hover:shadow-md transition relative">
+                        {/* Badge de priorité visuel */}
+                        {prioriteScore >= 80 && (
+                          <div className="absolute top-3 right-3 w-3 h-3 bg-red-500 rounded-full animate-pulse" title="Urgence élevée" />
+                        )}
+                        {prioriteScore >= 50 && prioriteScore < 80 && (
+                          <div className="absolute top-3 right-3 w-3 h-3 bg-orange-400 rounded-full" title="Attention requise" />
+                        )}
+                        
                         {/* Infos client existantes */}
                         <div className="flex items-center gap-3 mb-3">
                           <div className="w-12 h-12 rounded-full bg-[#FF7A00]/10 flex items-center justify-center text-[#FF7A00] font-black text-lg">
