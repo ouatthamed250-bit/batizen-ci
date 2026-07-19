@@ -172,18 +172,83 @@ function AdminContent() {
   if (authLoading) return <div className="min-h-screen bg-[#111827] flex items-center justify-center"><p className="text-white">Chargement...</p></div>;
   if (!user || user.role !== "admin") return <div className="min-h-screen bg-[#111827] flex items-center justify-center px-4"><div className="text-center"><h1 className="text-2xl font-bold text-red-600">Accès refusé</h1><p className="mt-4 text-white/60">Vous devez être administrateur.</p></div></div>;
 
-  useEffect(() => {
+useEffect(() => {
+    if (!user?.uid) {
+      console.log("⏳ Attente authentification admin...");
+      return;
+    }
+
     const db = getDatabase();
 
-    const clientsRef = dbRef(db, 'users');
-    const unsubClients = onValue(clientsRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        const clientsData = Object.keys(data).map(key => ({ id: key, ...data[key] }));
-        setClients(clientsData);
+    console.log("🔍 [DIAG] User connecté:", {
+      uid: user?.uid,
+      role: user?.role,
+      email: user?.email,
+      displayName: user?.displayName
+    });
+
+    const usersRef = dbRef(db, 'users');
+    
+    // Vérification du rôle admin au montage
+    onValue(usersRef, (snapshot) => {
+      const userData = snapshot.val();
+      console.log("🔐 [AUTH] Données user Firebase:", userData);
+      
+      if (userData?.role !== "admin" && userData?.userRole !== "admin") {
+        console.warn("⚠️ [AUTH] ALERTE: Rôle admin non détecté ! Role trouvé:", userData?.role || userData?.userRole);
       } else {
-        setClients([]);
+        console.log("✅ [AUTH] Rôle admin confirmé");
       }
+    }, { onlyOnce: true });
+
+    const unsubClients = onValue(usersRef, (snapshot) => {
+      console.log("📦 [DIAG] Snapshot reçu. Existe ?", snapshot.exists());
+      
+      const data = snapshot.val();
+      if (!data) {
+        console.log("❌ [DIAG] Aucune donnée dans /users");
+        setClients([]);
+        return;
+      }
+
+      const allUsers = Object.entries(data);
+      console.log(`👥 [DIAG] Total users trouvés: ${allUsers.length}`);
+
+      // Log CHAQUE utilisateur pour voir son rôle exact
+      allUsers.forEach(([id, u]: [string, any]) => {
+        console.log(`   User ${id}:`, {
+          role: u.role,
+          userRole: u.userRole,
+          displayName: u.displayName || u.nom,
+          email: u.email
+        });
+      });
+
+      // Filtre STRICT avec vérification multiple du champ rôle
+      const clientsList = allUsers
+        .filter(([id, u]: [string, any]) => {
+          const roleValue = u.role || u.userRole || "";
+          const isClient = roleValue === "client";
+          
+          if (isClient) {
+            console.log(`  ✅ [DIAG] Client détecté: ${id} (${u.displayName || u.nom})`);
+          }
+          
+          return isClient;
+        })
+        .map(([id, u]: [string, any]) => ({ 
+          id, 
+          ...u,
+          displayName: u.displayName || u.nom || "Sans nom",
+          role: u.role || u.userRole || "unknown"
+        }));
+
+      console.log(`✅ [DIAG] Clients filtrés: ${clientsList.length}`);
+      console.log("📋 [DIAG] Liste finale:", clientsList.map(c => ({ id: c.id, nom: c.displayName, role: c.role })));
+      
+      setClients(clientsList);
+    }, (error) => {
+      console.error("❌ [DIAG] Erreur Firebase:", error);
     });
 
     console.log("🔓 ADMIN MODE - Chargement de TOUS les chantiers sans filtre");
