@@ -47,6 +47,7 @@ import { AffichageEquipe } from "@/components/admin/ChantierMessaging";
 import EquipeHierarchiqueClient from "@/components/chantier/EquipeHierarchiqueClient";
 import AvancementParEtapes from "@/components/chantier/AvancementParEtapes";
 import AlbumChantier from "@/components/chantier/AlbumChantier";
+import ClientRendezVous from "@/components/chantier/ClientRendezVous";
 import { ref, push, onValue, type Unsubscribe } from "firebase/database";
 import { getFirebaseServices } from "@/lib/firebase";
 import SuperCalculateur from "@/components/btp/SuperCalculateur";
@@ -404,16 +405,16 @@ const [planning, setPlanning] = useState<Etape[]>([]);
        // Charger les nouvelles collections en parallèle (V2)
         // Documents, notes et rapports depuis chemins globaux, filtrés par chantierId
         if (!cancelled) {
-          const [plan, rdv, med, allDocs, allNotes, allRapports] = await Promise.all([
+const [plan, med, allDocs, allNotes, allRapports] = await Promise.all([
             rtdbGetList<Etape>(`chantiers/${id}/planning`),
-            rtdbGetList<RendezVous>(`chantiers/${id}/rendezvous`),
+            // Les RDV sont maintenant gérés par ClientRendezVous depuis rendezvous/
             rtdbGetList<any>(`chantiers/${id}/medias`),
             rtdbGetList<any>(`documents/`),
             rtdbGetList<any>(`notes/`),
             rtdbGetList<any>(`rapports/`), // 🔍 Lire depuis le nœud global
           ]);
           setPlanning(plan);
-          setRendezvous(rdv);
+          // setRendezvous(rdv); ← Plus besoin, géré par le composant ClientRendezVous
           setMedias(med);
           
           // 🔍 DIAGNOSTIC ULTRA-DÉTAILLÉ - CLIENT LECTURE RAPPORTS
@@ -1005,33 +1006,13 @@ const [planning, setPlanning] = useState<Etape[]>([]);
                 </section>
               )}
 
-              {/* ONGLET 3 - RENDEZ-VOUS */}
+{/* ONGLET 3 - RENDEZ-VOUS */}
               {activeTab === "rendezvous" && (
                 <section aria-label="Rendez-vous">
                   {isTabLocked("rendezvous") ? (
                     <LockedTab />
-                  ) : rendezvous.length === 0 ? (
-                    <EmptyState text="Aucun rendez-vous planifié" />
                   ) : (
-                    <div className="space-y-3">
-                      {rendezvous.map((r) => (
-                        <div key={r.id} className="rounded-[20px] border border-[#E7EBF5] bg-white p-4 shadow-[0_8px_24px_rgba(16,24,40,0.06)]">
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                <h3 className="font-black text-[#0D2B6B]">{r.type || "Rendez-vous"}</h3>
-                                {rdvStatutBadge(r.statut)}
-                              </div>
-                              <p className="mt-1 text-sm text-[#374151]">
-                                📅 {formatDateTimeFr(r.date, r.heure)}
-                              </p>
-                              {r.lieu && <p className="mt-1 text-xs text-[#6B7280]">📍 {r.lieu}</p>}
-                              {r.notes && <p className="mt-2 text-sm text-[#374151]">{r.notes}</p>}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    <ClientRendezVous chantierId={id!} />
                   )}
                 </section>
               )}
