@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { update } from "firebase/database";
+import { uploadToCloudinary } from "@/lib/cloudinary";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -140,11 +142,20 @@ type RendezVous = {
 type Message = {
   id: string;
   expediteur?: string;
+  expediteurNom?: string;
+  expediteurRole?: "client" | "admin" | "equipe";
   contenu?: string;
   date?: string;
   heure?: string;
+  dateEnvoi?: number;
   photoProfil?: string;
   role?: string; // client | admin | equipe
+  type?: "texte" | "vocal" | "piece_jointe";
+  url?: string;
+  dureeVocal?: number;
+  nomFichier?: string;
+  tailleFichier?: number;
+  lu?: boolean;
 };
 
 type Rapport = {
@@ -295,6 +306,7 @@ export default function ChantierDetailClient() {
   const params = useParams<{ id: string }>();
   const id = params?.id;
   const { user } = useAuthContext();
+  const { database } = getFirebaseServices();
 
   const [loading, setLoading] = useState(true);
   const [chantier, setChantier] = useState<Chantier | null>(null);
@@ -316,8 +328,12 @@ const [planning, setPlanning] = useState<Etape[]>([]);
   const [medias, setMedias] = useState<any[]>([]);
    const [album, setAlbum] = useState<Photo[]>([]);
    const [rapports, setRapports] = useState<Rapport[]>([]);
-const [ouvriersList, setOuvriersList] = useState<any[]>([]);
+  const [ouvriersList, setOuvriersList] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Fonction de téléchargement universelle
   const handleTelechargerFichier = async (url: string, nomFichier: string) => {
@@ -450,6 +466,97 @@ const [ouvriersList, setOuvriersList] = useState<any[]>([]);
       console.error("Erreur envoi message", err);
     }
   }, [newMessage, id, user, chantier, nom]);
+
+  // Fonctions pour la messagerie Pro
+  const handleDemarrerEnregistrement = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      setMediaRecorder(recorder);
+      const chunks: Blob[] = [];
+      
+      recorder.ondataavailable = (e) => {
+        chunks.push(e.data);
+      };
+
+      recorder.onstop = async () => {
+        const blob = new Blob(chunks, { type: 'audio/webm' });
+        await handleUploadVocal(blob);
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      recorder.start();
+      setRecording(true);
+    } catch (error) {
+      console.error("Erreur enregistrement:", error);
+      alert("Impossible d'accéder au microphone. Vérifiez les permissions.");
+    }
+  };
+
+  const handleArreterEnregistrement = () => {
+    if (mediaRecorder && recording) {
+      mediaRecorder.stop();
+      setRecording(false);
+    }
+  };
+
+  const handleUploadVocal = async (blob: Blob) => {
+    setUploading(true);
+    try {
+      const file = new File([blob], `vocal_${Date.now()}.webm`, { type: 'audio/webm' });
+      const url = await uploadToCloudinary(file);
+      const dureeApprox = Math.round(blob.size / 16000);
+
+      await push(ref(database, 'messages'), {
+        chantierId: id,
+        expediteurId: user?.uid || "client",
+        expediteurNom: user?.displayName || "Client",
+        expediteurRole: "client",
+        destinataireId: chantier?.userId,
+        type: "vocal",
+        url,
+        dureeVocal: dureeApprox,
+        dateEnvoi: Date.now(),
+        lu: false
+      });
+    } catch (error) {
+      console.error("Erreur upload vocal:", error);
+      alert("Erreur lors de l'upload du message vocal");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleEnvoyerPieceJointe = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const url = await uploadToCloudinary(file);
+
+      await push(ref(database, 'messages'), {
+        chantierId: id,
+        expediteurId: user?.uid || "client",
+        expediteurNom: user?.displayName || "Client",
+        expediteurRole: "client",
+        destinataireId: chantier?.userId,
+        type: "piece_jointe",
+        url,
+        nomFichier: file.name,
+        tailleFichier: file.size,
+        dateEnvoi: Date.now(),
+        lu: false
+      });
+
+      e.target.value = "";
+    } catch (error) {
+      console.error("Erreur upload pièce jointe:", error);
+      alert("Erreur lors de l'upload du fichier");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   // Filtrer les onglets à afficher selon le statut
   const visibleTabs = (): TabKey[] => {
@@ -1085,41 +1192,119 @@ const [ouvriersList, setOuvriersList] = useState<any[]>([]);
                 </section>
               )}
 
-              {/* ONGLET 10 - MESSAGES */}
+              {/* ONGLET 10 - MESSAGERIE PRO */}
               {activeTab === "messages" && (
-                <section aria-label="Messages">
+                <section aria-label="Messagerie Pro">
                   {isTabLocked("messages") ? (
                     <LockedTab />
-                  ) : messages.length === 0 ? (
-                    <EmptyState text="Aucun message pour le moment" />
                   ) : (
-                    <div className="flex h-[60vh] flex-col rounded-[20px] border border-[#E7EBF5] bg-white shadow-[0_8px_24px_rgba(16,24,40,0.06)]">
-                      <div className="flex-1 space-y-3 overflow-y-auto p-4" style={{ maxHeight: 400 }}>
-                        {messages.map((m) => (
-                          <div key={m.id} className={`flex ${m.role === "client" ? "justify-end" : "justify-start"}`}>
-                            <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 ${m.role === "client" ? "bg-[#0D2B6B] text-white" : "bg-[#F3F4F6] text-[#374151]"}`}>
-                              <p className="text-xs font-black">{m.expediteur || messageRoleLabel(m.role)}</p>
-                              <p className="mt-1 text-sm">{m.contenu}</p>
-                              <p className="mt-1 text-[10px] opacity-70">{formatDateTimeFr(m.date, m.heure)}</p>
+                    <div className="flex h-[80vh] flex-col rounded-[20px] border border-[#E7EBF5] bg-white shadow-[0_8px_24px_rgba(16,24,40,0.06)]">
+                      {/* Zone de messages */}
+                      <div className="flex-1 space-y-3 overflow-y-auto p-4" style={{ maxHeight: 500 }}>
+                        {messages.length === 0 ? (
+                          <p className="text-sm text-gray-500 text-center py-8">Aucun message. Commencez la conversation !</p>
+                        ) : (
+                          messages.map((m) => (
+                            <div key={m.id} className={`flex ${m.expediteurRole === "client" ? "justify-end" : "justify-start"}`}>
+                              <div className={`max-w-[70%] rounded-2xl p-3 ${
+                                m.expediteurRole === "client" 
+                                  ? "bg-[#0B5FFF] text-white" 
+                                  : "bg-gray-100 text-gray-800"
+                              }`}>
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="text-xs font-bold opacity-70">{m.expediteurNom || m.expediteur}</span>
+<span className="text-xs opacity-50">
+                                    {m.dateEnvoi ? new Date(m.dateEnvoi).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : (m.date || "").slice(11, 16)}
+                                  </span>
+                                  {m.expediteurRole === "client" && m.lu && (
+                                    <span className="text-xs">✓✓</span>
+                                  )}
+                                </div>
+
+                                {m.type === "texte" && (
+                                  <p className="text-sm whitespace-pre-line">{m.contenu}</p>
+                                )}
+
+                                {m.type === "vocal" && (
+                                  <div className="flex items-center gap-2">
+                                    <audio controls src={m.url} className="h-8" />
+                                    <span className="text-xs opacity-70">{m.dureeVocal}s</span>
+                                  </div>
+                                )}
+
+                                {m.type === "piece_jointe" && (
+                                  <a 
+                                    href={m.url} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-2 text-sm underline"
+                                  >
+📎 {m.nomFichier} ({m.tailleFichier ? (m.tailleFichier / 1024).toFixed(1) + " KB" : "—"})
+                                  </a>
+                                )}
+
+                                {/* Fallback pour les anciens messages */}
+                                {(!m.type && m.contenu) && (
+                                  <p className="text-sm">{m.contenu}</p>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          ))
+                        )}
+                        <div ref={messagesEndRef} />
                       </div>
-                      <div className="flex items-center gap-2 border-t border-[#E7EBF5] p-3">
-                        <input
-                          value={newMessage}
-                          onChange={(e) => setNewMessage(e.target.value)}
-                          placeholder="Écrire un message..."
-                          className="flex-1 rounded-full border border-[#E7EBF5] px-4 py-2 text-sm focus:border-[#0D2B6B] focus:outline-none"
-                        />
-                        <button
-                          type="button"
-                          onClick={handleSendMessage}
-                          disabled={!newMessage.trim()}
-                          className="grid size-10 place-items-center rounded-full bg-[#0D2B6B] text-white disabled:opacity-30"
-                        >
-                          <Send size={16} />
-                        </button>
+
+                      {/* Zone de saisie */}
+                      <div className="flex flex-col gap-2 border-t border-[#E7EBF5] p-3">
+                        <form onSubmit={handleSendMessage} className="flex gap-2">
+                          <input
+                            value={newMessage}
+                            onChange={(e) => setNewMessage(e.target.value)}
+                            placeholder="Votre message..."
+                            disabled={uploading}
+                            className="flex-1 rounded-full border border-gray-300 px-4 py-2 text-sm focus:border-[#0B5FFF] focus:outline-none disabled:opacity-50"
+                          />
+                          <button
+                            type="submit"
+                            disabled={!newMessage.trim() || uploading}
+                            className="px-4 py-2 bg-[#0B5FFF] text-white rounded-xl font-bold hover:bg-[#0a4fd9] transition disabled:opacity-50"
+                          >
+                            Envoyer
+                          </button>
+                        </form>
+
+                        <div className="flex gap-2">
+                          <button 
+                            type="button"
+                            onClick={recording ? handleArreterEnregistrement : handleDemarrerEnregistrement}
+                            disabled={uploading}
+                            className={`flex-1 px-3 py-2 rounded-xl font-bold transition ${
+                              recording 
+                                ? "bg-red-500 text-white animate-pulse" 
+                                : "bg-purple-100 text-purple-700 hover:bg-purple-200"
+                            }`}
+                          >
+                            {recording ? "⏹️ Arrêter" : "🎤 Vocal"}
+                          </button>
+
+                          <label className={`flex-1 px-3 py-2 rounded-xl font-bold text-center cursor-pointer transition ${
+                            uploading 
+                              ? "bg-gray-100 text-gray-400" 
+                              : "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                          }`}>
+                            📎 Fichier
+                            <input 
+                              type="file"
+                              onChange={handleEnvoyerPieceJointe}
+                              className="hidden"
+                              disabled={uploading}
+                            />
+                          </label>
+                        </div>
+
+                        {uploading && (
+                          <p className="text-xs text-gray-500 text-center">⏳ Upload en cours...</p>
+                        )}
                       </div>
                     </div>
                   )}
