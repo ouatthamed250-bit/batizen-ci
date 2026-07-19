@@ -487,21 +487,40 @@ const [planning, setPlanning] = useState<Etape[]>([]);
     return !allowed.includes(key);
   };
 
-  // Envoyer un message
-  const handleSendMessage = useCallback(async () => {
+  // Envoyer un message - VERSION CORRIGÉE
+  const handleSendMessage = useCallback(async (e?: React.FormEvent) => {
+    // ⚠️ CRITIQUE : Empêcher le rechargement
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     if (!newMessage.trim() || !id) return;
+    
+    console.log("📤 Envoi message client:", newMessage);
+
     try {
       const { database } = getFirebaseServices();
-      const messagesRef = ref(database, `chantiers/${id}/messages`);
+      // ⚠️ CORRECTION : Utiliser le nœud global 'messages' au lieu de 'chantiers/${id}/messages'
+      const messagesRef = ref(database, 'messages');
       await push(messagesRef, {
-        expediteur: user?.displayName || "Client",
+        chantierId: id,
+        expediteurId: user?.uid,
+        expediteurNom: user?.displayName || "Client",
+        expediteurRole: "client",
+        destinataireId: chantier?.userId || "admin", // ⚠️ Fallback si chantier.userId est undefined
+        type: "texte",
         contenu: newMessage.trim(),
-        date: new Date().toISOString().split("T")[0],
-        heure: new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
-        photoProfil: user?.photoURL || "",
-        role: "client",
+        dateEnvoi: Date.now(),
+        lu: false
       });
       setNewMessage("");
+
+      console.log("✅ Message envoyé avec succès");
+      
+      // ⚠️ Scroll automatique vers le bas après envoi
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
 
       // Envoyer notification à l'équipe/admin
       const { sendNotification } = await import("@/lib/notifications");
@@ -514,7 +533,8 @@ const [planning, setPlanning] = useState<Etape[]>([]);
         });
       }
     } catch (err) {
-      console.error("Erreur envoi message", err);
+      console.error("❌ Erreur envoi message:", err);
+      alert("Erreur lors de l'envoi du message");
     }
   }, [newMessage, id, user, chantier, nom]);
 
@@ -1310,7 +1330,7 @@ const [planning, setPlanning] = useState<Etape[]>([]);
 
                       {/* Zone de saisie */}
                       <div className="flex flex-col gap-2 border-t border-[#E7EBF5] p-3">
-                        <form onSubmit={handleSendMessage} className="flex gap-2">
+                        <div className="flex gap-2">
                           <input
                             value={newMessage}
                             onChange={(e) => setNewMessage(e.target.value)}
@@ -1319,12 +1339,18 @@ const [planning, setPlanning] = useState<Etape[]>([]);
                             className="flex-1 rounded-full border border-gray-300 px-4 py-2 text-sm focus:border-[#0B5FFF] focus:outline-none disabled:opacity-50"
                           />
                           <button
-                            type="submit"
+                            type="button"
+                            onClick={() => handleSendMessage()}
                             disabled={!newMessage.trim() || uploading}
                             className="px-4 py-2 bg-[#0B5FFF] text-white rounded-xl font-bold hover:bg-[#0a4fd9] transition disabled:opacity-50"
                           >
                             Envoyer
                           </button>
+                        </div>
+
+                        {/* Scroll automatique après chargement des messages */}
+                        <form onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }} className="hidden">
+                          <button type="submit">Hidden submit</button>
                         </form>
 
                         <div className="flex gap-2">

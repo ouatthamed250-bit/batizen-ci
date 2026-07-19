@@ -1316,12 +1316,20 @@ function MessagerieSection({ chantierId, clientUserId }: { chantierId: string; c
     const messagesRef = ref(database, 'messages');
     
     const unsub = onValue(messagesRef, (snapshot) => {
+      console.log("📩 Snapshot messages admin reçu");
+      
       const data = snapshot.val();
       if (data) {
+        // ⚠️ CORRECTION : Lire TOUS les messages du chantier, pas de filtre sur destinataireId
         const msgsChantier = Object.entries(data)
-          .filter(([id, m]: [string, any]) => m.chantierId === chantierId)
+          .filter(([id, m]: [string, any]) => {
+            console.log("🔍 Vérification message:", m.contenu, "chantierId:", m.chantierId, "vs", chantierId);
+            return m.chantierId === chantierId;
+          })
           .map(([id, m]: [string, any]) => ({ id, ...m }))
           .sort((a: any, b: any) => a.dateEnvoi - b.dateEnvoi);
+        
+        console.log("✅ Messages admin filtrés:", msgsChantier.length, msgsChantier);
         setMessages(msgsChantier);
         
         // Marquer comme lus les messages du client
@@ -1337,7 +1345,7 @@ function MessagerieSection({ chantierId, clientUserId }: { chantierId: string; c
         setMessages([]);
       }
     }, (error) => {
-      console.error("❌ Erreur listener messages:", error);
+      console.error("❌ Erreur listener messages admin:", error);
     });
 
     return () => {
