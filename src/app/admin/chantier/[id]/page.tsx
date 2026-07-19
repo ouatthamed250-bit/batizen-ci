@@ -900,6 +900,9 @@ export default function ChantierDetailPage() {
 
         {/* SECTION 12: Messagerie avec le client */}
         <MessagerieSection chantierId={chantierId} clientUserId={chantier?.userId} />
+
+        {/* SECTION 13: Paiements & Finances */}
+        <PaiementsSection chantierId={chantierId} chantier={chantier} />
       </div>
     </div>
   );
