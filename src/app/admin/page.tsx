@@ -150,30 +150,30 @@ function statutActivite(lastLogin?: string | number): { couleur: string; texte: 
   return { couleur: "bg-gray-500", texte: `⚪ Inactif (Dernière activité : ${formatDateActivite(lastLogin)})` };
 }
 
-// ✅ Fonction de calcul de santé d'un chantier
-function getSanteChantier(
-  chantier: any,
-  rapports: any[],
-  paiements: any[]
-): { couleur: "green" | "orange" | "red"; label: string; priorite: number } {
-  const rapportsEnRetard = rapports.filter(r => r.statut === "retard");
+// ✅ Fonction de calcul de santé d'un chantier (calculé à partir des données déjà chargées)
+const getSanteChantier = (chantier: any, rapports: any[], paiements: any[]) => {
+  // Vérifier les retards dans les rapports
+  const rapportsEnRetard = rapports.filter(r => r.chantierId === chantier.id && r.statut === "retard");
   if (rapportsEnRetard.length > 0) {
     return { couleur: "red", label: "⚠️ Retard signalé", priorite: 3 };
   }
 
-  const paiementsEnAttente = paiements.filter(p => p.statut === "en_attente");
+  // Vérifier les paiements en attente
+  const paiementsEnAttente = paiements.filter(p => p.chantierId === chantier.id && p.statut === "en_attente");
   if (paiementsEnAttente.length > 0) {
     return { couleur: "orange", label: "💰 Paiement en attente", priorite: 2 };
   }
 
-  const rapportsTries = [...rapports].sort((a, b) => (b.dateCreation || 0) - (a.dateCreation || 0));
-  const dernierRapport = rapportsTries[0];
-  if (rapports.length > 0 && dernierRapport && (Date.now() - (dernierRapport.dateCreation || 0)) > 7 * 24 * 60 * 60 * 1000) {
+  // Vérifier si aucun rapport récent (> 7 jours)
+  const rapportsChantier = rapports.filter(r => r.chantierId === chantier.id);
+  const dernierRapport = rapportsChantier.sort((a, b) => b.dateCreation - a.dateCreation)[0];
+  if (dernierRapport && (Date.now() - dernierRapport.dateCreation) > 7 * 24 * 60 * 60 * 1000) {
     return { couleur: "orange", label: "📋 Aucun rapport récent", priorite: 2 };
   }
 
+  // Tout va bien
   return { couleur: "green", label: "✅ Dans les délais", priorite: 1 };
-}
+};
 
 // ✅ Fonction de calcul du score de priorité d'un client
 const getPrioriteClient = (client: any): number => {
