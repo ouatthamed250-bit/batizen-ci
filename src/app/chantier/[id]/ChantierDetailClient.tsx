@@ -798,24 +798,54 @@ const [planning, setPlanning] = useState<Etape[]>([]);
                       </div>
                     )}
 
-{/* SECTION "MON ÉQUIPE" - Ouvriers affectés à ce chantier */}
-                    <div className="mt-6 p-4 bg-white/90 rounded-2xl border border-white/50">
-                      <h3 className="font-bold text-[var(--navy)] mb-3 flex items-center gap-2">👷 Mon Équipe sur ce chantier</h3>
+{/* SECTION "MON ÉQUIPE" - Ouvriers affectés à ce chantier (VERSION AMÉLIORÉE) */}
+                    <div className="mt-6 p-5 bg-white rounded-2xl border border-gray-200 shadow-sm">
+                      <h3 className="font-black text-[var(--navy)] text-lg mb-4 flex items-center gap-2">
+                        👷 Mon Équipe sur ce chantier
+                      </h3>
                       {ouvriers.length === 0 ? (
-                        <p className="text-sm text-gray-500">L'équipe sera assignée prochainement par l'administration.</p>
+                        <div className="text-center py-6 bg-gray-50 rounded-xl">
+                          <p className="text-sm text-gray-500">L'équipe sera assignée prochainement par l'administration.</p>
+                        </div>
                       ) : (
-                        <div className="space-y-2">
-                          {ouvriers.map((ouvrier: Membre) => (
-                            <div key={ouvrier.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                              <div>
-                                <p className="font-bold text-sm text-[var(--navy)]">{ouvrier.nom}</p>
-                                <p className="text-xs text-gray-600">{ouvrier.role || "Membre"}</p>
+                        <div className="space-y-4">
+                          {ouvriers.map((membre: any) => {
+                            const isChef = membre.type === "chef_de_chantier" || membre.type === "chef" || (chef && membre.id === chef.id);
+                            return (
+                              <div key={membre.id} className={`p-4 rounded-xl border flex items-start gap-4 transition ${
+                                isChef 
+                                  ? "bg-yellow-50 border-yellow-300 shadow-md" 
+                                  : "bg-gray-50 border-gray-200"
+                              }`}>
+                                {/* Avatar / Icône */}
+                                <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-2xl ${
+                                  isChef ? "bg-yellow-200" : "bg-blue-200"
+                                }`}>
+                                  {isChef ? "👑" : "👷"}
+                                </div>
+                                
+                                {/* Infos */}
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <p className={`font-black text-base ${isChef ? "text-yellow-800" : "text-[var(--navy)]"}`}>
+                                      {membre.nom}
+                                    </p>
+                                    {isChef && (
+                                      <span className="text-[10px] uppercase tracking-wider bg-yellow-400 text-yellow-900 px-2 py-0.5 rounded-full font-black">
+                                        Chef de chantier
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-sm text-gray-600 font-medium">🔧 {membre.role || "Membre"}</p>
+                                  {membre.telephone && (
+                                    <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                                      📞 <a href={`tel:${membre.telephone}`} className="hover:text-[var(--navy)] underline">{membre.telephone}</a>
+                                    </p>
+                                  )}
+                                </div>
                               </div>
-                              {(ouvrier.type === "chef" || ouvrier.type === "chef_de_chantier") && (
-                                <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full font-bold">👑 Chef</span>
-                              )}
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
                     </div>

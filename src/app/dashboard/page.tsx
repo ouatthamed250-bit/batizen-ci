@@ -371,6 +371,26 @@ const promosRef = ref(db, 'promotions');
   // Calculer les dépenses du mois (pour l'instant 0) et notifications non lues
   const depensesMois = 0;
   const notifsNonLues = notifications.length;
+  
+  // State et listener pour les partenaires
+  const [partenaires, setPartenaires] = useState<any[]>([]);
+  
+  useEffect(() => {
+    const db = getDatabase();
+    const partenairesRef = ref(db, 'partenaires');
+    const unsubPartenaires = onValue(partenairesRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const partenairesActifs = Object.entries(data)
+          .filter(([id, p]: [string, any]) => p.actif === true)
+          .map(([id, p]: [string, any]) => ({ id, ...p }));
+        setPartenaires(partenairesActifs);
+      } else {
+        setPartenaires([]);
+      }
+    });
+    return () => unsubPartenaires();
+  }, []);
 
    // Fonction de suppression sécurisée
    const handleSupprimerChantier = async (id: string, statut: string) => {
@@ -596,6 +616,32 @@ const promosRef = ref(db, 'promotions');
 
         {/* 9. CHATBOT */}
         <ChatBot />
+
+        {/* 10. CADRE "NOS PARTENAIRES" - Affiché en bas du dashboard */}
+        {partenaires.length > 0 && (
+          <div className="mt-8 pt-8 border-t border-white/10">
+            <h3 className="font-black text-xl text-white mb-6 flex items-center gap-2">
+              🤝 Nos Partenaires de Confiance
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {partenaires.map((partenaire: any) => (
+                <div key={partenaire.id} className="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 p-4 flex flex-col items-center text-center hover:bg-white/15 transition">
+                  {partenaire.photo_url ? (
+                    <div className="w-20 h-20 rounded-full overflow-hidden mb-3 border-2 border-[#FF7A00]">
+                      <img src={partenaire.photo_url} alt={partenaire.nom} className="w-full h-full object-cover" />
+                    </div>
+                  ) : (
+                    <div className="w-20 h-20 rounded-full bg-[#FF7A00]/20 flex items-center justify-center mb-3 text-3xl">
+                      🏢
+                    </div>
+                  )}
+                  <h4 className="font-bold text-white text-lg mb-1">{partenaire.nom}</h4>
+                  <p className="text-sm text-white/70 line-clamp-3">{partenaire.description || "Partenaire certifié BÂTIZEN"}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
