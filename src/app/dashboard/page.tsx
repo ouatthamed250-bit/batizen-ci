@@ -420,8 +420,8 @@ const promosRef = ref(db, 'promotions');
       <div className="absolute inset-0 bg-cover bg-center bg-no-repeat z-0" style={{ backgroundImage: 'url(/images/villa-bg.jpg)' }}></div>
       <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10"></div>
       
-      {/* Contenu principal avec padding pour scroll correct */}
-      <main className="relative z-20 flex flex-col gap-3 px-4 pt-4 pb-28">
+      {/* Contenu principal */}
+      <main className="relative z-20 flex flex-col gap-3 px-4 pb-4">
         {/* 1. HEADER PERSONNALISÉ */}
         <header className="rounded-[22px] border border-white/50 bg-white/90 backdrop-blur-sm">
           <div className="px-4 pt-4 pb-2 sm:px-6">

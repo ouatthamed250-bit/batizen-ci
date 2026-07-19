@@ -27,7 +27,7 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
     <div className="min-h-screen flex flex-col">
       <Header />
       <Sidebar />
-      <main className="flex-1 pb-24">
+      <main className="flex-1 pb-28 md:pb-24">
         {children}
       </main>
       <BottomNav />
