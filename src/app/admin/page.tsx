@@ -202,13 +202,27 @@ function AdminContent() {
     const partenairesRef = dbRef(db, 'partenaires');
     const unsubPartenaires = onValue(partenairesRef, (snapshot) => {
       const data = snapshot.val();
-      setPartenaires(data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : []);
+      if (data) {
+        const partenairesData = Object.entries(data)
+          .filter(([id, p]: [string, any]) => p.actif === true) // ⚠️ Filtre STRICT === true
+          .map(([id, p]: [string, any]) => ({ id, ...p }));
+        setPartenaires(partenairesData);
+      } else {
+        setPartenaires([]);
+      }
     });
 
-    const promotionsRef = dbRef(db, 'promotions');
+const promotionsRef = dbRef(db, 'promotions');
     const unsubPromotions = onValue(promotionsRef, (snapshot) => {
       const data = snapshot.val();
-      setPromotions(data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : []);
+      if (data) {
+        const promotionsData = Object.entries(data)
+          .filter(([id, p]: [string, any]) => p.active === true) // ⚠️ Filtre STRICT === true
+          .map(([id, p]: [string, any]) => ({ id, ...p }));
+        setPromotions(promotionsData);
+      } else {
+        setPromotions([]);
+      }
     });
 
     const ouvriersRef = dbRef(db, 'ouvriers');
@@ -527,15 +541,29 @@ function AdminContent() {
                   </div>
                 </form>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {partenaires.map((p) => (
+{partenaires.map((p) => (
                     <div key={p.id} className="rounded-[16px] border border-white/10 bg-white/5 p-4 flex flex-col h-full">
                       {p.photo_url && <img src={p.photo_url} alt={p.nom} className="mb-2 h-32 w-full rounded-lg object-cover" />}
                       <h4 className="font-bold">{p.nom}</h4>
                       <p className="text-xs text-white/60">{p.description}</p>
-                      <span className={`mt-2 inline-block rounded-full px-2 py-0.5 text-xs ${p.actif ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>{p.actif ? "Actif" : "Inactif"}</span>
-                      <div className="mt-auto flex gap-2 pt-3">
-                        <button onClick={() => handleEditPartenaire(p)} className="flex-1 rounded-[10px] bg-blue-500/20 px-3 py-2 text-xs font-bold text-blue-400 hover:bg-blue-500/30 transition">✏️ Modifier</button>
-                        <button onClick={() => handleDeletePartenaire(p.id)} className="flex-1 rounded-[10px] bg-red-500/20 px-3 py-2 text-xs font-bold text-red-400 hover:bg-red-500/30 transition">🗑️ Supprimer</button>
+                      <div className="mt-auto flex flex-col gap-2 pt-3">
+                        <button
+                          onClick={async () => {
+                            const db = getDatabase();
+                            await update(dbRef(db, `partenaires/${p.id}`), { actif: !p.actif, dateModification: Date.now() });
+                          }}
+                          className={`w-full rounded-full px-3 py-1 text-xs font-bold border transition ${
+                            p.actif 
+                              ? "bg-green-50 border-green-200 text-green-700 hover:bg-green-100" 
+                              : "bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100"
+                          }`}
+                        >
+                          {p.actif ? "✅ Actif" : "⏸️ Inactif"}
+                        </button>
+                        <div className="flex gap-2">
+                          <button onClick={() => handleEditPartenaire(p)} className="flex-1 rounded-[10px] bg-blue-500/20 px-3 py-2 text-xs font-bold text-blue-400 hover:bg-blue-500/30 transition">✏️ Modifier</button>
+                          <button onClick={() => handleDeletePartenaire(p.id)} className="flex-1 rounded-[10px] bg-red-500/20 px-3 py-2 text-xs font-bold text-red-400 hover:bg-red-500/30 transition">🗑️ Supprimer</button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -564,14 +592,28 @@ function AdminContent() {
                       <h4 className="font-bold">{p.titre}</h4>
                       <p className="text-xs text-white/60">{p.description}</p>
                       <p className="text-xs mt-1">Du {p.date_debut} au {p.date_fin}</p>
-                      <span className={`mt-2 inline-block rounded-full px-2 py-0.5 text-xs ${p.active ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>{p.active ? "Active" : "Inactive"}</span>
-                      <div className="mt-auto flex gap-2 pt-3">
-                        <button onClick={() => handleEditPromo(p)} className="flex-1 rounded-[10px] bg-blue-500/20 px-3 py-2 text-xs font-bold text-blue-400 hover:bg-blue-500/30 transition">
-                          ✏️ Modifier
+                      <div className="mt-auto flex flex-col gap-2 pt-3">
+                        <button
+                          onClick={async () => {
+                            const db = getDatabase();
+                            await update(dbRef(db, `promotions/${p.id}`), { active: !p.active, dateModification: Date.now() });
+                          }}
+                          className={`w-full rounded-full px-3 py-1 text-xs font-bold border transition ${
+                            p.active 
+                              ? "bg-green-50 border-green-200 text-green-700 hover:bg-green-100" 
+                              : "bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100"
+                          }`}
+                        >
+                          {p.active ? "✅ Active" : "⏸️ Inactive"}
                         </button>
-                        <button onClick={() => handleDeletePromo(p.id)} className="flex-1 rounded-[10px] bg-red-500/20 px-3 py-2 text-xs font-bold text-red-400 hover:bg-red-500/30 transition">
-                          🗑️ Supprimer
-                        </button>
+                        <div className="flex gap-2">
+                          <button onClick={() => handleEditPromo(p)} className="flex-1 rounded-[10px] bg-blue-500/20 px-3 py-2 text-xs font-bold text-blue-400 hover:bg-blue-500/30 transition">
+                            ✏️ Modifier
+                          </button>
+                          <button onClick={() => handleDeletePromo(p.id)} className="flex-1 rounded-[10px] bg-red-500/20 px-3 py-2 text-xs font-bold text-red-400 hover:bg-red-500/30 transition">
+                            🗑️ Supprimer
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}

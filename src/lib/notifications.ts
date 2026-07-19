@@ -8,7 +8,10 @@ export type NotificationType =
   | "nouveau_message"
   | "nouvelle_photo"
   | "paiement_recu"
-  | "promotion";
+  | "promotion"
+  | "nouveau_rdv"
+  | "confirme_rdv"
+  | "rappel_rdv";
 
 export type Notification = {
   id: string;
@@ -218,6 +221,12 @@ export function getNotificationIcon(type: NotificationType): string {
       return "💰";
     case "promotion":
       return "🎁";
+    case "nouveau_rdv":
+      return "📅";
+    case "confirme_rdv":
+      return "✅";
+    case "rappel_rdv":
+      return "🔔";
     default:
       return "🔔";
   }
@@ -238,6 +247,12 @@ export function getNotificationColor(type: NotificationType): string {
       return "#FF7A00";
     case "promotion":
       return "#EF4444";
+    case "nouveau_rdv":
+      return "#3B82F6";
+    case "confirme_rdv":
+      return "#22C55E";
+    case "rappel_rdv":
+      return "#F59E0B";
     default:
       return "#6B7280";
   }
