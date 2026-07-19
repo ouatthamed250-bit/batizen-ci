@@ -36,11 +36,15 @@ type Localisation = {
 type Client = {
   id: string;
   nom?: string;
+  displayName?: string;
   email?: string;
   telephone?: string;
   date_inscription?: string;
   statut?: string;
   lastLogin?: string | number;
+  isOnline?: boolean;
+  lastSeen?: number;
+  chantierIds?: string[];
 };
 
 type Chantier = {
