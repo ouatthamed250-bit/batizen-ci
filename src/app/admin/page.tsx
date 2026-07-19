@@ -87,9 +87,13 @@ type Ouvrier = {
   id: string;
   nom: string;
   specialite: string;
-  telephone: string;
-  chantierId: string;
-  fonction: "ouvrier" | "chef_de_chantier";
+  telephone?: string;
+  email?: string;
+  description?: string;
+  tarif?: number;
+  photoUrl?: string;
+  chantierId?: string;
+  fonction: "ouvrier" | "chef_equipe" | "chef_de_chantier";
   actif: boolean;
 };
 
@@ -261,7 +265,17 @@ function AdminContent() {
 
   const [partenaireForm, setPartenaireForm] = useState({ nom: "", description: "", photo: null as File | null, actif: true });
   const [promoForm, setPromoForm] = useState({ titre: "", description: "", image: null as File | null, date_debut: "", date_fin: "", active: true });
-  const [ouvrierForm, setOuvrierForm] = useState({ nom: "", specialite: "", telephone: "", chantierId: "", fonction: "ouvrier" as "ouvrier" | "chef_de_chantier" });
+  const [ouvrierForm, setOuvrierForm] = useState({ 
+    nom: "", 
+    specialite: "", 
+    telephone: "", 
+    email: "",
+    description: "",
+    tarif: "",
+    photo: null as File | null,
+    chantierId: "", 
+    fonction: "ouvrier" as "ouvrier" | "chef_equipe" | "chef_de_chantier" 
+  });
   const [materiauForm, setMateriauForm] = useState({ nom: "", categorie: "", prix_unitaire: "", unite: "kg", disponible: true });
 
   const handleAddPartenaire = async (e: FormEvent) => {
@@ -320,6 +334,38 @@ function AdminContent() {
     }
   };
 
+  const handleEditPartenaire = async (partenaire: Partenaire) => {
+    const nouveauNom = prompt("Nouveau nom :", partenaire.nom);
+    if (nouveauNom && nouveauNom.trim()) {
+      const db = getDatabase();
+      await update(dbRef(db, `partenaires/${partenaire.id}`), { nom: nouveauNom.trim() });
+      setMessage({ type: "success", text: "Nom du partenaire modifié !" });
+    }
+  };
+
+  const handleDeletePartenaire = async (id: string) => {
+    if (!confirm("Supprimer ce partenaire ?")) return;
+    const db = getDatabase();
+    await update(dbRef(db, `partenaires/${id}`), { actif: false, dateSuppression: Date.now() });
+    setMessage({ type: "success", text: "Partenaire supprimé !" });
+  };
+
+  const handleEditOuvrier = async (ouvrier: Ouvrier) => {
+    const nouveauNom = prompt("Nouveau nom :", ouvrier.nom);
+    if (nouveauNom && nouveauNom.trim()) {
+      const db = getDatabase();
+      await update(dbRef(db, `ouvriers/${ouvrier.id}`), { nom: nouveauNom.trim() });
+      setMessage({ type: "success", text: "Nom de l'ouvrier modifié !" });
+    }
+  };
+
+  const handleDeleteOuvrier = async (id: string) => {
+    if (!confirm("Supprimer cet ouvrier ?")) return;
+    const db = getDatabase();
+    await update(dbRef(db, `ouvriers/${id}`), { actif: false, dateSuppression: Date.now() });
+    setMessage({ type: "success", text: "Ouvrier supprimé !" });
+  };
+
   const handleAddOuvrier = async (e: FormEvent) => {
     e.preventDefault();
     if (!ouvrierForm.nom || !ouvrierForm.specialite) return;
@@ -329,11 +375,15 @@ function AdminContent() {
       nom: ouvrierForm.nom,
       specialite: ouvrierForm.specialite,
       telephone: ouvrierForm.telephone,
+      email: ouvrierForm.email,
+      description: ouvrierForm.description,
+      tarif: Number(ouvrierForm.tarif) || 0,
+      photoUrl: ouvrierForm.photo ? await uploadToCloudinary(ouvrierForm.photo) : "",
       chantierId: ouvrierForm.chantierId,
       fonction: ouvrierForm.fonction,
       actif: true
     });
-    setOuvrierForm({ nom: "", specialite: "", telephone: "", chantierId: "", fonction: "ouvrier" });
+    setOuvrierForm({ nom: "", specialite: "", telephone: "", email: "", description: "", tarif: "", photo: null, chantierId: "", fonction: "ouvrier" });
     setMessage({ type: "success", text: "Ouvrier ajouté !" });
   };
 
@@ -474,11 +524,15 @@ function AdminContent() {
                 </form>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {partenaires.map((p) => (
-                    <div key={p.id} className="rounded-[16px] border border-white/10 bg-white/5 p-4">
+                    <div key={p.id} className="rounded-[16px] border border-white/10 bg-white/5 p-4 flex flex-col h-full">
                       {p.photo_url && <img src={p.photo_url} alt={p.nom} className="mb-2 h-32 w-full rounded-lg object-cover" />}
                       <h4 className="font-bold">{p.nom}</h4>
                       <p className="text-xs text-white/60">{p.description}</p>
                       <span className={`mt-2 inline-block rounded-full px-2 py-0.5 text-xs ${p.actif ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>{p.actif ? "Actif" : "Inactif"}</span>
+                      <div className="mt-auto flex gap-2 pt-3">
+                        <button onClick={() => handleEditPartenaire(p)} className="flex-1 rounded-[10px] bg-blue-500/20 px-3 py-2 text-xs font-bold text-blue-400 hover:bg-blue-500/30 transition">✏️ Modifier</button>
+                        <button onClick={() => handleDeletePartenaire(p.id)} className="flex-1 rounded-[10px] bg-red-500/20 px-3 py-2 text-xs font-bold text-red-400 hover:bg-red-500/30 transition">🗑️ Supprimer</button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -526,34 +580,50 @@ function AdminContent() {
                 <form onSubmit={handleAddOuvrier} className="rounded-[16px] border border-white/10 bg-white/5 p-4">
                   <h3 className="mb-3 font-black text-[#FF7A00]">➕ Ajouter un ouvrier</h3>
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <input type="text" placeholder="Nom" value={ouvrierForm.nom} onChange={e => setOuvrierForm({ ...ouvrierForm, nom: e.target.value })} className="h-10 rounded-[10px] bg-white/5 px-3 text-sm outline-none" required />
-                    <input type="text" placeholder="Spécialité" value={ouvrierForm.specialite} onChange={e => setOuvrierForm({ ...ouvrierForm, specialite: e.target.value })} className="h-10 rounded-[10px] bg-white/5 px-3 text-sm outline-none" required />
+                    <input type="text" placeholder="Nom complet" value={ouvrierForm.nom} onChange={e => setOuvrierForm({ ...ouvrierForm, nom: e.target.value })} className="h-10 rounded-[10px] bg-white/5 px-3 text-sm outline-none" required />
                     <input type="tel" placeholder="Téléphone" value={ouvrierForm.telephone} onChange={e => setOuvrierForm({ ...ouvrierForm, telephone: e.target.value })} className="h-10 rounded-[10px] bg-white/5 px-3 text-sm outline-none" />
+                    <input type="email" placeholder="Email (optionnel)" value={ouvrierForm.email} onChange={e => setOuvrierForm({ ...ouvrierForm, email: e.target.value })} className="h-10 rounded-[10px] bg-white/5 px-3 text-sm outline-none" />
+                    <input type="text" placeholder="Spécialité" value={ouvrierForm.specialite} onChange={e => setOuvrierForm({ ...ouvrierForm, specialite: e.target.value })} className="h-10 rounded-[10px] bg-white/5 px-3 text-sm outline-none" required />
+                    <input type="number" placeholder="Tarif journalier (FCFA)" value={ouvrierForm.tarif} onChange={e => setOuvrierForm({ ...ouvrierForm, tarif: e.target.value })} className="h-10 rounded-[10px] bg-white/5 px-3 text-sm outline-none" />
+                    <input type="file" accept="image/*" onChange={e => setOuvrierForm({ ...ouvrierForm, photo: e.target.files?.[0] || null })} className="text-xs text-white/70" />
                     <select value={ouvrierForm.chantierId} onChange={e => setOuvrierForm({ ...ouvrierForm, chantierId: e.target.value })} className="h-10 rounded-[10px] bg-white/5 px-3 text-sm outline-none">
-                      <option value="">Affecter à un chantier</option>
+                      <option value="">Affecter à un chantier (optionnel)</option>
                       {chantiers.map(c => (
                         <option key={c.id} value={c.id}>{c.nom_projet || c.nom}</option>
                       ))}
                     </select>
-                    <select value={ouvrierForm.fonction} onChange={e => setOuvrierForm({ ...ouvrierForm, fonction: e.target.value as "ouvrier" | "chef_de_chantier" })} className="h-10 rounded-[10px] bg-white/5 px-3 text-sm outline-none">
+                    <select value={ouvrierForm.fonction} onChange={e => setOuvrierForm({ ...ouvrierForm, fonction: e.target.value as "ouvrier" | "chef_equipe" | "chef_de_chantier" })} className="h-10 rounded-[10px] bg-white/5 px-3 text-sm outline-none">
                       <option value="ouvrier">Ouvrier</option>
+                      <option value="chef_equipe">Chef d'équipe</option>
                       <option value="chef_de_chantier">Chef de chantier</option>
                     </select>
-                    <button type="submit" className="h-10 rounded-[10px] bg-[#FF7A00] font-bold sm:col-span-2">Ajouter</button>
+                    <textarea placeholder="Description / Expérience" value={ouvrierForm.description} onChange={e => setOuvrierForm({ ...ouvrierForm, description: e.target.value })} className="col-span-2 h-20 rounded-[10px] bg-white/5 px-3 py-2 text-sm outline-none resize-none" />
+                    <button type="submit" className="h-10 rounded-[10px] bg-[#FF7A00] font-bold sm:col-span-2">Enregistrer l'ouvrier</button>
                   </div>
                 </form>
                 <div className="space-y-3">
-                  {ouvriers.map((o) => {
+                  {ouvriers.filter(o => o.actif !== false).map((o) => {
                     const chantier = chantiers.find(c => c.id === o.chantierId);
+                    const fonctionLabel = {
+                      ouvrier: "👷 Ouvrier",
+                      chef_equipe: "👥 Chef d'équipe",
+                      chef_de_chantier: "👑 Chef de chantier"
+                    }[o.fonction] || "Ouvrier";
                     return (
-                      <div key={o.id} className="rounded-[16px] border border-white/10 bg-white/5 p-4 flex justify-between items-center">
-                        <div>
+                      <div key={o.id} className="rounded-[16px] border border-white/10 bg-white/5 p-4 flex flex-col">
+                        <div className="flex-1">
                           <h4 className="font-bold">{o.nom}</h4>
                           <p className="text-xs text-white/60">Spécialité: {o.specialite}</p>
-                          {o.chantierId && <p className="text-xs text-white/60">📍 Affecté à: {chantier?.nom_projet || chantier?.nom || "—"}</p>}
-                          {o.fonction === "chef_de_chantier" && <span className="inline-block mt-1 rounded-full px-2 py-0.5 text-xs bg-yellow-500/20 text-yellow-400">👑 Chef de chantier</span>}
+                          {o.telephone && <p className="text-xs text-white/60">📞 {o.telephone}</p>}
+                          {o.email && <p className="text-xs text-white/60">✉️ {o.email}</p>}
+                          {o.tarif && <p className="text-xs text-white/60">💰 {o.tarif} FCFA/j</p>}
+                          {o.chantierId && <p className="text-xs text-white/60">📍 {chantier?.nom_projet || chantier?.nom}</p>}
+                          <span className="inline-block mt-1 rounded-full px-2 py-0.5 text-xs bg-white/10">{fonctionLabel}</span>
                         </div>
-                        <span className={`rounded-full px-2 py-0.5 text-xs ${o.actif ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>{o.actif ? "Actif" : "Inactif"}</span>
+                        <div className="mt-3 flex gap-2">
+                          <button onClick={() => handleEditOuvrier(o)} className="flex-1 rounded-[10px] bg-blue-500/20 px-3 py-2 text-xs font-bold text-blue-400 hover:bg-blue-500/30 transition">✏️ Modifier</button>
+                          <button onClick={() => handleDeleteOuvrier(o.id)} className="flex-1 rounded-[10px] bg-red-500/20 px-3 py-2 text-xs font-bold text-red-400 hover:bg-red-500/30 transition">🗑️ Supprimer</button>
+                        </div>
                       </div>
                     );
                   })}
