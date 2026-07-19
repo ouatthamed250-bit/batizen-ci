@@ -104,7 +104,7 @@ export function GestionEquipe({ chantierId }: { chantierId: string }) {
     };
   }, [chantierId]);
 
-  const handleAjouter = async (e: FormEvent) => {
+const handleAjouter = async (e: FormEvent) => {
     e.preventDefault();
     if (!ouvrierSelectionne) {
       alert("Veuillez sélectionner un ouvrier");
@@ -114,9 +114,16 @@ export function GestionEquipe({ chantierId }: { chantierId: string }) {
     const ouvrier = ouvriersList.find((o: any) => o.id === ouvrierSelectionne);
     if (!ouvrier) return;
 
-    console.log(" ADMIN - Écriture équipe:", {
-      chantierId,
-      chantierIdType: typeof chantierId,
+    // 🔍 DIAGNOSTIC ULTRA-DÉTAILLÉ - ADMIN ÉCRITURE ÉQUIPE
+    console.log("🔍 ADMIN - Écriture équipe DÉTAILLÉE:", {
+      chantierId_original: chantierId,
+      chantierId_type: typeof chantierId,
+      chantierId_stringified: String(chantierId),
+      chantierId_length: chantierId.length,
+      chantierId_charCodes: chantierId.split('').map(c => c.charCodeAt(0)),
+      ouvrierId_selectionne: ouvrierSelectionne,
+      ouvrierId_type: typeof ouvrierSelectionne,
+      ouvrier_trouve: ouvrier,
       ouvrierId: ouvrier.id,
       ouvrierNom: ouvrier.nom,
       fonction: ouvrier.fonction
@@ -132,18 +139,22 @@ export function GestionEquipe({ chantierId }: { chantierId: string }) {
         fonction: ouvrier.fonction || ouvrier.role || "ouvrier",
         telephone: ouvrier.telephone || ouvrier.phone || "",
         dateAffectation: Date.now(),
-        actif: true
+        actif: true,
+        // 🔍 Ajouter un timestamp pour debugging
+        _debug_timestamp: Date.now()
       };
 
-      console.log(" Données équipe à écrire:", equipeData);
+      console.log("📝 Données équipe Firebase (avec clé chantierId):", JSON.stringify(equipeData, null, 2));
 
       await push(ref(database, "equipes"), equipeData);
 
-      console.log("✅ Équipe écrite avec succès !");
+      console.log("✅ Équipe écrite avec succès dans Firebase !");
+      console.log("   - Nœud Firebase: equipes/");
+      console.log("   - chantierId stocké:", equipeData.chantierId);
       alert(`✅ ${ouvrier.nom} ajouté à l'équipe`);
       setOuvrierSelectionne("");
     } catch (error) {
-      console.error("❌ Erreur:", error);
+      console.error("❌ Erreur écriture équipe:", error);
       alert("Erreur lors de l'ajout");
     }
   };

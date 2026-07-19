@@ -399,58 +399,97 @@ const [planning, setPlanning] = useState<Etape[]>([]);
       setLoading(false);
 
        // Charger les nouvelles collections en parallèle (V2)
-       // Documents et notes depuis chemins globaux, filtrés par chantierId
-       if (!cancelled) {
-         const [plan, rdv, med, rap, allDocs, allNotes] = await Promise.all([
-           rtdbGetList<Etape>(`chantiers/${id}/planning`),
-           rtdbGetList<RendezVous>(`chantiers/${id}/rendezvous`),
-           rtdbGetList<any>(`chantiers/${id}/medias`),
-           rtdbGetList<Rapport>(`chantiers/${id}/rapports`),
-           rtdbGetList<any>(`documents/`),
-           rtdbGetList<any>(`notes/`),
-         ]);
-         setPlanning(plan);
-         setRendezvous(rdv);
-         setMedias(med);
-         setRapports(rap);
-         // Filtrer documents et notes par chantierId pour V2
-         const docsFiltered = allDocs.filter((doc: any) => doc?.chantierId === id);
-         const notesFiltered = allNotes.filter((note: any) => note?.chantierId === id);
-         // Prioriser les documents du chemin global V2, fallback sur chantier local
-         if (docsFiltered.length > 0) {
-           setDocuments(docsFiltered);
-         }
-         setNotes(notesFiltered);
-       }
+        // Documents, notes et rapports depuis chemins globaux, filtrés par chantierId
+        if (!cancelled) {
+          const [plan, rdv, med, allDocs, allNotes, allRapports] = await Promise.all([
+            rtdbGetList<Etape>(`chantiers/${id}/planning`),
+            rtdbGetList<RendezVous>(`chantiers/${id}/rendezvous`),
+            rtdbGetList<any>(`chantiers/${id}/medias`),
+            rtdbGetList<any>(`documents/`),
+            rtdbGetList<any>(`notes/`),
+            rtdbGetList<any>(`rapports/`), // 🔍 Lire depuis le nœud global
+          ]);
+          setPlanning(plan);
+          setRendezvous(rdv);
+          setMedias(med);
+          
+          // 🔍 DIAGNOSTIC ULTRA-DÉTAILLÉ - CLIENT LECTURE RAPPORTS
+          console.log("🔍 CLIENT - Lecture rapports DÉTAILLÉE:");
+          console.log("  - chantierId attendu:", id);
+          console.log("  - Type de chantierId:", typeof id);
+          console.log("  - Nombre de rapports bruts:", allRapports.length);
+          console.log("  - Rapports bruts:", allRapports.map((r: any) => ({ id: r.id, chantierId: r.chantierId, etape: r.etape })));
+          
+          // Filtrer rapports par chantierId pour V2 (avec String pour éviter les problèmes de type)
+          const rapportsFiltered = allRapports.filter((rapport: any) => {
+            const match = String(rapport?.chantierId) === String(id) && rapport?.actif !== false;
+            console.log(`  🔍 Vérif rapport ${rapport?.id}:`, {
+              chantierIdEcrit: rapport?.chantierId,
+              chantierIdEcrit_type: typeof rapport?.chantierId,
+              chantierIdAttendu: id,
+              match_String: String(rapport?.chantierId) === String(id),
+              actif: rapport?.actif,
+              garde: match
+            });
+            return match;
+          });
+          console.log("  ✅ Rapports filtrés:", rapportsFiltered.length);
+          setRapports(rapportsFiltered);
+          
+          // Filtrer documents et notes par chantierId pour V2
+          const docsFiltered = allDocs.filter((doc: any) => doc?.chantierId === id);
+          const notesFiltered = allNotes.filter((note: any) => note?.chantierId === id);
+          // Prioriser les documents du chemin global V2, fallback sur chantier local
+          if (docsFiltered.length > 0) {
+            setDocuments(docsFiltered);
+          }
+          setNotes(notesFiltered);
+        }
     }
 
     load();
 
-    // 🔍 Listener temps réel pour l'équipe - DIAGNOSTIC
-    const chantierIdPourEquipe = id; // Capturer la valeur actuelle
-    unsubEquipes = onValue(ref(database, 'equipes'), (snapshot) => {
-      console.log("🔍 DIAGNOSTIC CLIENT - Lecture équipe:");
-      console.log("  - chantierId attendu:", chantierIdPourEquipe);
-      console.log("  - Type de chantierId:", typeof chantierIdPourEquipe);
-      
-      const data = snapshot.val();
-      console.log("  - Données brutes Firebase:", data);
-      
-      if (data) {
-        const equipeBrute = Object.entries(data)
-          .map(([idEq, e]: [string, any]) => {
-            console.log(`  - Vérif équipe ${idEq}: chantierId=${e.chantierId} (type: ${typeof e.chantierId}), actif=${e.actif}`);
-            return { id: idEq, ...e };
-          });
-        
-        console.log("  - Toutes les équipes trouvées:", equipeBrute.length);
-        
-        // ⚠️ CORRECTION : Comparaison stricte avec toString() pour éviter les problèmes de type
-        const equipeChantier = equipeBrute.filter(e => 
-          String(e.chantierId) === String(chantierIdPourEquipe) && e.actif === true
-        );
-        
-        console.log("  - Équipes filtrées pour CE chantier:", equipeChantier.length, equipeChantier);
+// 🔍 Listener temps réel pour l'équipe - DIAGNOSTIC ULTRA-DÉTAILLÉ
+     const chantierIdPourEquipe = id; // Capturer la valeur actuelle
+     unsubEquipes = onValue(ref(database, 'equipes'), (snapshot) => {
+       // 🔍 DIAGNOSTIC ULTRA-DÉTAILLÉ - CLIENT LECTURE ÉQUIPE
+       console.log("🔍 CLIENT - Lecture équipes DÉTAILLÉE:");
+       console.log("  - chantierId attendu:", chantierIdPourEquipe);
+       console.log("  - Type de chantierId:", typeof chantierIdPourEquipe);
+       console.log("  - Snapshot existe:", snapshot.exists());
+       console.log("  - Nombre d'enfants:", snapshot.size);
+       
+       const data = snapshot.val();
+       console.log("  - Données brutes équipes:", data);
+       
+       if (data) {
+         const equipeBrute = Object.entries(data)
+           .map(([idEq, e]: [string, any]) => {
+             console.log(`  🔍 Vérif équipe ${idEq}:`, {
+               chantierIdEcrit: e.chantierId,
+               chantierIdEcrit_type: typeof e.chantierId,
+               chantierIdAttendu: chantierIdPourEquipe,
+               match_String: String(e.chantierId) === String(chantierIdPourEquipe),
+               match_strict: e.chantierId === chantierIdPourEquipe,
+               actif: e.actif,
+               nom: e.ouvrierNom
+             });
+             return { id: idEq, ...e };
+           });
+         
+         console.log("  📊 Toutes les équipes trouvées:", equipeBrute.length);
+         console.log("  📊 Liste complète des équipes:", equipeBrute.map(e => ({ id: e.id, chantierId: e.chantierId, actif: e.actif })));
+         
+         // ⚠️ CORRECTION : Comparaison stricte avec toString() pour éviter les problèmes de type
+         const equipeChantier = equipeBrute.filter(e => {
+           const matchId = String(e.chantierId) === String(chantierIdPourEquipe);
+           const matchActif = e.actif === true;
+           console.log(`  ✅ Filtre équipe ${e.id}: matchId=${matchId}, matchActif=${matchActif}, gardé=${matchId && matchActif}`);
+           return matchId && matchActif;
+         });
+         
+         console.log("  ✅ Équipes filtrées pour CE chantier:", equipeChantier.length);
+         console.log("  ✅ Données équipe finale:", equipeChantier);
         
         // Tri : Chef en premier
         equipeChantier.sort((a: any, b: any) => {

@@ -244,66 +244,73 @@ export default function ChantierDetailPage() {
     }
   };
 
-  // Sauvegarde du rapport hebdomadaire
-  const handleCreerRapport = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    console.log("🔍 ADMIN - Création rapport:", {
-      chantierId,
-      chantierIdType: typeof chantierId,
-      rapportForm,
-      mediasCount: mediasRapport.length
-    });
+// Sauvegarde du rapport hebdomadaire
+   const handleCreerRapport = async (e: React.FormEvent) => {
+     e.preventDefault();
+     
+     // 🔍 DIAGNOSTIC ULTRA-DÉTAILLÉ - ADMIN ÉCRITURE RAPPORT
+     console.log("🔍 ADMIN - Création rapport DÉTAILLÉE:", {
+       chantierId_original: chantierId,
+       chantierId_type: typeof chantierId,
+       chantierId_stringified: String(chantierId),
+       chantierId_length: chantierId.length,
+       rapportForm,
+       mediasCount: mediasRapport.length
+     });
 
-    try {
-      const rapportData = {
-        chantierId: String(chantierId), // ⚠️ FORCER EN STRING
-        semaine: rapportForm.semaine || `S${getWeekNumber(new Date())}`,
-        dateDebut: rapportForm.dateDebut || new Date().toISOString(),
-        dateFin: rapportForm.dateFin || new Date().toISOString(),
-        etape: rapportForm.etape || "fondations",
-        avancement: rapportForm.avancement || 0,
-        statut: rapportForm.statut || "dans_delais",
-        commentaires: rapportForm.commentaires || "",
-        problemes: rapportForm.problemes || "",
-        prochaine_etape: rapportForm.prochaine_etape || "",
-        medias: mediasRapport.map(m => ({
-          id: m.id,
-          url: m.url,
-          type: m.type || "photo",
-          legende: m.legende || "",
-          categorie: m.categorie || "pendant",
-          dateUpload: m.dateUpload || Date.now()
-        })),
-        creePar: "admin",
-        dateCreation: Date.now(),
-        actif: true
-      };
+     try {
+       const rapportData = {
+         chantierId: String(chantierId), // ⚠️ FORCER EN STRING
+         semaine: rapportForm.semaine || `S${getWeekNumber(new Date())}`,
+         dateDebut: rapportForm.dateDebut || new Date().toISOString(),
+         dateFin: rapportForm.dateFin || new Date().toISOString(),
+         etape: rapportForm.etape || "fondations",
+         avancement: rapportForm.avancement || 0,
+         statut: rapportForm.statut || "dans_delais",
+         commentaires: rapportForm.commentaires || "",
+         problemes: rapportForm.problemes || "",
+         prochaine_etape: rapportForm.prochaine_etape || "",
+         medias: mediasRapport.map(m => ({
+           id: m.id,
+           url: m.url,
+           type: m.type || "photo",
+           legende: m.legende || "",
+           categorie: m.categorie || "pendant",
+           dateUpload: m.dateUpload || Date.now()
+         })),
+         creePar: "admin",
+         dateCreation: Date.now(),
+         actif: true,
+         // 🔍 Timestamp de debug
+         _debug_timestamp: Date.now()
+       };
 
-      console.log(" Données rapport à écrire:", rapportData);
+       console.log("📝 Données rapport Firebase (avec chantierId):", JSON.stringify(rapportData, null, 2));
 
-      await push(ref(database, 'rapports'), rapportData);
+       await push(ref(database, 'rapports'), rapportData);
 
-      console.log("✅ Rapport écrit avec succès !");
-      alert("✅ Rapport créé !");
-      setShowRapportForm(false);
-      setRapportForm({
-        semaine: "",
-        dateDebut: "",
-        dateFin: "",
-        etape: "fondations",
-        avancement: 0,
-        statut: "dans_delais",
-        commentaires: "",
-        problemes: "",
-        prochaine_etape: ""
-      });
-      setMediasRapport([]);
-    } catch (error) {
-      console.error("❌ Erreur:", error);
-      alert("Erreur lors de la création");
-    }
-  };
+       console.log("✅ Rapport écrit avec succès dans Firebase !");
+       console.log("   - Nœud Firebase: rapports/");
+       console.log("   - chantierId stocké:", rapportData.chantierId);
+       alert("✅ Rapport créé !");
+       setShowRapportForm(false);
+       setRapportForm({
+         semaine: "",
+         dateDebut: "",
+         dateFin: "",
+         etape: "fondations",
+         avancement: 0,
+         statut: "dans_delais",
+         commentaires: "",
+         problemes: "",
+         prochaine_etape: ""
+       });
+       setMediasRapport([]);
+     } catch (error) {
+       console.error("❌ Erreur création rapport:", error);
+       alert("Erreur lors de la création");
+     }
+   };
 
   // Sauvegarde de l'édition rapide
   const handleSaveEdit = async () => {
