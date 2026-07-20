@@ -147,28 +147,20 @@ function ActionButton({ icon: Icon, label, color, href }: {
   href: string;
 }) {
   return (
-    <motion.div
-      whileHover={{ y: -4, scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      transition={{ type: "spring", stiffness: 400, damping: 10 }}
+    <Link
+      href={href}
+      className="flex flex-col items-center justify-center gap-2 rounded-2xl bg-white p-4 text-center shadow-[0_4px_0_rgb(229,231,235)] border-b-4 border-gray-200 active:shadow-none active:translate-y-1 transition"
     >
-      <Link
-        href={href}
-        className="group flex h-full flex-col items-center gap-2 rounded-[16px] border border-white/50 bg-white/90 p-3 text-center shadow-[0_4px_12px_rgba(16,24,40,0.06)] backdrop-blur-sm transition-all active:scale-95 hover:shadow-[0_6px_16px_rgba(16,24,40,0.08)]"
+      <div
+        className="grid size-12 place-items-center rounded-xl text-white shadow-md"
+        style={{ backgroundColor: color }}
       >
-        <motion.div
-          className="grid size-10 place-items-center rounded-[12px] text-white shadow-md"
-          style={{ backgroundColor: color }}
-          whileHover={{ scale: 1.1, rotate: 5 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
-        >
-          <Icon size={18} aria-hidden />
-        </motion.div>
-        <span className="text-[10px] font-black leading-tight text-[var(--navy)] group-hover:text-[var(--primary)] transition-colors">
-          {label}
-        </span>
-      </Link>
-    </motion.div>
+        <Icon size={22} aria-hidden />
+      </div>
+      <span className="text-xs font-bold text-navy">
+        {label}
+      </span>
+    </Link>
   );
 }
 
@@ -286,6 +278,14 @@ export default function DashboardClientPage() {
   const [promos, setPromos] = useState<Promo[]>([]);
 
   const nomClient = user?.displayName || user?.email?.split("@")[0] || "Client";
+  
+  // Calculer le greeting selon l'heure
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 18) return "Bonjour";
+    return "Bonsoir";
+  };
+  const greeting = getGreeting();
 
   // Calculer les stats depuis les vrais chantiers
   const chantiersActifs = chantiers.filter(c => c.statut === "en_cours").length;
@@ -395,25 +395,23 @@ export default function DashboardClientPage() {
     window.location.href = `/nouveau-chantier?edit=${id}`;
   };
 
-  return (
-    <div className="relative min-h-screen bg-[var(--bg-dashboard)]">
-      {/* Background avec image et overlay */}
-      <div className="absolute inset-0 bg-cover bg-center bg-no-repeat z-0" style={{ backgroundImage: 'url(/images/villa-bg.jpg)' }}></div>
-      <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10"></div>
-      
-       {/* Contenu principal */}
-       <main className="relative z-20 flex flex-col gap-3 px-4 pt-20 sm:pt-24 pb-8 md:pb-12">
-         {/* 1. HEADER PERSONNALISÉ */}
+return (
+    <div className="pt-24 pb-20 px-4 min-h-screen bg-gray-50 overflow-x-hidden">
+      {/* Contenu principal */}
+      <main className="flex flex-col gap-3">
+        {/* 1. HEADER PERSONNALISÉ */}
         <header className="rounded-[22px] border border-white/50 bg-white/90 backdrop-blur-sm mb-6">
           <div className="px-4 pt-4 pb-2 sm:px-6">
-            <h1 className="text-2xl font-black tracking-[-0.03em] text-[var(--navy)] sm:text-3xl">Bonjour {nomClient}</h1>
+            <h1 className="text-2xl font-black tracking-[-0.03em] text-[var(--navy)] sm:text-3xl flex items-center gap-2">
+              {greeting} {nomClient} <span>✋🏽</span>
+            </h1>
             <p className="mt-1 text-sm font-semibold text-[var(--muted)]">{formatDateFrancais(new Date())}</p>
-            <div className="mt-2"><WeatherWidget title="Météo du jour" /></div>
+            <div className="mt-2"><WeatherWidget title="Météo du jour" className="w-full rounded-3xl p-5 bg-gradient-to-br from-blue-500 to-blue-700 text-white shadow-lg mb-6" /></div>
           </div>
         </header>
 
         {/* 2. 3 BOUTONS D'ACTIONS RAPIDES (grille 3 colonnes) */}
-        <section className="grid gap-3 sm:grid-cols-3">
+        <section className="grid grid-cols-3 gap-3 mb-6">
           <ActionButton 
             icon={Calculator} 
             label="Simulation" 

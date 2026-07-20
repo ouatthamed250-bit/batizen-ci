@@ -22,12 +22,12 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
     return <>{children}</>;
   }
 
-  // Pour toutes les autres pages (connectées) → interface complète
+// Pour toutes les autres pages (connectées) → interface complète
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
       <Sidebar />
-      <main className="flex-1 pb-28 md:pb-24">
+      <main className="flex-1 pt-24 pb-20 px-4 min-h-screen bg-gray-50">
         {children}
       </main>
       <BottomNav />
