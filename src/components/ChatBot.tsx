@@ -66,31 +66,18 @@ export default function ChatBot() {
     <>
       {/* Bouton flottant - Mini robot 3D */}
       {!isOpen && (
-        <button
-          onClick={() => setIsOpen(true)}
-          style={{
-            position: 'fixed',
-            bottom: '100px',
-            right: '20px',
-            width: '50px',
-            height: '50px',
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg, #4A90E2, #2C5FA8)',
-            border: 'none',
-            cursor: 'pointer',
-            boxShadow: '0 4px 15px rgba(74, 144, 226, 0.4), inset 0 1px 2px rgba(255,255,255,0.3)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '28px',
-            zIndex: 40,
-            animation: 'float 3s ease-in-out infinite'
-          }}
-          title="Assistant BATIZEN"
-          aria-label="Ouvrir l'assistant"
-        >
-          🤖
-        </button>
+      <div
+        onClick={() => setIsOpen(true)}
+        className="fixed bottom-20 right-4 z-50 animate-float cursor-pointer"
+        title="Assistant BÂTIZEN"
+        aria-label="Ouvrir l'assistant"
+      >
+        <img 
+          src="/images/batizen-robot.svg" 
+          alt="Assistant BÂTIZEN" 
+          className="w-12 h-12 object-contain drop-shadow-lg"
+        />
+      </div>
       )}
 
       {/* Fenêtre de chat */}
@@ -266,7 +253,7 @@ export default function ChatBot() {
       <style jsx>{`
         @keyframes float {
           0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-10px); }
+          50% { transform: translateY(-8px); }
         }
         @keyframes slideUp {
           from { transform: translateY(20px); opacity: 0; }
