@@ -393,16 +393,50 @@ export default function DashboardClientPage() {
   };
 
 return (
+<>
+<style>{`
+  .wave-hand {
+    display: inline-block;
+    transform-origin: 70% 70%;
+    animation: wave 2.5s infinite;
+  }
+  @keyframes wave {
+    0% { transform: rotate(0deg); }
+    10% { transform: rotate(14deg); }
+    20% { transform: rotate(-8deg); }
+    30% { transform: rotate(14deg); }
+    40% { transform: rotate(-4deg); }
+    50% { transform: rotate(10deg); }
+    60% { transform: rotate(0deg); }
+    100% { transform: rotate(0deg); }
+  }
+`}</style>
 <div className="pt-24 pb-20 px-4 min-h-screen bg-[#f9fafb] overflow-x-hidden">
       {/* Contenu principal */}
       <main className="flex flex-col gap-3">
-        {/* 1. HEADER PERSONNALISÉ */}
-        <header className="mb-6">
-          <h1 className="text-2xl font-black tracking-[-0.03em] text-[#1e3a8a] sm:text-3xl flex items-center gap-2 mb-1">
-            {greeting} {nomClient} <span>✋🏽</span>
-          </h1>
-          <p className="text-sm font-semibold text-[#4b5563]">{formatDateFrancais(new Date())}</p>
-        </header>
+        {/* 1. HEADER PERSONNALISÉ - Salutation dynamique Bonjour/Bonsoir */}
+        <div className="flex items-center gap-3 mb-6">
+          {(() => {
+            const hour = new Date().getHours();
+            const greeting = hour < 18 ? "Bonjour" : "Bonsoir";
+            // Récupération stricte du nom, jamais du téléphone
+            const userName = user?.displayName || (user?.email ? user.email.split("@")[0] : "Client");
+            
+            return (
+              <>
+                <span className="text-4xl wave-hand" role="img" aria-label="Salutation">✋🏽</span>
+                <div>
+                  <h1 className="text-2xl font-black text-[#1e3a8a] leading-tight">
+                    {greeting}, <span className="text-[#FF7A00]">{userName}</span>
+                  </h1>
+                  <p className="text-sm text-[#4b5563] font-medium mt-1">
+                    Prêt à suivre vos chantiers aujourd'hui ?
+                  </p>
+                </div>
+              </>
+            );
+          })()}
+        </div>
 
         {/* 1.1 WIDGET MÉTÉO - FULL WIDTH DÉGRADÉ BÂTIZEN */}
         <div className="w-full rounded-3xl p-5 bg-gradient-to-br from-[#1e3a8a] to-[#2563eb] text-white shadow-md mb-6">
