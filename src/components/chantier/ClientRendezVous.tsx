@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react";
 import { Calendar, Plus, Check, X, Clock, MapPin, AlertCircle } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
-import { rtdbGetList } from "@/lib/rtdb";
+import { rtdbGetList, rtdbSubscribeListByChild } from "@/lib/rtdb";
 import { getFirebaseServices } from "@/lib/firebase";
-import { ref, push, update, onValue } from "firebase/database";
+import { ref, push, update, onValue, query, orderByChild, equalTo, getDatabase, get } from "firebase/database";
 
 interface RendezVous {
   id: string;
@@ -53,29 +53,34 @@ export default function ClientRendezVous({ chantierId }: ClientRendezVousProps) 
     description: ""
   });
 
-  useEffect(() => {
+useEffect(() => {
     if (!user || !chantierId) return;
 
-    // Charger les RDV depuis le nœud global rendezvous/
+    // Charger les RDV depuis le nœud global rendezvous/ - AVEC REQUÊTE FILTRÉE POUR RÈGLES STRICTES
     const loadRdvs = async () => {
-      const allRdvs = await rtdbGetList<any>(`rendezvous/`);
-      const rdvsFiltered = allRdvs.filter((r: any) => 
-        String(r?.chantierId) === String(chantierId) && r?.actif !== false
-      );
-      setRendezVous(rdvsFiltered);
+      const q = query(ref(database, 'rendezvous'), orderByChild("chantierId"), equalTo(String(chantierId)));
+      const snap = await get(q);
+      const data = snap.val();
+      if (data) {
+        const rdvsFiltered = Object.entries(data)
+          .filter(([id, r]: [string, any]) => r?.actif !== false)
+          .map(([id, r]: [string, any]) => ({ id, ...r }))
+          .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        setRendezVous(rdvsFiltered);
+      } else {
+        setRendezVous([]);
+      }
       setLoading(false);
     };
     loadRdvs();
 
-    // Écoute en temps réel
-    const rdvsRef = ref(database, 'rendezvous');
-    const unsubscribe = onValue(rdvsRef, (snapshot) => {
+    // Écoute en temps réel - AVEC REQUÊTE FILTRÉE
+    const q = query(ref(database, 'rendezvous'), orderByChild("chantierId"), equalTo(String(chantierId)));
+    const unsubscribe = onValue(q, (snapshot) => {
       const data = snapshot.val();
       if (data) {
         const rdvs = Object.entries(data)
-          .filter(([id, r]: [string, any]) => 
-            String(r?.chantierId) === String(chantierId) && r?.actif !== false
-          )
+          .filter(([id, r]: [string, any]) => r?.actif !== false)
           .map(([id, r]: [string, any]) => ({ id, ...r }))
           .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
         setRendezVous(rdvs);

@@ -60,19 +60,6 @@ export async function rtdbGetList<T = Record<string, unknown>>(
 /**
  * Récupère une collection filtrée par une propriété enfant (equalTo).
  */
-/**
- * Écrit une valeur à un chemin Firebase Realtime Database.
- */
-export async function rtdbSet<T = unknown>(path: string, value: T): Promise<void> {
-  const r = dbRef(path);
-  if (!r) return;
-  try {
-    await set(r, value);
-  } catch {
-    // silencieux
-  }
-}
-
 export async function rtdbGetListByChild<T = Record<string, unknown>>(
   path: string,
   childKey: string,
@@ -91,6 +78,19 @@ export async function rtdbGetListByChild<T = Record<string, unknown>>(
     })) as T[];
   } catch {
     return [];
+  }
+}
+
+/**
+ * Écrit une valeur à un chemin Firebase Realtime Database.
+ */
+export async function rtdbSet<T = unknown>(path: string, value: T): Promise<void> {
+  const r = dbRef(path);
+  if (!r) return;
+  try {
+    await set(r, value);
+  } catch {
+    // silencieux
   }
 }
 
@@ -135,4 +135,38 @@ export function rtdbSubscribeList<T = Record<string, unknown>>(
     })) as T[];
     callback(normalized);
   });
+}
+
+/**
+ * Écoute les changements en temps réel sur une collection Firebase avec filtre.
+ * Utilise orderByChild + equalTo pour compatibilité avec les règles strictes.
+ * Normalise les données en tableau avec propriété `id`.
+ */
+export function rtdbSubscribeListByChild<T = Record<string, unknown>>(
+  path: string,
+  childKey: string,
+  childValue: string | number | boolean,
+  callback: (data: T[]) => void
+): Unsubscribe {
+  if (!hasFirebaseConfig()) return () => {};
+  try {
+    const { database } = getFirebaseServices();
+    const r = ref(database, path);
+    const q = query(r, orderByChild(childKey), equalTo(childValue));
+    const unsubscribe = onValue(q, (snapshot) => {
+      if (!snapshot.exists()) {
+        callback([]);
+        return;
+      }
+      const data = snapshot.val() as Record<string, T>;
+      const normalized = Object.entries(data).map(([id, value]) => ({
+        ...(value as object),
+        id,
+      })) as T[];
+      callback(normalized);
+    });
+    return unsubscribe;
+  } catch {
+    return () => {};
+  }
 }

@@ -41,7 +41,7 @@ import {
 } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { ProgressBar } from "@/components/ui/ProgressBar";
-import { rtdbGet, rtdbGetList, rtdbSubscribeList } from "@/lib/rtdb";
+import { rtdbGet, rtdbGetList, rtdbSubscribeList, rtdbGetListByChild } from "@/lib/rtdb";
 import { formatFcfa } from "@/utils/currency";
 import { AffichageEquipe } from "@/components/admin/ChantierMessaging";
 import EquipeHierarchiqueClient from "@/components/chantier/EquipeHierarchiqueClient";
@@ -434,52 +434,61 @@ const [medias, setMedias] = useState<any[]>([]);
       setDocuments(d);
       setLoading(false);
 
-       // Charger les nouvelles collections en parallèle (V2)
-        // Documents, notes et rapports depuis chemins globaux, filtrés par chantierId
-        if (!cancelled) {
-const [plan, med, allDocs, allNotes, allRapports] = await Promise.all([
+        // Charger les nouvelles collections en parallèle (V2) - AVEC REQUÊTES FILTRÉES POUR RÈGLES STRICTES
+        if (!cancelled && id) {
+          // ✅ RÈGLE CRITIQUE : Utiliser query() pour filtrer par chantierId - sinon Firebase bloque l'accès
+          const { getDatabase, query, orderByChild, equalTo, ref: dbRef } = await import("firebase/database");
+          const db = getDatabase();
+          
+const [plan, med, docsFiltered, notesFiltered, rapportsFiltered] = await Promise.all([
             rtdbGetList<Etape>(`chantiers/${id}/planning`),
-            // Les RDV sont maintenant gérés par ClientRendezVous depuis rendezvous/
             rtdbGetList<any>(`chantiers/${id}/medias`),
-            rtdbGetList<any>(`documents/`),
-            rtdbGetList<any>(`notes/`),
-            rtdbGetList<any>(`rapports/`), // 🔍 Lire depuis le nœud global
+            // 🔍 Documents filtrés par chantierId
+            (async () => {
+              const q = query(dbRef(db, 'documents'), orderByChild("chantierId"), equalTo(String(id)));
+              const snap = await (await import("firebase/database")).get(q);
+              const data = snap.val();
+              if (!data) return [];
+              return Object.entries(data)
+                .filter(([_, d]: [string, any]) => d?.actif !== false)
+                .map(([docId, d]: [string, any]) => ({ id: docId, ...d }));
+            })(),
+            // 🔍 Notes filtrées par chantierId
+            (async () => {
+              const q = query(dbRef(db, 'notes'), orderByChild("chantierId"), equalTo(String(id)));
+              const snap = await (await import("firebase/database")).get(q);
+              const data = snap.val();
+              if (!data) return [];
+              return Object.entries(data)
+                .filter(([_, n]: [string, any]) => n?.actif !== false)
+                .map(([noteId, n]: [string, any]) => ({ id: noteId, ...n }));
+            })(),
+            // 🔍 Rapports filtrés par chantierId
+            (async () => {
+              const q = query(dbRef(db, 'rapports'), orderByChild("chantierId"), equalTo(String(id)));
+              const snap = await (await import("firebase/database")).get(q);
+              const data = snap.val();
+              if (!data) return [];
+              return Object.entries(data)
+                .filter(([_, r]: [string, any]) => r?.actif !== false)
+                .map(([rapportId, r]: [string, any]) => ({ id: rapportId, ...r }));
+            })()
           ]);
+          
+          console.log("✅ [SEC] Documents/Notes/Rapports chargés avec filtre Firebase (chantierId filter)");
+          
           setPlanning(plan);
-          // setRendezvous(rdv); ← Plus besoin, géré par le composant ClientRendezVous
           setMedias(med);
           
-          // 🔍 DIAGNOSTIC ULTRA-DÉTAILLÉ - CLIENT LECTURE RAPPORTS
-          console.log("🔍 CLIENT - Lecture rapports DÉTAILLÉE:");
-          console.log("  - chantierId attendu:", id);
-          console.log("  - Type de chantierId:", typeof id);
-          console.log("  - Nombre de rapports bruts:", allRapports.length);
-          console.log("  - Rapports bruts:", allRapports.map((r: any) => ({ id: r.id, chantierId: r.chantierId, etape: r.etape })));
-          
-          // Filtrer rapports par chantierId pour V2 (avec String pour éviter les problèmes de type)
-          const rapportsFiltered = allRapports.filter((rapport: any) => {
-            const match = String(rapport?.chantierId) === String(id) && rapport?.actif !== false;
-            console.log(`  🔍 Vérif rapport ${rapport?.id}:`, {
-              chantierIdEcrit: rapport?.chantierId,
-              chantierIdEcrit_type: typeof rapport?.chantierId,
-              chantierIdAttendu: id,
-              match_String: String(rapport?.chantierId) === String(id),
-              actif: rapport?.actif,
-              garde: match
-            });
-            return match;
-          });
+          console.log("  ✅ Documents filtrés:", docsFiltered.length);
+          console.log("  ✅ Notes filtrées:", notesFiltered.length);
           console.log("  ✅ Rapports filtrés:", rapportsFiltered.length);
-          setRapports(rapportsFiltered);
           
-          // Filtrer documents et notes par chantierId pour V2
-          const docsFiltered = allDocs.filter((doc: any) => doc?.chantierId === id);
-          const notesFiltered = allNotes.filter((note: any) => note?.chantierId === id);
-          // Prioriser les documents du chemin global V2, fallback sur chantier local
+          setRapports(rapportsFiltered);
+          setNotes(notesFiltered);
           if (docsFiltered.length > 0) {
             setDocuments(docsFiltered);
           }
-          setNotes(notesFiltered);
         }
     }
 

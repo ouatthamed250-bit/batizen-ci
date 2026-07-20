@@ -304,50 +304,47 @@ export default function DashboardClientPage() {
     }
   }, [user?.uid]);
 
-  // Effet 2 : Charger les chantiers SEULEMENT quand auth est prête
-  useEffect(() => {
-    if (!isAuthReady || !user?.uid) {
-      console.log("⏸️ [CLIENT] Chargement chantiers en pause (auth non prête)");
-      return;
-    }
+   // Effet 2 : Charger les chantiers SEULEMENT quand auth est prête - AVEC FILTRE POUR RÈGLE STRICTE
+   useEffect(() => {
+     if (!isAuthReady || !user?.uid) {
+       console.log("⏸️ [CLIENT] Chargement chantiers en pause (auth non prête)");
+       return;
+     }
 
-    console.log("🚀 [CLIENT] Lancement chargement chantiers pour:", user.uid);
-    
-    const chantiersRef = dbRef(getDatabase(), 'chantiers');
-    const unsubChantiers = onValue(chantiersRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        const mesChantiers = Object.entries(data)
-          .filter(([_, c]: [string, any]) => {
-            const isMyChantier = c.userId === user.uid || c.client_id === user.uid;
-            const isActive = c.actif !== false;
-            
-            if (isMyChantier && isActive) {
-              console.log(`  ✅ Chantier validé: ${c.nom_projet || c.nom} (${c.id})`);
-            }
-            
-            return isMyChantier && isActive;
-          })
-          .map(([id, c]: [string, any]) => ({ id, ...c }));
-        
-        console.log(`✅ [CLIENT] ${mesChantiers.length} chantiers chargés`);
-        setChantiers(mesChantiers);
-        setLoading(false);
-      } else {
-        console.log("⚠️ [CLIENT] Aucune donnée dans /chantiers");
-        setChantiers([]);
-        setLoading(false);
-      }
-    }, (error) => {
-      console.error("❌ [CLIENT] Erreur Firebase:", error);
-      setLoading(false);
-    });
+     console.log("✅ [SEC] Chantiers chargés avec filtre Firebase (userId filter)");
+     
+     const db = getDatabase();
+     const chantiersRef = dbRef(db, 'chantiers');
+     const q = query(chantiersRef, orderByChild("userId"), equalTo(user.uid));
+     const unsubChantiers = onValue(q, (snapshot) => {
+       const data = snapshot.val();
+       if (data) {
+         const mesChantiers = Object.entries(data)
+           .filter(([_, c]: [string, any]) => {
+             const isActive = c.actif !== false;
+             console.log(`  ✅ Chantier validé: ${c.nom_projet || c.nom}`);
+             return isActive;
+           })
+           .map(([id, c]: [string, any]) => ({ id, ...c }));
+         
+         console.log(`✅ [CLIENT] ${mesChantiers.length} chantiers chargés`);
+         setChantiers(mesChantiers);
+         setLoading(false);
+       } else {
+         console.log("⚠️ [CLIENT] Aucune donnée dans /chantiers");
+         setChantiers([]);
+         setLoading(false);
+       }
+     }, (error) => {
+       console.error("❌ [CLIENT] Erreur Firebase:", error);
+       setLoading(false);
+     });
 
-    return () => {
-      console.log("🧹 [CLIENT] Nettoyage listener chantiers");
-      unsubChantiers();
-    };
-  }, [isAuthReady, user?.uid]); // ✅ Dépendances critiques
+     return () => {
+       console.log("🧹 [CLIENT] Nettoyage listener chantiers");
+       unsubChantiers();
+     };
+   }, [isAuthReady, user?.uid]); // ✅ Dépendances critiques
 
   // Calculer les dépenses du mois (pour l'instant 0) et notifications non lues
   const depensesMois = 0;

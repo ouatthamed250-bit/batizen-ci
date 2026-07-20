@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { Search } from "lucide-react";
-import { getDatabase, ref, onValue, push, set, update } from "firebase/database";
+import { getDatabase, ref, onValue, push, set, update, query, orderByChild, limitToLast } from "firebase/database";
 import { useAuthContext } from "@/contexts/AuthContext";
 
 type Message = {
@@ -30,15 +30,17 @@ export default function AdminMessagesPage() {
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
 
-  // Chargement des messages et des clients
+  // Chargement des messages et des clients - AVEC FILTRE POUR RÈGLE STRICTE
   useEffect(() => {
     if (!user?.uid) return;
 
     const db = getDatabase();
     
-    // Écoute des messages
+    // Écoute des messages avec filtre limitToLast(100) pour compatibilité règles strictes
+    console.log("✅ [SEC] Messages admin chargés avec filtre");
     const messagesRef = ref(db, "messages");
-    const unsubMessages = onValue(messagesRef, (snapshot) => {
+    const q = query(messagesRef, orderByChild("dateEnvoi"), limitToLast(100));
+    const unsubMessages = onValue(q, (snapshot) => {
       const data = snapshot.val() || {};
       const msgs: Message[] = Object.entries(data).map(([id, m]: [string, any]) => ({ id, ...m }));
       setMessages(msgs);
