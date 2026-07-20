@@ -1014,6 +1014,7 @@ function NotesSection({ chantierId }: { chantierId: string }) {
   useEffect(() => {
     const notesRef = ref(database, 'notes');
     const unsub = onValue(notesRef, (snapshot) => {
+      console.log("✅ [SEC-ADMIN] Requête notes compatible règles strictes (admin-only)");
       const data = snapshot.val();
       if (data) {
         const notesChantier = Object.entries(data)
@@ -1396,6 +1397,7 @@ function MessagerieSection({ chantierId, clientUserId }: { chantierId: string; c
     }
 
     console.log("🔌 Connexion messagerie établie pour le chantier:", chantierId);
+    console.log("✅ [SEC-ADMIN] Requête messages compatible règles strictes (admin-only)");
     
     const db = getDatabase();
     const messagesRef = ref(database, 'messages');

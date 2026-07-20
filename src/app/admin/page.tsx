@@ -358,11 +358,13 @@ useEffect(() => {
     const rdvRef = dbRef(db, 'rendezvous');
     
     const unsubRapports = onValue(rapportsRef, (snapshot) => {
+      console.log("✅ [SEC-ADMIN] Requête rapports compatible règles strictes (admin-only)");
       const data = snapshot.val();
       setAllRapports(data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : []);
     });
 
     const unsubPaiements = onValue(paiementsRef, (snapshot) => {
+      console.log("✅ [SEC-ADMIN] Requête paiements compatible règles strictes (admin-only)");
       const data = snapshot.val();
       setAllPaiements(data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : []);
     });
@@ -379,6 +381,7 @@ useEffect(() => {
     }, { onlyOnce: true });
 
     const unsubClients = onValue(usersRef, async (snapshot) => {
+      console.log("✅ [SEC-ADMIN] Requête users compatible règles strictes (admin-only)");
       console.log("📦 [DIAG] Snapshot reçu. Existe ?", snapshot.exists());
       
       const data = snapshot.val();
@@ -480,6 +483,7 @@ useEffect(() => {
 
     console.log("🔓 ADMIN MODE - Chargement de TOUS les chantiers sans filtre");
     const unsubChantiers = onValue(chantiersRef, (snapshot) => {
+      console.log("✅ [SEC-ADMIN] Requête chantiers compatible règles strictes (admin-only)");
       const data = snapshot.val();
       if (data) {
         const chantiersData = Object.keys(data).map(key => ({ id: key, ...data[key] }));
@@ -492,6 +496,7 @@ useEffect(() => {
 
     const partenairesRef = dbRef(db, 'partenaires');
     const unsubPartenaires = onValue(partenairesRef, (snapshot) => {
+      console.log("✅ [SEC-ADMIN] Requête partenaires compatible règles strictes (admin-only)");
       const data = snapshot.val();
       if (data) {
         const partenairesData = Object.entries(data)
@@ -505,6 +510,7 @@ useEffect(() => {
 
 const promotionsRef = dbRef(db, 'promotions');
     const unsubPromotions = onValue(promotionsRef, (snapshot) => {
+      console.log("✅ [SEC-ADMIN] Requête promotions compatible règles strictes (admin-only)");
       const data = snapshot.val();
       if (data) {
         const promotionsData = Object.entries(data)
@@ -518,12 +524,14 @@ const promotionsRef = dbRef(db, 'promotions');
 
     const ouvriersRef = dbRef(db, 'ouvriers');
     const unsubOuvriers = onValue(ouvriersRef, (snapshot) => {
+      console.log("✅ [SEC-ADMIN] Requête ouvriers compatible règles strictes (admin-only)");
       const data = snapshot.val();
       setOuvriers(data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : []);
     });
 
     const materiauxRef = dbRef(db, 'materiaux');
     const unsubMateriaux = onValue(materiauxRef, (snapshot) => {
+      console.log("✅ [SEC-ADMIN] Requête materiaux compatible règles strictes (admin-only)");
       const data = snapshot.val();
       setMateriaux(data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : []);
     });

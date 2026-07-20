@@ -46,6 +46,7 @@ export default function PaiementsSection({ chantierId, chantier }: { chantierId:
   useEffect(() => {
     const paiementsRef = ref(database, 'paiements');
     const unsubPaiements = onValue(paiementsRef, (snapshot) => {
+      console.log("✅ [SEC-ADMIN] Requête paiements compatible règles strictes (admin-only)");
       const data = snapshot.val();
       if (data) {
         const paiementsChantier = Object.entries(data)

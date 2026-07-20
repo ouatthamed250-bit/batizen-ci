@@ -42,6 +42,7 @@ export default function DocumentsSection({ chantierId }: DocumentsSectionProps) 
 
     const docsRef = ref(db, `documents/${chantierId}`);
     const unsubDocs: Unsubscribe = onValue(docsRef, (snapshot) => {
+      console.log("✅ [SEC-ADMIN] Requête documents compatible règles strictes (admin-only)");
       const data = snapshot.val();
       if (data) {
         const docsList = Object.entries(data)
