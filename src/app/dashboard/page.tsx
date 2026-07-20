@@ -110,7 +110,6 @@ function SummaryCard({ icon: Icon, label, value, color = "#0B5FFF" }: {
   value: string | number; 
   color?: string;
 }) {
-  // Couleurs prédéfinies pour chaque carte
   const getBgStyle = () => {
     switch (color) {
       case "#0B5FFF": return "bg-gradient-to-br from-[#0B5FFF] to-[#0D2B6B]";
@@ -131,36 +130,6 @@ function SummaryCard({ icon: Icon, label, value, color = "#0B5FFF" }: {
         <p className="text-lg font-black text-[var(--navy)]">{value}</p>
       </div>
     </div>
-  );
-}
-
-const actionItems = [
-  { icon: Calculator, label: "Simulation", color: "#FF7A00", href: "/simulation" },
-  { icon: BrickWall, label: "Nouveau chantier", color: "#0B5FFF", href: "/nouveau-chantier" },
-  { icon: HardHat, label: "Rénovation", color: "#22C55E", href: "/renovation" },
-];
-
-function ActionButton({ icon: Icon, label, color, href }: { 
-  icon: typeof HardHat; 
-  label: string; 
-  color: string;
-  href: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className="flex flex-col items-center justify-center gap-2 rounded-2xl bg-white p-4 text-center shadow-[0_4px_0_rgb(229,231,235)] border-b-4 border-gray-200 active:shadow-none active:translate-y-1 transition"
-    >
-      <div
-        className="grid size-12 place-items-center rounded-xl text-white shadow-md"
-        style={{ backgroundColor: color }}
-      >
-        <Icon size={22} aria-hidden />
-      </div>
-      <span className="text-xs font-bold text-navy">
-        {label}
-      </span>
-    </Link>
   );
 }
 
@@ -207,14 +176,12 @@ function ChantierCard({ chantier, onModifier, onSupprimer }: {
           💰 Budget : <span className="font-bold text-[var(--navy)]">{formatFcfa(chantier.budget || 0)}</span>
         </p>
         
-        {/* PROGRESSION pour les chantiers en cours */}
         {chantier.statut === "en_cours" && (
           <div className="mt-3">
             <ProgressBar value={pct} label="Progression" />
           </div>
         )}
         
-        {/* INFOS PLAN & RDV pour les chantiers en attente */}
         {(chantier.statut === "en_attente" || chantier.statut === "en_attente_rdv") && (
           <div className="mt-3 space-y-1">
             {chantier.plan_choisi && (
@@ -230,7 +197,6 @@ function ChantierCard({ chantier, onModifier, onSupprimer }: {
           </div>
         )}
         
-        {/* DATE FIN pour les chantiers terminés */}
         {(chantier.statut === "termine" || chantier.statut === "terminé") && (
           <p className="mt-3 text-xs text-[var(--muted)]">
             🏁 Terminé le : <span className="font-bold text-[var(--navy)]">{formatDateCourte(chantier.date_fin)}</span>
@@ -242,7 +208,6 @@ function ChantierCard({ chantier, onModifier, onSupprimer }: {
             Voir détails <ChevronRight size={16} />
           </Link>
           
-          {/* Boutons Modifier/Supprimer - seulement si le statut est "en_attente" */}
           {chantier.statut === "en_attente" && onModifier && onSupprimer && (
             <div className="flex gap-2">
               <button
@@ -276,22 +241,7 @@ export default function DashboardClientPage() {
   const [chantiers, setChantiers] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [promos, setPromos] = useState<Promo[]>([]);
-
-  const nomClient = user?.displayName || user?.email?.split("@")[0] || "Client";
-  
-  // Calculer le greeting selon l'heure
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 18) return "Bonjour";
-    return "Bonsoir";
-  };
-  const greeting = getGreeting();
-
-  // Calculer les stats depuis les vrais chantiers
-  const chantiersActifs = chantiers.filter(c => c.statut === "en_cours").length;
-  const prochainRdv = chantiers
-    .filter(c => (c.statut === "en_attente" || c.statut === "en_attente_rdv") && c.rdv_date)
-    .sort((a, b) => new Date(a.rdv_date!).getTime() - new Date(b.rdv_date!).getTime())[0];
+  const [partenaires, setPartenaires] = useState<any[]>([]);
 
   // Effet 1 : Attendre que l'auth soit prête
   useEffect(() => {
@@ -304,55 +254,49 @@ export default function DashboardClientPage() {
     }
   }, [user?.uid]);
 
-   // Effet 2 : Charger les chantiers SEULEMENT quand auth est prête - AVEC FILTRE POUR RÈGLE STRICTE
-   useEffect(() => {
-     if (!isAuthReady || !user?.uid) {
-       console.log("⏸️ [CLIENT] Chargement chantiers en pause (auth non prête)");
-       return;
-     }
+  // Effet 2 : Charger les chantiers SEULEMENT quand auth est prête - AVEC FILTRE POUR RÈGLE STRICTE
+  useEffect(() => {
+    if (!isAuthReady || !user?.uid) {
+      console.log("⏸️ [CLIENT] Chargement chantiers en pause (auth non prête)");
+      return;
+    }
 
-     console.log("✅ [SEC] Chantiers chargés avec filtre Firebase (userId filter)");
-     
-     const db = getDatabase();
-     const chantiersRef = dbRef(db, 'chantiers');
-     const q = query(chantiersRef, orderByChild("userId"), equalTo(user.uid));
-     const unsubChantiers = onValue(q, (snapshot) => {
-       const data = snapshot.val();
-       if (data) {
-         const mesChantiers = Object.entries(data)
-           .filter(([_, c]: [string, any]) => {
-             const isActive = c.actif !== false;
-             console.log(`  ✅ Chantier validé: ${c.nom_projet || c.nom}`);
-             return isActive;
-           })
-           .map(([id, c]: [string, any]) => ({ id, ...c }));
-         
-         console.log(`✅ [CLIENT] ${mesChantiers.length} chantiers chargés`);
-         setChantiers(mesChantiers);
-         setLoading(false);
-       } else {
-         console.log("⚠️ [CLIENT] Aucune donnée dans /chantiers");
-         setChantiers([]);
-         setLoading(false);
-       }
-     }, (error) => {
-       console.error("❌ [CLIENT] Erreur Firebase:", error);
-       setLoading(false);
-     });
+    console.log("✅ [SEC] Chantiers chargés avec filtre Firebase (userId filter)");
+    
+    const db = getDatabase();
+    const chantiersRef = dbRef(db, 'chantiers');
+    const q = query(chantiersRef, orderByChild("userId"), equalTo(user.uid));
+    const unsubChantiers = onValue(q, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const mesChantiers = Object.entries(data)
+          .filter(([_, c]: [string, any]) => {
+            const isActive = c.actif !== false;
+            console.log(`  ✅ Chantier validé: ${c.nom_projet || c.nom}`);
+            return isActive;
+          })
+          .map(([id, c]: [string, any]) => ({ id, ...c }));
+        
+        console.log(`✅ [CLIENT] ${mesChantiers.length} chantiers chargés`);
+        setChantiers(mesChantiers);
+        setLoading(false);
+      } else {
+        console.log("⚠️ [CLIENT] Aucune donnée dans /chantiers");
+        setChantiers([]);
+        setLoading(false);
+      }
+    }, (error) => {
+      console.error("❌ [CLIENT] Erreur Firebase:", error);
+      setLoading(false);
+    });
 
-     return () => {
-       console.log("🧹 [CLIENT] Nettoyage listener chantiers");
-       unsubChantiers();
-     };
-   }, [isAuthReady, user?.uid]); // ✅ Dépendances critiques
+    return () => {
+      console.log("🧹 [CLIENT] Nettoyage listener chantiers");
+      unsubChantiers();
+    };
+  }, [isAuthReady, user?.uid]);
 
-  // Calculer les dépenses du mois (pour l'instant 0) et notifications non lues
-  const depensesMois = 0;
-  const notifsNonLues = notifications.length;
-  
-  // State et listener pour les partenaires
-  const [partenaires, setPartenaires] = useState<any[]>([]);
-  
+  // Listener pour les partenaires
   useEffect(() => {
     const db = getDatabase();
     const partenairesRef = dbRef(db, 'partenaires');
@@ -370,31 +314,38 @@ export default function DashboardClientPage() {
     return () => unsubPartenaires();
   }, []);
 
-   // Fonction de suppression sécurisée
-   const handleSupprimerChantier = async (id: string, statut: string) => {
-     if (statut === "en_cours" || statut === "termine" || statut === "terminé") {
-       alert("⚠️ Impossible de supprimer un chantier en cours ou terminé. Veuillez contacter l'administration.");
-       return;
-     }
-     if (!confirm("Voulez-vous vraiment supprimer ce chantier ? Cette action est irréversible.")) return;
-     
-     const db = getDatabase();
-     // Soft delete pour garder une trace propre dans la DB
-     await update(dbRef(db, `chantiers/${id}`), {
-       statut: "supprime_par_client", 
-       dateMiseAJour: Date.now() 
-     });
-     alert("✅ Chantier supprimé avec succès.");
-   };
+  const nomClient = user?.displayName || user?.email?.split("@")[0] || "Client";
+  
+  const chantiersActifs = chantiers.filter(c => c.statut === "en_cours").length;
+  const prochainRdv = chantiers
+    .filter(c => (c.statut === "en_attente" || c.statut === "en_attente_rdv") && c.rdv_date)
+    .sort((a, b) => new Date(a.rdv_date!).getTime() - new Date(b.rdv_date!).getTime())[0];
+  
+  const depensesMois = 0;
+  const notifsNonLues = notifications.length;
 
-  // Fonction de modification - redirige vers la page d'édition
+  const handleSupprimerChantier = async (id: string, statut: string) => {
+    if (statut === "en_cours" || statut === "termine" || statut === "terminé") {
+      alert("⚠️ Impossible de supprimer un chantier en cours ou terminé. Veuillez contacter l'administration.");
+      return;
+    }
+    if (!confirm("Voulez-vous vraiment supprimer ce chantier ? Cette action est irréversible.")) return;
+    
+    const db = getDatabase();
+    await update(dbRef(db, `chantiers/${id}`), {
+      statut: "supprime_par_client", 
+      dateMiseAJour: Date.now() 
+    });
+    alert("✅ Chantier supprimé avec succès.");
+  };
+
   const handleModifierChantier = (id: string) => {
     window.location.href = `/nouveau-chantier?edit=${id}`;
   };
 
-return (
-<>
-<style>{`
+  return (
+    <>
+    <style>{`
   .wave-hand {
     display: inline-block;
     transform-origin: 70% 70%;
@@ -411,15 +362,12 @@ return (
     100% { transform: rotate(0deg); }
   }
 `}</style>
-<div className="pt-24 pb-20 px-4 min-h-screen bg-[#f9fafb] overflow-x-hidden">
-      {/* Contenu principal */}
+    <div className="pt-24 pb-20 px-4 min-h-screen bg-[#f9fafb] overflow-x-hidden">
       <main className="flex flex-col gap-3">
-        {/* 1. HEADER PERSONNALISÉ - Salutation dynamique Bonjour/Bonsoir */}
         <div className="flex items-center gap-3 mb-6">
           {(() => {
             const hour = new Date().getHours();
             const greeting = hour < 18 ? "Bonjour" : "Bonsoir";
-            // Récupération stricte du nom, jamais du téléphone
             const userName = user?.displayName || (user?.email ? user.email.split("@")[0] : "Client");
             
             return (
@@ -438,12 +386,10 @@ return (
           })()}
         </div>
 
-        {/* 1.1 WIDGET MÉTÉO - FULL WIDTH DÉGRADÉ BÂTIZEN */}
         <div className="w-full rounded-3xl p-5 bg-gradient-to-br from-[#1e3a8a] to-[#2563eb] text-white shadow-md mb-6">
           <WeatherWidget title="Météo du jour" />
         </div>
 
-        {/* 2. BOUTONS D'ACTION EN GRILLE HORIZONTALE 3D */}
         <div className="grid grid-cols-3 gap-3 mb-6">
           {[
             { label: "Simulation", icon: "🧮", href: "/simulation", color: "bg-[#FF7A00]" },
@@ -459,7 +405,6 @@ return (
           ))}
         </div>
 
-        {/* 3. SUPER CALCULATEUR (Widget d'estimation rapide) */}
         <section>
           <SuperCalculateur
             surface={100}
@@ -475,7 +420,6 @@ return (
           />
         </section>
 
-        {/* 3.5 SECTION "PROMOTIONS EN COURS" - Affiche les promos actives */}
         {!loading && promos.length > 0 && (
           <section>
             <h2 className="text-xs font-black uppercase tracking-[0.2em] text-[var(--muted)] mb-3">📢 Promotions en cours</h2>
@@ -504,37 +448,15 @@ return (
           </section>
         )}
 
-        {/* 4. SECTION "RÉSUMÉ RAPIDE" - 4 SummaryCards avec couleurs distinctes */}
         {!loading && (
           <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <SummaryCard 
-              icon={HardHat} 
-              label="Chantiers actifs" 
-              value={chantiersActifs}
-              color="#0B5FFF"
-            />
-            <SummaryCard 
-              icon={Wallet} 
-              label="Dépensé ce mois" 
-              value={formatFcfa(depensesMois)}
-              color="#FF7A00"
-            />
-            <SummaryCard 
-              icon={CalendarClock} 
-              label="Prochain RDV" 
-              value={prochainRdv ? formatDateCourte(prochainRdv.rdv_date) : "Aucun"}
-              color="#22C55E"
-            />
-            <SummaryCard 
-              icon={Bell} 
-              label="Notifications" 
-              value={notifsNonLues}
-              color="#EC4899"
-            />
+            <SummaryCard icon={HardHat} label="Chantiers actifs" value={chantiersActifs} color="#0B5FFF" />
+            <SummaryCard icon={Wallet} label="Dépensé ce mois" value={formatFcfa(depensesMois)} color="#FF7A00" />
+            <SummaryCard icon={CalendarClock} label="Prochain RDV" value={prochainRdv ? formatDateCourte(prochainRdv.rdv_date) : "Aucun"} color="#22C55E" />
+            <SummaryCard icon={Bell} label="Notifications" value={notifsNonLues} color="#EC4899" />
           </section>
         )}
 
-{/* 5. SECTION "MES CHANTIERS" */}
         {!isAuthReady ? (
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#FF7A00]"></div>
@@ -557,18 +479,12 @@ return (
             <h2 className="text-xs font-black uppercase tracking-[0.2em] text-[var(--muted)]">Mes chantiers</h2>
             <div className="grid gap-3 sm:grid-cols-2">
               {chantiers.map((c) => (
-                <ChantierCard 
-                  key={c.id} 
-                  chantier={c} 
-                  onModifier={handleModifierChantier}
-                  onSupprimer={handleSupprimerChantier}
-                />
+                <ChantierCard key={c.id} chantier={c} onModifier={handleModifierChantier} onSupprimer={handleSupprimerChantier} />
               ))}
             </div>
           </div>
         )}
         
-        {/* 6. BLOC "À PROPOS DE BÂTIZEN.CI" - Style aplati */}
         <div className="mt-6 p-4 bg-white rounded-2xl border border-gray-200 shadow-sm">
           <h3 className="text-lg font-bold text-[#1e3a8a] mb-3">🏗️ À PROPOS DE BÂTIZEN.CI</h3>
           <p className="text-sm text-gray-700 mb-3">
@@ -581,7 +497,6 @@ return (
           </p>
         </div>
 
-        {/* 7. BLOC "ALERTE ARNAQUE" - Style aplati */}
         <div className="mt-4 p-4 bg-red-50 rounded-2xl border border-red-200 shadow-sm">
           <h3 className="text-lg font-bold text-red-700 mb-3">🚨 ALERTE ARNAQUE</h3>
           <p className="text-sm text-gray-800 mb-2 font-semibold">
@@ -598,7 +513,6 @@ return (
           </p>
         </div>
 
-        {/* 8. BLOC "NOS ENGAGEMENTS" - Style aplati */}
         <div className="mt-4 p-4 bg-green-50 rounded-2xl border border-green-200 shadow-sm">
           <h3 className="text-lg font-bold text-green-700 mb-3">🤝 NOS ENGAGEMENTS</h3>
           <ul className="text-sm text-gray-700 space-y-2">
@@ -625,48 +539,44 @@ return (
           </ul>
         </div>
 
-        {/* 9. CHATBOT */}
         <ChatBot />
 
-{/* 10. PARTENAIRES EN CARROUSEL HORIZONTAL */}
-        {(partenaires.length > 0 || true) && (
-          <div className="mt-8">
-            <h3 className="font-black text-xl text-[#1e3a8a] mb-4 flex items-center gap-2">
-              🤝 Nos Partenaires de Confiance
-            </h3>
-            <div className="flex gap-4 overflow-x-auto pb-4 snap-x scrollbar-hide">
-              {partenaires.map((partenaire: any) => (
-                <div key={partenaire.id} className="min-w-[280px] bg-white rounded-2xl border border-gray-200 shadow-sm p-4 flex flex-col items-center text-center snap-center">
-                  {partenaire.photo_url ? (
-                    <div className="w-20 h-20 rounded-full overflow-hidden mb-3 border-2 border-[#FF7A00]">
-                      <img src={partenaire.photo_url} alt={partenaire.nom} className="w-full h-full object-cover" />
-                    </div>
-                  ) : (
-                    <div className="w-20 h-20 rounded-full bg-[#FF7A00]/10 flex items-center justify-center mb-3 text-3xl">
-                      🏢
-                    </div>
-                  )}
-                  <h4 className="font-bold text-[#1e3a8a] text-lg mb-1">{partenaire.nom}</h4>
-                  <p className="text-sm text-gray-700 line-clamp-3">{partenaire.description || "Partenaire certifié BÂTIZEN"}</p>
-                </div>
-              ))}
-              {/* 3 placeholders "Bientôt disponible" */}
-              <div className="min-w-[280px] bg-gray-100 rounded-2xl border-2 border-dashed border-gray-300 p-4 flex flex-col items-center justify-center text-center snap-center">
-                <span className="text-4xl mb-2">🏢</span>
-                <p className="text-sm font-bold text-gray-500">Bientôt disponible</p>
+        <div className="mt-8">
+          <h3 className="font-black text-xl text-[#1e3a8a] mb-4 flex items-center gap-2">
+            🤝 Nos Partenaires de Confiance
+          </h3>
+          <div className="flex gap-4 overflow-x-auto pb-4 snap-x scrollbar-hide">
+            {partenaires.map((partenaire: any) => (
+              <div key={partenaire.id} className="min-w-[280px] bg-white rounded-2xl border border-gray-200 shadow-sm p-4 flex flex-col items-center text-center snap-center">
+                {partenaire.photo_url ? (
+                  <div className="w-20 h-20 rounded-full overflow-hidden mb-3 border-2 border-[#FF7A00]">
+                    <img src={partenaire.photo_url} alt={partenaire.nom} className="w-full h-full object-cover" />
+                  </div>
+                ) : (
+                  <div className="w-20 h-20 rounded-full bg-[#FF7A00]/10 flex items-center justify-center mb-3 text-3xl">
+                    🏢
+                  </div>
+                )}
+                <h4 className="font-bold text-[#1e3a8a] text-lg mb-1">{partenaire.nom}</h4>
+                <p className="text-sm text-gray-700 line-clamp-3">{partenaire.description || "Partenaire certifié BÂTIZEN"}</p>
               </div>
-              <div className="min-w-[280px] bg-gray-100 rounded-2xl border-2 border-dashed border-gray-300 p-4 flex flex-col items-center justify-center text-center snap-center">
-                <span className="text-4xl mb-2">🤝</span>
-                <p className="text-sm font-bold text-gray-500">Bientôt disponible</p>
-              </div>
-              <div className="min-w-[280px] bg-gray-100 rounded-2xl border-2 border-dashed border-gray-300 p-4 flex flex-col items-center justify-center text-center snap-center">
-                <span className="text-4xl mb-2">🏗️</span>
-                <p className="text-sm font-bold text-gray-500">Bientôt disponible</p>
-              </div>
+            ))}
+            <div className="min-w-[280px] bg-gray-100 rounded-2xl border-2 border-dashed border-gray-300 p-4 flex flex-col items-center justify-center text-center snap-center">
+              <span className="text-4xl mb-2">🏢</span>
+              <p className="text-sm font-bold text-gray-500">Bientôt disponible</p>
+            </div>
+            <div className="min-w-[280px] bg-gray-100 rounded-2xl border-2 border-dashed border-gray-300 p-4 flex flex-col items-center justify-center text-center snap-center">
+              <span className="text-4xl mb-2">🤝</span>
+              <p className="text-sm font-bold text-gray-500">Bientôt disponible</p>
+            </div>
+            <div className="min-w-[280px] bg-gray-100 rounded-2xl border-2 border-dashed border-gray-300 p-4 flex flex-col items-center justify-center text-center snap-center">
+              <span className="text-4xl mb-2">🏗️</span>
+              <p className="text-sm font-bold text-gray-500">Bientôt disponible</p>
             </div>
           </div>
-        )}
+        </div>
       </main>
     </div>
+    </>
   );
 }
