@@ -9,7 +9,7 @@ import { useAuthContext } from "@/contexts/AuthContext";
 import { WeatherWidget } from "@/components/btp/WeatherWidget";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import SuperCalculateur from "@/components/btp/SuperCalculateur";
-import { getDatabase, ref as dbRef, onValue, update } from "firebase/database";
+import { getDatabase, ref as dbRef, onValue, update, query, orderByChild, equalTo } from "firebase/database";
 import ChatBot from "@/components/ChatBot";
 
 /* ------------------------------------------------------------------ */
