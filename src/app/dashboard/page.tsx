@@ -9,7 +9,7 @@ import { useAuthContext } from "@/contexts/AuthContext";
 import { WeatherWidget } from "@/components/btp/WeatherWidget";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import SuperCalculateur from "@/components/btp/SuperCalculateur";
-import { getDatabase, ref, onValue, update } from "firebase/database";
+import { getDatabase, ref as dbRef, onValue, update } from "firebase/database";
 import ChatBot from "@/components/ChatBot";
 
 /* ------------------------------------------------------------------ */
@@ -280,6 +280,7 @@ function ChantierCard({ chantier, onModifier, onSupprimer }: {
 export default function DashboardClientPage() {
   const { user } = useAuthContext();
   const [loading, setLoading] = useState(true);
+  const [isAuthReady, setIsAuthReady] = useState(false);
   const [chantiers, setChantiers] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [promos, setPromos] = useState<Promo[]>([]);
@@ -292,90 +293,61 @@ export default function DashboardClientPage() {
     .filter(c => (c.statut === "en_attente" || c.statut === "en_attente_rdv") && c.rdv_date)
     .sort((a, b) => new Date(a.rdv_date!).getTime() - new Date(b.rdv_date!).getTime())[0];
 
+  // Effet 1 : Attendre que l'auth soit prête
   useEffect(() => {
-    console.log(" [CLIENT] Début chargement chantiers...");
-    console.log("🔐 [CLIENT] User UID:", user?.uid);
-    
-    if (!user?.uid) {
-      console.warn("⚠️ [CLIENT] Pas d'UID utilisateur, arrêt du chargement");
-      setLoading(false);
+    if (user?.uid) {
+      console.log("✅ [CLIENT] Auth ready! UID:", user.uid);
+      setIsAuthReady(true);
+    } else {
+      console.log("⏳ [CLIENT] Attente authentification...");
+      setIsAuthReady(false);
+    }
+  }, [user?.uid]);
+
+  // Effet 2 : Charger les chantiers SEULEMENT quand auth est prête
+  useEffect(() => {
+    if (!isAuthReady || !user?.uid) {
+      console.log("⏸️ [CLIENT] Chargement chantiers en pause (auth non prête)");
       return;
     }
 
-    console.log("🟢 [3] Initialisation Firebase...");
-    try {
-      console.log("🟢 [4] Appel de onValue sur 'chantiers'...");
-      const db = getDatabase();
-      const chantiersRef = ref(db, 'chantiers');
-      
-      const unsubscribe = onValue(chantiersRef, (snapshot) => {
-        console.log("🟢 [5] CALLBACK onValue DÉCLENCÉ !");
-        const data = snapshot.val();
-        console.log("📦 [6] DONNÉES BRUTES FIREBASE:", data);
-
-        if (data) {
-          // Filtrer pour ne garder que les chantiers du client connecté
-          // Support userId ET client_id pour compatibilité maximale + filtre actif !== false pour soft delete
-          const liste = Object.keys(data)
-            .map(key => ({
-              id: key,
-              ...data[key]
-            }))
-            .filter((c: any) => {
-              const isMyChantier = (c.userId === user?.uid || c.client_id === user?.uid);
-              const isActive = c.actif !== false; // Soft delete
-              
-              if (isMyChantier && isActive) {
-                console.log(`  ✅ Chantier validé: ${c.nom_projet || c.nom} (${c.id})`);
-              }
-              
-              return isMyChantier && isActive;
-            });
-
-          console.log(`📊 [8] Total chantiers après filtre: ${liste.length}`);
-          setChantiers(liste);
-        } else {
-          console.log("⚠️ [10] Aucune donnée dans le nœud 'chantiers'");
-          setChantiers([]);
-        }
+    console.log("🚀 [CLIENT] Lancement chargement chantiers pour:", user.uid);
+    
+    const chantiersRef = dbRef(getDatabase(), 'chantiers');
+    const unsubChantiers = onValue(chantiersRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const mesChantiers = Object.entries(data)
+          .filter(([_, c]: [string, any]) => {
+            const isMyChantier = c.userId === user.uid || c.client_id === user.uid;
+            const isActive = c.actif !== false;
+            
+            if (isMyChantier && isActive) {
+              console.log(`  ✅ Chantier validé: ${c.nom_projet || c.nom} (${c.id})`);
+            }
+            
+            return isMyChantier && isActive;
+          })
+          .map(([id, c]: [string, any]) => ({ id, ...c }));
+        
+        console.log(`✅ [CLIENT] ${mesChantiers.length} chantiers chargés`);
+        setChantiers(mesChantiers);
         setLoading(false);
-      });
-
-      // Charger les notifications du client
-      const notificationsRef = ref(db, `notifications/${user.uid}`);
-      const unsubscribeNotif = onValue(notificationsRef, (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-          const notifs = Object.values(data).filter((n: any) => n.lu === false);
-          setNotifications(notifs);
-        } else {
-          setNotifications([]);
-        }
-      });
-
-const promosRef = ref(db, 'promotions');
-      const unsubscribePromos = onValue(promosRef, (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-          const promosActives = Object.keys(data).map(key => ({ id: key, ...data[key] })).filter(p => p.active === true);
-          setPromos(promosActives);
-          console.log("📦 PROMOS CLIENT (temps réel):", promosActives);
-        } else {
-          setPromos([]);
-        }
-      });
-
-      return () => {
-        console.log("🧹 [11] Nettoyage du listener onValue");
-        unsubscribe();
-        unsubscribePromos();
-        unsubscribeNotif();
-      };
-    } catch (error) {
-      console.error("💥 [12] ERREUR FATALE DANS LE USEEFFECT :", error);
+      } else {
+        console.log("⚠️ [CLIENT] Aucune donnée dans /chantiers");
+        setChantiers([]);
+        setLoading(false);
+      }
+    }, (error) => {
+      console.error("❌ [CLIENT] Erreur Firebase:", error);
       setLoading(false);
-    }
-  }, [user?.uid]);
+    });
+
+    return () => {
+      console.log("🧹 [CLIENT] Nettoyage listener chantiers");
+      unsubChantiers();
+    };
+  }, [isAuthReady, user?.uid]); // ✅ Dépendances critiques
 
   // Calculer les dépenses du mois (pour l'instant 0) et notifications non lues
   const depensesMois = 0;
@@ -386,7 +358,7 @@ const promosRef = ref(db, 'promotions');
   
   useEffect(() => {
     const db = getDatabase();
-    const partenairesRef = ref(db, 'partenaires');
+    const partenairesRef = dbRef(db, 'partenaires');
     const unsubPartenaires = onValue(partenairesRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
@@ -411,7 +383,7 @@ const promosRef = ref(db, 'promotions');
      
      const db = getDatabase();
      // Soft delete pour garder une trace propre dans la DB
-     await update(ref(db, `chantiers/${id}`), { 
+     await update(dbRef(db, `chantiers/${id}`), {
        statut: "supprime_par_client", 
        dateMiseAJour: Date.now() 
      });
@@ -538,7 +510,12 @@ const promosRef = ref(db, 'promotions');
         )}
 
 {/* 5. SECTION "MES CHANTIERS" */}
-        {loading ? (
+        {!isAuthReady ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#FF7A00]"></div>
+            <span className="ml-3 text-gray-500">Chargement de vos chantiers...</span>
+          </div>
+        ) : loading ? (
           <div className="space-y-3">
             <SkeletonChantier /><SkeletonChantier />
           </div>
