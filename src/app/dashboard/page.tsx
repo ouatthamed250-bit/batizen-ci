@@ -393,41 +393,37 @@ export default function DashboardClientPage() {
   };
 
 return (
-    <div className="pt-24 pb-20 px-4 min-h-screen bg-gray-50 overflow-x-hidden">
+<div className="pt-24 pb-20 px-4 min-h-screen bg-[#f9fafb] overflow-x-hidden">
       {/* Contenu principal */}
       <main className="flex flex-col gap-3">
         {/* 1. HEADER PERSONNALISÉ */}
-        <header className="rounded-[22px] border border-white/50 bg-white/90 backdrop-blur-sm mb-6">
-          <div className="px-4 pt-4 pb-2 sm:px-6">
-            <h1 className="text-2xl font-black tracking-[-0.03em] text-[var(--navy)] sm:text-3xl flex items-center gap-2">
-              {greeting} {nomClient} <span>✋🏽</span>
-            </h1>
-            <p className="mt-1 text-sm font-semibold text-[var(--muted)]">{formatDateFrancais(new Date())}</p>
-            <div className="mt-2"><WeatherWidget title="Météo du jour" className="w-full rounded-3xl p-5 bg-gradient-to-br from-blue-500 to-blue-700 text-white shadow-lg mb-6" /></div>
-          </div>
+        <header className="mb-6">
+          <h1 className="text-2xl font-black tracking-[-0.03em] text-[#1e3a8a] sm:text-3xl flex items-center gap-2 mb-1">
+            {greeting} {nomClient} <span>✋🏽</span>
+          </h1>
+          <p className="text-sm font-semibold text-[#4b5563]">{formatDateFrancais(new Date())}</p>
         </header>
 
-        {/* 2. 3 BOUTONS D'ACTIONS RAPIDES (grille 3 colonnes) */}
-        <section className="grid grid-cols-3 gap-3 mb-6">
-          <ActionButton 
-            icon={Calculator} 
-            label="Simulation" 
-            color="#FF7A00"
-            href="/simulation"
-          />
-          <ActionButton 
-            icon={BrickWall} 
-            label="Nouveau chantier" 
-            color="#0B5FFF"
-            href="/nouveau-chantier"
-          />
-          <ActionButton 
-            icon={HardHat} 
-            label="Rénovation" 
-            color="#22C55E"
-            href="/renovation"
-          />
-        </section>
+        {/* 1.1 WIDGET MÉTÉO - FULL WIDTH DÉGRADÉ BÂTIZEN */}
+        <div className="w-full rounded-3xl p-5 bg-gradient-to-br from-[#1e3a8a] to-[#2563eb] text-white shadow-md mb-6">
+          <WeatherWidget title="Météo du jour" />
+        </div>
+
+        {/* 2. BOUTONS D'ACTION EN GRILLE HORIZONTALE 3D */}
+        <div className="grid grid-cols-3 gap-3 mb-6">
+          {[
+            { label: "Simulation", icon: "🧮", href: "/simulation", color: "bg-[#FF7A00]" },
+            { label: "Nouveau Chantier", icon: "🏗️", href: "/nouveau-chantier", color: "bg-[#1e3a8a]" },
+            { label: "Rénovation", icon: "", href: "/renovation", color: "bg-green-600" }
+          ].map((btn, i) => (
+            <Link key={i} href={btn.href}
+              className={`flex flex-col items-center justify-center p-3 ${btn.color} text-white rounded-2xl shadow-[0_4px_0_rgba(0,0,0,0.2)] border-b-4 border-black/20 active:shadow-none active:border-b-0 active:translate-y-1 transition-all duration-150`}
+            >
+              <span className="text-2xl mb-1 drop-shadow-md">{btn.icon}</span>
+              <span className="text-[10px] font-bold text-center leading-tight drop-shadow-sm">{btn.label}</span>
+            </Link>
+          ))}
+        </div>
 
         {/* 3. SUPER CALCULATEUR (Widget d'estimation rapide) */}
         <section>
@@ -538,9 +534,9 @@ return (
           </div>
         )}
         
-        {/* 6. BLOC "À PROPOS DE BÂTIZEN.CI" */}
-        <div className="mt-6 p-4 bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20">
-          <h3 className="text-lg font-bold text-[var(--navy)] mb-3">🏗️ À PROPOS DE BÂTIZEN.CI</h3>
+        {/* 6. BLOC "À PROPOS DE BÂTIZEN.CI" - Style aplati */}
+        <div className="mt-6 p-4 bg-white rounded-2xl border border-gray-200 shadow-sm">
+          <h3 className="text-lg font-bold text-[#1e3a8a] mb-3">🏗️ À PROPOS DE BÂTIZEN.CI</h3>
           <p className="text-sm text-gray-700 mb-3">
             BÂTIZEN.CI est votre partenaire BTP de confiance en Côte d'Ivoire. 
             Nous simplifions la construction en vous connectant avec des experts qualifiés, 
@@ -551,8 +547,8 @@ return (
           </p>
         </div>
 
-        {/* 7. BLOC "ALERTE ARNAQUE" */}
-        <div className="mt-4 p-4 bg-red-50/80 backdrop-blur-lg rounded-2xl border border-red-200">
+        {/* 7. BLOC "ALERTE ARNAQUE" - Style aplati */}
+        <div className="mt-4 p-4 bg-red-50 rounded-2xl border border-red-200 shadow-sm">
           <h3 className="text-lg font-bold text-red-700 mb-3">🚨 ALERTE ARNAQUE</h3>
           <p className="text-sm text-gray-800 mb-2 font-semibold">
             ⚠️ BÂTIZEN.CI ne demande JAMAIS :
@@ -568,8 +564,8 @@ return (
           </p>
         </div>
 
-        {/* 8. BLOC "NOS ENGAGEMENTS" */}
-        <div className="mt-4 p-4 bg-green-50/80 backdrop-blur-lg rounded-2xl border border-green-200">
+        {/* 8. BLOC "NOS ENGAGEMENTS" - Style aplati */}
+        <div className="mt-4 p-4 bg-green-50 rounded-2xl border border-green-200 shadow-sm">
           <h3 className="text-lg font-bold text-green-700 mb-3">🤝 NOS ENGAGEMENTS</h3>
           <ul className="text-sm text-gray-700 space-y-2">
             <li className="flex items-start">
@@ -598,15 +594,15 @@ return (
         {/* 9. CHATBOT */}
         <ChatBot />
 
-{/* 10. CADRE "NOS PARTENAIRES" - Dégradé BÂTIZEN pour un contraste parfait */}
-        {partenaires.length > 0 && (
-          <div className="mt-8 pt-8 border-t border-gray-200">
-            <h3 className="font-black text-xl text-[var(--navy)] mb-6 flex items-center gap-2">
+{/* 10. PARTENAIRES EN CARROUSEL HORIZONTAL */}
+        {(partenaires.length > 0 || true) && (
+          <div className="mt-8">
+            <h3 className="font-black text-xl text-[#1e3a8a] mb-4 flex items-center gap-2">
               🤝 Nos Partenaires de Confiance
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="flex gap-4 overflow-x-auto pb-4 snap-x scrollbar-hide">
               {partenaires.map((partenaire: any) => (
-                <div key={partenaire.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 flex flex-col items-center text-center hover:shadow-md transition">
+                <div key={partenaire.id} className="min-w-[280px] bg-white rounded-2xl border border-gray-200 shadow-sm p-4 flex flex-col items-center text-center snap-center">
                   {partenaire.photo_url ? (
                     <div className="w-20 h-20 rounded-full overflow-hidden mb-3 border-2 border-[#FF7A00]">
                       <img src={partenaire.photo_url} alt={partenaire.nom} className="w-full h-full object-cover" />
@@ -616,10 +612,23 @@ return (
                       🏢
                     </div>
                   )}
-                  <h4 className="font-bold text-[var(--navy)] text-lg mb-1">{partenaire.nom}</h4>
+                  <h4 className="font-bold text-[#1e3a8a] text-lg mb-1">{partenaire.nom}</h4>
                   <p className="text-sm text-gray-700 line-clamp-3">{partenaire.description || "Partenaire certifié BÂTIZEN"}</p>
                 </div>
               ))}
+              {/* 3 placeholders "Bientôt disponible" */}
+              <div className="min-w-[280px] bg-gray-100 rounded-2xl border-2 border-dashed border-gray-300 p-4 flex flex-col items-center justify-center text-center snap-center">
+                <span className="text-4xl mb-2">🏢</span>
+                <p className="text-sm font-bold text-gray-500">Bientôt disponible</p>
+              </div>
+              <div className="min-w-[280px] bg-gray-100 rounded-2xl border-2 border-dashed border-gray-300 p-4 flex flex-col items-center justify-center text-center snap-center">
+                <span className="text-4xl mb-2">🤝</span>
+                <p className="text-sm font-bold text-gray-500">Bientôt disponible</p>
+              </div>
+              <div className="min-w-[280px] bg-gray-100 rounded-2xl border-2 border-dashed border-gray-300 p-4 flex flex-col items-center justify-center text-center snap-center">
+                <span className="text-4xl mb-2">🏗️</span>
+                <p className="text-sm font-bold text-gray-500">Bientôt disponible</p>
+              </div>
             </div>
           </div>
         )}
