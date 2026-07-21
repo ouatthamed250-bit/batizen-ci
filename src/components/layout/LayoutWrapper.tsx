@@ -28,12 +28,9 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
     <>
       <Header />
       <PremiumBackground>
-<main className="ios-scroll flex-1 pt-20 pb-16 px-4 min-h-screen">
-          {/* Container mobile centré 430px max - glassmorphism */}
-          <div className="mx-auto w-full max-w-[430px]">
-            <div className="min-h-screen">
-              {children}
-            </div>
+      <main className="ios-scroll flex-1 pt-4 pb-16 px-2 min-h-screen">
+          <div className="w-full">
+            {children}
           </div>
         </main>
       </PremiumBackground>
