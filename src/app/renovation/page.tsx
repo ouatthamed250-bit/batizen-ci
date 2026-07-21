@@ -255,9 +255,9 @@ export default function RenovationPage() {
         )}
 
         {/* Navigation buttons - position sticky au-dessus de BottomNav */}
-        <div className="sticky bottom-24 left-0 right-0 z-30 flex items-center gap-4 bg-white/90 p-5 backdrop-blur-xl border-t border-[#E7EBF5]">
+        <div className="sticky bottom-24 left-0 right-0 z-30 flex items-center gap-4 mx-2 mb-4">
           {step > 1 && (
-            <button onClick={back} aria-label="Retour" className="grid size-[56px] place-items-center rounded-[18px] bg-[#F7F9FC] text-[#0D2B6B] transition hover:bg-[#E7EBF5] active:scale-95">
+            <button onClick={back} aria-label="Retour" className="grid size-[56px] place-items-center rounded-[18px] bg-white/20 text-white transition hover:bg-white/30 active:scale-95">
               <ArrowLeft size={22} />
             </button>
           )}
