@@ -143,7 +143,7 @@ export default function NotificationsPage() {
         </motion.div>
 
         {/* Liste des notifications */}
-        <div className="mt-4 space-y-3 pb-24">
+        <div className="mt-4 space-y-3">
           {loading ? (
             <div className="animate-pulse space-y-3">
               {[1, 2, 3].map((i) => (

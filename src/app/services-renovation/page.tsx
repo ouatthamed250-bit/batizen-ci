@@ -34,7 +34,7 @@ export default function ServicesRenovationPage() {
         <RenovationHero />
 
       {/* Section Services */}
-      <section className="mx-auto max-w-7xl px-6 pb-24 pt-16">
+      <section className="pt-20 pb-16 px-4 min-h-screen bg-[#f9fafb] mx-auto max-w-7xl">
         <div className="mb-14 text-center">
           <h2 className="text-4xl font-black text-[#1a1a1a]">
             Nos services de rénovation

@@ -78,7 +78,7 @@ export default function SettingsPage() {
   );
 
   return (
-    <main className="min-h-screen bg-[#F7F9FC] pb-24">
+    <main className="pt-20 pb-16 px-4 min-h-screen bg-[#f9fafb]">
       <div className="relative overflow-hidden bg-[#0D2B6B] pb-16 pt-12">
         <div className="absolute inset-0 bg-gradient-to-br from-[#0D2B6B] to-[#1E40AF]" />
         <div className="relative px-4">

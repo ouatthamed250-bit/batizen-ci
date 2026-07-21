@@ -4,17 +4,15 @@ import { cn } from "@/lib/helpers";
 type ScreenWrapperProps = {
   children: ReactNode;
   className?: string;
-  withBottomPadding?: boolean;
 };
 
-export function ScreenWrapper({ children, className, withBottomPadding = true }: ScreenWrapperProps) {
+export function ScreenWrapper({ children, className }: ScreenWrapperProps) {
   return (
     <main
       className={cn(
-        "min-h-screen px-4 py-4 sm:px-6 lg:px-8",
-        "screen-bg-default",
+        "min-h-screen pt-20 pb-16 px-4 sm:px-6 lg:px-8",
+        "bg-[#f9fafb]",
         "dark:screen-bg-dark",
-        withBottomPadding && "pb-28",
         className
       )}
     >

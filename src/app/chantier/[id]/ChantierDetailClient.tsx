@@ -804,7 +804,7 @@ const [plan, med, docsFiltered, notesFiltered, rapportsFiltered] = await Promise
   };
 
   return (
-    <main className="min-h-screen bg-[#F7F9FC] pb-28">
+    <main className="pt-20 pb-16 px-4 min-h-screen bg-[#f9fafb]">
       {/* HEADER DU CHANTIER */}
       <header className="relative overflow-hidden">
         <div className="absolute inset-0">

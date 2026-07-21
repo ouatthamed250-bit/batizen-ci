@@ -57,7 +57,7 @@ export default function RenovationPage() {
   );
 
   const pageContent = step === 5 ? (
-    <ScreenWrapper withBottomPadding={false}>
+    <ScreenWrapper>
       <div className="flex min-h-[80vh] flex-col items-center justify-center text-center px-6">
         <div className="grid size-24 place-items-center rounded-full bg-[#22C55E] text-white shadow-[0_20px_40px_rgba(34,197,94,0.3)] animate-bounceIn">
           <CheckCircle2 size={48} />
@@ -75,7 +75,7 @@ export default function RenovationPage() {
       </div>
     </ScreenWrapper>
   ) : (
-    <ScreenWrapper className="pb-32">
+    <ScreenWrapper>
       <PremiumHeader />
 
       <div className="mb-6 flex items-center gap-3">

@@ -102,7 +102,7 @@ export default function HistoriquePage() {
   }, [user?.uid]);
 
   return (
-    <main className="min-h-screen bg-[#F7F9FC] pt-20 pb-24">
+    <main className="pt-20 pb-16 px-4 min-h-screen bg-[#f9fafb]">
       {/* Header */}
       <header className="relative overflow-hidden">
         <div className="absolute inset-0">

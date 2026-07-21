@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { BottomNav } from "@/components/layout/BottomNav";
-import { PremiumHeader } from "@/components/layout/PremiumHeader";
 import { ScreenWrapper } from "@/components/layout/ScreenWrapper";
 import { PremiumButton } from "@/components/ui/PremiumButton";
 import { HardHat } from "lucide-react";
@@ -102,8 +101,6 @@ export default function ProjectsPage() {
 
   return (
     <ScreenWrapper>
-      <PremiumHeader />
-
       <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.18em] text-[#0B5FFF]">Archive</p>

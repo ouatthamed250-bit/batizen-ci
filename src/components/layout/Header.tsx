@@ -7,12 +7,36 @@ import { Menu, X, User, Construction } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
 import NotificationBell from "@/components/ui/NotificationBell";
 
+// Fonction helper pour les titres dynamiques
+const getPageTitle = (pathname: string | null): string => {
+  if (!pathname) return "BÂTIZEN.CI";
+  
+  const titles: Record<string, string> = {
+    "/projets": "Mes Projets",
+    "/profil": "Mon Profil",
+    "/messages": "Messages",
+    "/simulation": "Simulation",
+    "/nouveau-chantier": "Nouveau Chantier",
+    "/renovation": "Rénovation",
+    "/historique": "Historique",
+    "/devis": "Mes Devis",
+  };
+
+  // Gestion dynamique des routes chantier
+  if (pathname.includes("/chantier/")) return "Détail Chantier";
+  if (pathname.includes("/admin")) return "Administration";
+  if (pathname.includes("/assistant-chat")) return "Assistant IA";
+
+  return titles[pathname] || "BÂTIZEN.CI";
+};
+
 export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { user, isAuthenticated } = useAuthContext();
   const pathname = usePathname();
   const router = useRouter();
+  const isDashboard = pathname === "/dashboard" || pathname === "/dashboard/";
 
   useEffect(() => {
     setMounted(true);
@@ -29,47 +53,66 @@ export function Header() {
 
   return (
     <>
-      {/* Header fixe */}
-      <header className="fixed top-0 left-0 right-0 z-50 flex h-[60px] items-center justify-between bg-white/95 px-4 shadow-md backdrop-blur-sm">
-        {/* Gauche : Hamburger */}
-        <button
-          onClick={() => setMenuOpen(true)}
-          className="grid size-10 place-items-center rounded-full bg-white/50 transition-all active:scale-95"
-          aria-label="Ouvrir le menu"
-        >
-          <Menu size={20} className="text-[#FF6B00]" />
-        </button>
+      {/* HEADER DASHBOARD - Fixed top */}
+      {isDashboard && (
+        <header className="fixed top-0 left-0 right-0 z-50 h-16 flex items-center justify-between bg-white px-4 shadow-sm">
+          {/* Gauche : Hamburger */}
+          <button
+            onClick={() => setMenuOpen(true)}
+            className="w-10 h-10 bg-[#1e3a8a] rounded-xl flex items-center justify-center text-white text-xl"
+            aria-label="Ouvrir le menu"
+          >
+            ☰
+          </button>
 
-        {/* Centre : Logo */}
-        <Link href={isAuthenticated ? "/dashboard" : "/login"} className="flex items-center gap-2">
-          <Construction size={22} className="text-[#FF6B00]" />
-          <span className="text-lg font-black tracking-tight bg-gradient-to-r from-[#FF6B00] to-[#FF8C00] bg-clip-text text-transparent">
-            BÂTIZEN.CI
-          </span>
-        </Link>
+          {/* Centre : Logo */}
+          <div className="flex items-center gap-2">
+            <span className="text-xl">🏗️</span>
+            <h1 className="font-black text-lg text-[#FF7A00]">BÂTIZEN.CI</h1>
+          </div>
 
-        {/* Droite : Notifications + Avatar */}
-        <div className="flex items-center gap-2">
-          {isAuthenticated && <NotificationBell />}
-          
-          {isAuthenticated && user ? (
-            <Link
-              href="/profil"
-              className="grid size-10 place-items-center rounded-full bg-gradient-to-br from-[#FF6B00] to-[#FF8C00] font-bold text-white shadow-md transition-all active:scale-95"
-            >
-              {initials}
-            </Link>
-          ) : (
-            <button
-              onClick={() => router.push("/login")}
-              className="grid size-10 place-items-center rounded-full bg-white/50 transition-all active:scale-95"
-              aria-label="Se connecter"
-            >
-              <User size={18} className="text-[#FF6B00]" />
-            </button>
-          )}
-        </div>
-      </header>
+          {/* Droite : Notifications + Avatar */}
+          <div className="flex items-center gap-2">
+            {isAuthenticated && <NotificationBell />}
+            
+            {isAuthenticated && user ? (
+              <div className="w-10 h-10 bg-[#FF7A00] rounded-full flex items-center justify-center text-white font-bold">
+                {initials}
+              </div>
+            ) : (
+              <button
+                onClick={() => router.push("/login")}
+                className="w-10 h-10 rounded-full flex items-center justify-center text-gray-600 transition-all active:scale-95"
+                aria-label="Se connecter"
+              >
+                <User size={18} />
+              </button>
+            )}
+          </div>
+        </header>
+      )}
+
+      {/* HEADER AUTRES PAGES - Fixed bottom avec titre */}
+      {!isDashboard && (
+        <header className="fixed bottom-0 left-0 right-0 z-50 h-16 flex items-center justify-between bg-[#1e3a8a] text-white shadow-md rounded-t-3xl px-4">
+          {/* Gauche : Hamburger */}
+          <button
+            onClick={() => setMenuOpen(true)}
+            className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-white text-xl backdrop-blur-sm"
+            aria-label="Ouvrir le menu"
+          >
+            ☰
+          </button>
+
+          {/* Centre : Titre */}
+          <h1 className="font-black text-white text-lg">
+            {getPageTitle(pathname)}
+          </h1>
+
+          {/* Droite : Espace vide pour alignement */}
+          <div className="w-10"></div>
+        </header>
+      )}
 
       {/* Menu latéral */}
       {menuOpen && (
@@ -92,7 +135,7 @@ export function Header() {
 
             {/* Items du menu */}
             <div className="space-y-2">
-{[
+              {[
                 { href: "/dashboard", label: "Tableau de bord", icon: "📊" },
                 { href: "/renovation", label: "Rénovation", icon: "🔨" },
                 { href: "/catalogue-materiaux", label: "Matériaux", icon: "🧱" },

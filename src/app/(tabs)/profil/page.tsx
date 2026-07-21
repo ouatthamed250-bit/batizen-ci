@@ -33,7 +33,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <main className="min-h-screen pb-28" style={{
+    <main className="pt-20 pb-16 px-4 min-h-screen bg-[#f9fafb]" style={{
       background: "var(--bg-profil)"
     }}>
       <div className="mx-auto w-full max-w-2xl px-4 py-4 sm:px-6">

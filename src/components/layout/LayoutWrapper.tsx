@@ -23,14 +23,14 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
   }
 
 // Pour toutes les autres pages (connectées) → interface complète
+  // Header gère déjà le hamburger + menu latéral intégré
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <>
       <Header />
-      <Sidebar />
-      <main className="flex-1 pt-24 pb-20 px-4 min-h-screen bg-gray-50">
+      <main className="flex-1 pt-20 pb-16 px-4 min-h-screen bg-[#f9fafb]">
         {children}
       </main>
       <BottomNav />
-    </div>
+    </>
   );
 }

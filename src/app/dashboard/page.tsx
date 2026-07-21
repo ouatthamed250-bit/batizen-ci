@@ -362,7 +362,7 @@ export default function DashboardClientPage() {
     100% { transform: rotate(0deg); }
   }
 `}</style>
-    <div className="pt-24 pb-20 px-4 min-h-screen bg-[#f9fafb] overflow-x-hidden">
+    <div className="pt-20 pb-16 px-4 min-h-screen bg-[#f9fafb] overflow-x-hidden">
       <main className="flex flex-col gap-3">
         <div className="flex items-center gap-3 mb-6">
           {(() => {
