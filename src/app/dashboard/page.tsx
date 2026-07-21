@@ -150,7 +150,7 @@ function ChantierCard({ chantier, onModifier, onSupprimer }: {
       animate={{ opacity: 1, y: 0 }}
       className="w-full overflow-hidden rounded-[28px] border border-white/30 bg-white/20 backdrop-blur-xl shadow-xl"
     >
-      <div className="relative h-40 w-full bg-white/10">
+      <div className="relative h-32 w-full bg-white/10">
         {photo ? <Image src={photo} alt={nom} fill className="object-cover" /> : <div className="grid size-full place-items-center text-white/60"><HardHat size={48} /></div>}
       </div>
       <div className="p-5">
@@ -464,13 +464,13 @@ export default function DashboardClientPage() {
                  <BrickWall size={20} /> Créer un chantier
                </Link>
              </div>
-           ) : (
-             <div className="space-y-4 w-full">
-               {chantiers.map((c) => (
-                 <ChantierCard key={c.id} chantier={c} onModifier={handleModifierChantier} onSupprimer={handleSupprimerChantier} />
-               ))}
-             </div>
-           )}
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                {chantiers.map((c) => (
+                  <ChantierCard key={c.id} chantier={c} onModifier={handleModifierChantier} onSupprimer={handleSupprimerChantier} />
+                ))}
+              </div>
+            )}
            
            {/* Sections Infos */}
            <div className="mt-6 p-5 w-full bg-white/20 rounded-[28px] border border-white/30 backdrop-blur-xl shadow-xl">
