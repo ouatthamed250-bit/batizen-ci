@@ -1,6 +1,3 @@
-import { BottomNav } from "@/components/layout/BottomNav";
-import { Header } from "@/components/layout/Header";
-import PremiumBackground from "@/components/layout/PremiumBackground";
 import { Badge } from "@/components/ui/Badge";
 import { getMessages } from "@/services/batizen";
 import { WeatherWidget } from "@/components/btp/WeatherWidget";
@@ -10,11 +7,8 @@ export default async function MessagesPage() {
 
   return (
     <>
-      <Header />
-      <PremiumBackground>
-        <main className="ios-scroll min-h-screen pt-4 pb-16 px-4">
-          {/* Container mobile centré 430px max */}
-          <div className="mx-auto w-full max-w-[430px]">
+      <main className="ios-scroll min-h-screen pt-4 pb-16 px-2">
+        <div className="w-full">
             <div className="mb-7">
               <p className="text-xs font-black uppercase tracking-[0.18em] text-white drop-shadow-md">Messages</p>
               <h1 className="mt-2 text-4xl font-black tracking-[-0.04em] text-white md:text-5xl drop-shadow-lg">
@@ -58,10 +52,8 @@ export default async function MessagesPage() {
               ))}
             </div>
 
-            <BottomNav />
           </div>
         </main>
-      </PremiumBackground>
     </>
   );
 }

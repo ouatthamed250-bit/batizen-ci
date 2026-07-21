@@ -34,7 +34,7 @@ export default function ProfilePage() {
   return (
     <>
       <main className="ios-scroll pt-4 pb-16 px-4 min-h-screen">
-          <div className="mx-auto w-full max-w-2xl px-4 py-4 sm:px-6">
+          <div className="w-full px-2 py-4">
 
             <div className="space-y-5">
               {/* ── Hero identité ── */}
