@@ -24,7 +24,7 @@ export function PremiumCard({
     <div
       className={cn(
         "rounded-[28px] p-6 shadow-lg",
-        variant === "glass" && "bg-white/80 border border-white/30",
+        variant === "glass" && "bg-white/10 border border-white/20",
         variant === "elevated" && "bg-white border border-gray-100 shadow-xl",
         variant === "default" && "bg-white",
         intensityClasses[intensity],
