@@ -20,6 +20,7 @@ export default function BtpPageBackground({ children, imageUrl, overlayClassName
           }}
         />
         <div className={`absolute inset-0 ${overlayClassName}`} />
+        <div className="absolute inset-0 bg-[#0D2B6B]/50" />
       </div>
       <div className="relative z-10">{children}</div>
     </div>
