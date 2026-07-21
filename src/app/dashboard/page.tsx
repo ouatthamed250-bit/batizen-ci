@@ -367,7 +367,7 @@ export default function DashboardClientPage() {
       {/* px-3 au lieu de px-4 pour donner plus de largeur aux cadres sur mobile */}
       <div className="pt-4 pb-24 px-3 min-h-screen w-full">
         {/* max-w-2xl au lieu de max-w-lg pour des cadres plus larges et imposants */}
-        <main className="flex flex-col gap-5 w-full max-w-2xl mx-auto">
+        <main className="flex flex-col gap-5 w-full">
           
           {/* Salutation */}
           <div className="flex items-center gap-3 mb-2 px-1">
