@@ -2,7 +2,6 @@
 
 import { usePathname } from "next/navigation";
 import { Header } from "./Header";
-import Sidebar from "./Sidebar";
 import { BottomNav } from "./BottomNav";
 
 export default function LayoutWrapper({ children }: { children: React.ReactNode }) {

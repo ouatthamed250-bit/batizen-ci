@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, X, User, Construction } from "lucide-react";
+import { X, User } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
 import NotificationBell from "@/components/ui/NotificationBell";
 
@@ -32,15 +32,10 @@ const getPageTitle = (pathname: string | null): string => {
 
 export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const { user, isAuthenticated } = useAuthContext();
   const pathname = usePathname();
   const router = useRouter();
   const isDashboard = pathname === "/dashboard" || pathname === "/dashboard/";
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   // Ferme le menu quand on navigue
   useEffect(() => {
@@ -53,7 +48,7 @@ export function Header() {
 
   return (
     <>
-      {/* HEADER DASHBOARD - Fixed top */}
+      {/* HEADER DASHBOARD - Fixed top blanc */}
       {isDashboard && (
         <header className="fixed top-0 left-0 right-0 z-50 h-16 flex items-center justify-between bg-white px-4 shadow-sm">
           {/* Gauche : Hamburger */}
@@ -92,9 +87,9 @@ export function Header() {
         </header>
       )}
 
-      {/* HEADER AUTRES PAGES - Fixed bottom avec titre */}
+      {/* HEADER AUTRES PAGES - Fixed top avec arrondi bas bleu */}
       {!isDashboard && (
-        <header className="fixed bottom-0 left-0 right-0 z-50 h-16 flex items-center justify-between bg-[#1e3a8a] text-white shadow-md rounded-t-3xl px-4">
+        <header className="fixed top-0 left-0 right-0 z-50 h-16 flex items-center justify-between bg-[#1e3a8a] rounded-b-3xl px-4">
           {/* Gauche : Hamburger */}
           <button
             onClick={() => setMenuOpen(true)}
@@ -141,7 +136,7 @@ export function Header() {
                 { href: "/catalogue-materiaux", label: "Matériaux", icon: "🧱" },
                 { href: "/messages", label: "Messages", icon: "💬" },
                 { href: "/devis", label: "Devis", icon: "📋" },
-                ].map((item, i) => (
+              ].map((item, i) => (
                 <Link
                   key={item.href}
                   href={item.href}
