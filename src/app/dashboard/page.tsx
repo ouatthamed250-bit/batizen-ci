@@ -233,7 +233,6 @@ export default function DashboardClientPage() {
   const [promos, setPromos] = useState<Promo[]>([]);
   const [partenaires, setPartenaires] = useState<any[]>([]);
 
-  // Effet 1 : Attendre que l'auth soit prête
   useEffect(() => {
     if (user?.uid) {
       console.log("✅ [CLIENT] Auth ready! UID:", user.uid);
@@ -244,7 +243,6 @@ export default function DashboardClientPage() {
     }
   }, [user?.uid]);
 
-  // Effet 2 : Charger les chantiers SEULEMENT quand auth est prête - AVEC FILTRE POUR RÈGLE STRICTE
   useEffect(() => {
     if (!isAuthReady || !user?.uid) {
       console.log("⏸️ [CLIENT] Chargement chantiers en pause (auth non prête)");
@@ -286,7 +284,6 @@ export default function DashboardClientPage() {
     };
   }, [isAuthReady, user?.uid]);
 
-  // Listener pour les partenaires
   useEffect(() => {
     const db = getDatabase();
     const partenairesRef = dbRef(db, 'partenaires');
@@ -353,9 +350,7 @@ export default function DashboardClientPage() {
   }
 `}</style>
     <PremiumBackground>
-      {/* CORRECTION 1 & 2 : px-3 pour plus de largeur, pb-24 pour ne pas cacher le bas avec la nav */}
       <div className="pt-4 pb-24 px-3 min-h-screen w-full">
-        {/* CORRECTION 3 : w-full max-w-lg au lieu de max-w-[430px] pour bien remplir l'écran */}
         <main className="flex flex-col gap-4 w-full max-w-lg mx-auto">
           <div className="flex items-center gap-3 mb-4">
             {(() => {
@@ -414,7 +409,6 @@ export default function DashboardClientPage() {
           </section>
 
           {!loading && (
-            {/* CORRECTION 4 : grid-cols-2 sur mobile pour mettre les cartes côte à côte et gagner de la place */}
             <section className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4 w-full">
               <SummaryCard icon={HardHat} label="Chantiers actifs" value={chantiersActifs} />
               <SummaryCard icon={Wallet} label="Dépensé ce mois" value={formatFcfa(depensesMois)} />
@@ -443,7 +437,7 @@ export default function DashboardClientPage() {
           ) : (
             <div className="space-y-3 w-full">
               <h2 className="text-xs font-black uppercase tracking-[0.2em] text-white/80 drop-shadow-md">Mes chantiers</h2>
-              <div className="grid gap-3 w-full"> {/* Retiré sm:grid-cols-2 pour forcer 1 colonne large et lisible sur mobile */}
+              <div className="grid gap-3 w-full">
                 {chantiers.map((c) => (
                   <ChantierCard key={c.id} chantier={c} onModifier={handleModifierChantier} onSupprimer={handleSupprimerChantier} />
                 ))}
@@ -517,7 +511,7 @@ export default function DashboardClientPage() {
                   {partenaire.photo_url ? (
                     <div className="w-20 h-20 rounded-full overflow-hidden mb-3 border-2 border-[#FF7A00]">
                       <img src={partenaire.photo_url} alt={partenaire.nom} className="w-full h-full object-cover" />
-                </div>
+                    </div>
                   ) : (
                     <div className="w-20 h-20 rounded-full bg-[#FF7A00]/20 flex items-center justify-center mb-3 text-3xl">
                       🏢
