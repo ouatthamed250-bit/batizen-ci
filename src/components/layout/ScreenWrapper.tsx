@@ -10,8 +10,9 @@ export function ScreenWrapper({ children, className }: ScreenWrapperProps) {
   return (
     <main
       className={cn(
-        "min-h-screen pt-20 pb-16 px-4",
-        "bg-[#FFFFFF] dark:bg-[#081423]",
+        "ios-scroll min-h-screen pt-4 pb-16 px-4", // pt-4 au lieu de pt-20 (header gère l'espace)
+        "bg-white/90 dark:bg-[#081423]/60 backdrop-blur-sm", // glassmorphism
+        "dark:text-white text-gray-800",
         className
       )}
     >
