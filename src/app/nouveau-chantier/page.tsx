@@ -309,7 +309,7 @@ function NouveauChantierContent() {
       <div className="min-h-screen">
         <PremiumHeader />
         
-        <main className="min-h-screen pt-6 pb-28">
+        <main className="min-h-screen pt-6 pb-14">
           <div className="mx-2">
             {prefilledData && (
               <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-6 mx-2 rounded-[18px] bg-white/20 border border-white/30 p-4">
