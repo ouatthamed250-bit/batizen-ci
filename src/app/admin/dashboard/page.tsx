@@ -7,6 +7,35 @@ import { Search } from 'lucide-react';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { getDatabase, ref, onValue, get } from 'firebase/database';
 
+type Localisation = {
+  adresse?: string;
+  commune?: string;
+  quartier?: string;
+  ville?: string;
+};
+
+type Chantier = {
+  id: string;
+  client_id?: string;
+  userId?: string;
+  nom?: string;
+  nom_projet?: string;
+  adresse?: string;
+  progression?: number;
+  progress?: number;
+  statut?: string;
+  date_fin?: string;
+  dateCreation?: number;
+  type?: string;
+  budget?: number;
+  plan_choisi?: string;
+  date_soumission?: string;
+  localisation?: Localisation;
+  client_nom?: string;
+  client_email?: string;
+  client_telephone?: string;
+};
+
 type Client = {
   id: string;
   displayName?: string;
@@ -15,22 +44,6 @@ type Client = {
   chantiers?: Chantier[];
   rapports?: any[];
   paiements?: any[];
-  dernierMessage?: any;
-  rdvConfirmes?: any[];
-};
-
-type Chantier = {
-  id: string;
-  nom?: string;
-  nom_projet?: string;
-  localisation?: {
-    ville?: string;
-    commune?: string;
-    quartier?: string;
-    adresse?: string;
-  };
-  dateCreation?: number;
-  statut?: string;
 };
 
 // Fonction utilitaire de calcul de santé
@@ -147,7 +160,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Barre de recherche */}
-      <div className="mb-6 relative max-w-md">
+      <div className="mb-6 relative">
         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
           <Search size={20} className="text-gray-400" />
         </div>
@@ -161,7 +174,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Section Clients avec chantiers */}
-      <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2">
+      <div className="space-y-4">
         {clients
           .filter((client) => {
             if (!searchTerm.trim()) return true;

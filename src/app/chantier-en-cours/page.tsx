@@ -49,7 +49,7 @@ export default function ChantierEnCoursPage() {
 
   return (
     <div className="min-h-screen bg-[#F7F9FC]">
-      <div className="mx-auto max-w-3xl px-4 py-6 space-y-6">
+      <div className="mx-auto max-w-[430px] px-4 py-6 space-y-6">
         {/* En-tête projet */}
         <div className="rounded-[25px] bg-white p-6 shadow-[0_10px_40px_rgba(0,0,0,0.08)] border-t-[6px] border-t-[#FF6B00]">
           <div className="flex items-start justify-between gap-4">
