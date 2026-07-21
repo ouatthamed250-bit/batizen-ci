@@ -11,7 +11,6 @@ import { PHOTOS_CHANTIER } from "@/data/photos-chantier";
 import BtpPageBackground from "@/components/btp/BtpPageBackground";
 import { PremiumHeader } from "@/components/layout/PremiumHeader";
 import { PremiumButton } from "@/components/ui/PremiumButton";
-import { BackButton } from "@/components/ui/BackButton";
 import { formatFcfa } from "@/utils/currency";
 import PlanGenerator2D from "@/components/simulation/PlanGenerator2D";
 import PlanGenerator3D from "@/components/simulation/PlanGenerator3D";
@@ -310,12 +309,10 @@ function NouveauChantierContent() {
       <div className="min-h-screen">
         <PremiumHeader />
         
-        <main className="min-h-screen pt-20 pb-32">
-          <div className="mx-auto max-w-4xl px-4">
-            <div className="mb-6"><BackButton href="/dashboard" /></div>
-
+        <main className="min-h-screen pt-20 pb-24">
+          <div className="mx-2">
             {prefilledData && (
-              <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-6 rounded-[18px] bg-white/20 border border-white/30 p-4">
+              <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-6 mx-2 rounded-[18px] bg-white/20 border border-white/30 p-4">
                 <div className="flex items-center gap-3">
                   <CheckCircle2 size={20} className="text-[#FF6B00]" />
                   <p className="text-sm font-bold text-white">📐 Données importées depuis votre simulation. Vous pouvez modifier les champs.</p>
@@ -371,7 +368,7 @@ function NouveauChantierContent() {
 
 function Step1({ formData, setFormData }: { formData: FormData; setFormData: (data: FormData) => void }) {
   return (
-    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20">
+    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="mx-2 rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20">
       <div className="flex items-center gap-3 mb-6">
         <div className="grid size-12 place-items-center rounded-[16px] bg-[#FF6B00]"><Building2 size={24} className="text-white" /></div>
         <div><h2 className="text-xl font-black text-white">Type de projet</h2><p className="text-sm text-white/60">Décrivez votre projet de construction</p></div>
@@ -388,7 +385,7 @@ function Step1({ formData, setFormData }: { formData: FormData; setFormData: (da
 
 function Step2({ formData, setFormData }: { formData: FormData; setFormData: (data: FormData) => void }) {
   return (
-    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20">
+    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="mx-2 rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20">
       <div className="flex items-center gap-3 mb-6"><div className="grid size-12 place-items-center rounded-[16px] bg-[#FF6B00]"><Home size={24} className="text-white" /></div><div><h2 className="text-xl font-black text-white">Surface et dimensions</h2><p className="text-sm text-white/60">Définissez les dimensions de votre projet</p></div></div>
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
@@ -407,7 +404,7 @@ function Step2({ formData, setFormData }: { formData: FormData; setFormData: (da
 
 function Step3({ formData, setFormData }: { formData: FormData; setFormData: (data: FormData) => void }) {
   return (
-    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20">
+    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="mx-2 rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20">
       <div className="flex items-center gap-3 mb-6"><div className="grid size-12 place-items-center rounded-[16px] bg-[#FF6B00]"><MapPin size={24} className="text-white" /></div><div><h2 className="text-xl font-black text-white">Localisation</h2><p className="text-sm text-white/60">Où se trouve votre terrain ?</p></div></div>
       <div className="space-y-4">
         <div><label className="mb-2 block text-sm font-bold text-white">Ville</label><select value={formData.ville || ""} onChange={(e) => setFormData({ ...formData, ville: e.target.value })} className="h-[54px] w-full rounded-[18px] bg-white/20 px-4 text-sm font-bold text-white outline-none"><option value="">Sélectionnez...</option><option value="Abidjan">Abidjan</option><option value="Yamoussoukro">Yamoussoukro</option><option value="Bouaké">Bouaké</option><option value="Korhogo">Korhogo</option><option value="San-Pédro">San-Pédro</option><option value="Daloa">Daloa</option></select></div>
@@ -424,7 +421,7 @@ function Step3({ formData, setFormData }: { formData: FormData; setFormData: (da
 
 function Step4({ formData, setFormData }: { formData: FormData; setFormData: (data: FormData) => void }) {
   return (
-    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20">
+    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="mx-2 rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20">
       <div className="flex items-center gap-3 mb-6"><div className="grid size-12 place-items-center rounded-[16px] bg-[#FF6B00]"><HardHat size={24} className="text-white" /></div><div><h2 className="text-xl font-black text-white">Matériaux gros œuvre</h2><p className="text-sm text-white/60">Sélectionnez les matériaux de base</p></div></div>
       <div className="space-y-4">
         <div><label className="mb-2 block text-sm font-bold text-white">Ciment</label><select value={formData.materiauxGrosOeuvre?.ciment || ""} onChange={(e) => setFormData({ ...formData, materiauxGrosOeuvre: { ...formData.materiauxGrosOeuvre, ciment: e.target.value } })} className="h-[54px] w-full rounded-[18px] bg-white/20 px-4 text-sm font-bold text-white outline-none"><option value="">Sélectionnez...</option><option value="cpj42">Ciment CPJ 42.5 - 5 200 FCFA/sac</option><option value="cpj35">Ciment CPJ 35 - 4 800 FCFA/sac</option></select></div>
@@ -438,7 +435,7 @@ function Step4({ formData, setFormData }: { formData: FormData; setFormData: (da
 
 function Step5({ formData, setFormData }: { formData: FormData; setFormData: (data: FormData) => void }) {
   return (
-    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20">
+    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="mx-2 rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20">
       <div className="flex items-center gap-3 mb-6"><div className="grid size-12 place-items-center rounded-[16px] bg-[#FF6B00]"><Paintbrush size={24} className="text-white" /></div><div><h2 className="text-xl font-black text-white">Matériaux finitions</h2><p className="text-sm text-white/60">Sélectionnez les matériaux de finition</p></div></div>
       <div className="space-y-4">
         <div><label className="mb-2 block text-sm font-bold text-white">Carrelage</label><select value={formData.materiauxFinitions?.carrelage || ""} onChange={(e) => setFormData({ ...formData, materiauxFinitions: { ...formData.materiauxFinitions, carrelage: e.target.value } })} className="h-[54px] w-full rounded-[18px] bg-white/20 px-4 text-sm font-bold text-white outline-none"><option value="">Sélectionnez...</option><option value="premium">Carrelage premium - 12 500 FCFA/m²</option><option value="standard">Carrelage standard - 8 500 FCFA/m²</option></select></div>
@@ -457,7 +454,7 @@ function Step6({ formData, setFormData }: { formData: FormData; setFormData: (da
   };
 
   return (
-    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20">
+    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="mx-2 rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20">
       <div className="flex items-center gap-3 mb-6"><div className="grid size-12 place-items-center rounded-[16px] bg-[#FF6B00]"><Wallet size={24} className="text-white" /></div><div><h2 className="text-xl font-black text-white">Budget et financement</h2><p className="text-sm text-white/60">Définissez votre budget</p></div></div>
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
@@ -472,7 +469,7 @@ function Step6({ formData, setFormData }: { formData: FormData; setFormData: (da
 
 function Step7({ formData, setFormData }: { formData: FormData; setFormData: (data: FormData) => void }) {
   return (
-    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20">
+    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="mx-2 rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20">
       <div className="flex items-center gap-3 mb-6"><div className="grid size-12 place-items-center rounded-[16px] bg-[#FF6B00]"><Calendar size={24} className="text-white" /></div><div><h2 className="text-xl font-black text-white">Délai et planning</h2><p className="text-sm text-white/60">Définissez votre planning</p></div></div>
       <div className="space-y-4">
         <div><label className="mb-2 block text-sm font-bold text-white">Délai souhaité</label><select value={formData.delai || ""} onChange={(e) => setFormData({ ...formData, delai: e.target.value })} className="h-[54px] w-full rounded-[18px] bg-white/20 px-4 text-sm font-bold text-white outline-none"><option value="6mois">6 mois</option><option value="12mois">12 mois</option><option value="18mois">18 mois</option><option value="24mois">24 mois+</option></select></div>
@@ -508,7 +505,7 @@ function Step8({ formData, selectedPlan, onPlanSelect, showRdvForm, rdvData, set
         💡 Comparez cette estimation avec les plans professionnels ci-dessous pour choisir la formule adaptée à votre budget.
       </p>
 
-      <div className="rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20">
+      <div className="mx-2 rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20">
         <h2 className="text-xl font-black text-white mb-4">📋 Récapitulatif</h2>
         <div className="space-y-2 text-sm">
           <div className="flex justify-between"><span className="text-white/60">Nom du projet</span><span className="font-bold text-white">{formData.nom || '—'}</span></div>
@@ -520,7 +517,7 @@ function Step8({ formData, selectedPlan, onPlanSelect, showRdvForm, rdvData, set
       </div>
 
       {/* Plan gratuit - TOUJOURS affiché */}
-      <div className="rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20">
+      <div className="mx-2 rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20">
         <h2 className="text-xl font-black text-white mb-4">🎨 VOTRE PLAN GRATUIT</h2>
         <p className="text-xs italic text-white/60 mb-4">⚠️ Ceci est juste une maquette de base générée selon vos renseignements. Nos experts vous fourniront un plan professionnel détaillé lors du rendez-vous.</p>
         
@@ -593,7 +590,7 @@ function Step8({ formData, selectedPlan, onPlanSelect, showRdvForm, rdvData, set
         </div>
       )}
 
-      <div className="rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20">
+      <div className="mx-2 rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20">
         <h2 className="text-xl font-black text-white mb-4">🎯 Choisissez votre plan professionnel</h2>
         <div className="space-y-4">
           {[
@@ -623,7 +620,7 @@ function Step8({ formData, selectedPlan, onPlanSelect, showRdvForm, rdvData, set
       )}
 
       {showRdvForm && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mx-2 rounded-[24px] bg-white/10 backdrop-blur-xl p-6 shadow-lg border border-white/20">
           <h2 className="text-xl font-black text-white mb-4">📅 Prendre rendez-vous avec un expert</h2>
           <div className="space-y-4">
             <div><label className="mb-2 block text-sm font-bold text-white">Lieu du rendez-vous</label><div className="flex gap-4"><label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="lieu" value="bureau" checked={rdvData.lieu === 'bureau'} onChange={(e) => setRdvData({ ...rdvData, lieu: e.target.value })} className="accent-[#FF6B00]" /><span className="text-sm text-white">Dans nos bureaux</span></label><label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="lieu" value="terrain" checked={rdvData.lieu === 'terrain'} onChange={(e) => setRdvData({ ...rdvData, lieu: e.target.value })} className="accent-[#FF6B00]" /><span className="text-sm text-white">Sur votre terrain</span></label></div></div>
