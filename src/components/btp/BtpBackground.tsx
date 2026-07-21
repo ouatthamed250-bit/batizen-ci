@@ -45,8 +45,8 @@ export default function BtpBackground({
       {/* Overlay */}
       <div className={`absolute inset-0 bg-gradient-to-b ${overlayOpacity}`} />
       
-      {/* Overlay bleu premium */}
-      <div className="absolute inset-0 bg-[#0D2B6B]/50" />
+       {/* Overlay bleu premium */}
+       <div className="absolute inset-0 bg-[#0D2B6B]/30" />
 
       {/* Texture béton par-dessus */}
       <div
