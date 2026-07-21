@@ -36,7 +36,6 @@ export default function LoginPage() {
     }
   }
 
-  // CORRECTION : On empêche la redirection si on est en train de charger une connexion
   useEffect(() => {
     if (!authLoading && isAuthenticated && !loading) {
       router.replace("/dashboard");
@@ -53,43 +52,47 @@ export default function LoginPage() {
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
+    console.log("🖱️ UI: Bouton 'Se connecter' cliqué !");
     setError("");
     setLoading(true);
     try {
       const cleanPhone = phone.replace(/\s/g, '');
       if (cleanPhone.length < 8) {
+        console.log("⚠️ UI: Numéro trop court");
         setError("Le numéro de téléphone doit contenir au moins 8 chiffres.");
         setLoading(false);
         return;
       }
       const firebaseEmail = cleanPhone + '@batizen.ci';
+      console.log("➡️ UI: Appel de la fonction login() avec:", firebaseEmail);
+      
       await login(firebaseEmail, password);
+      
+      console.log("✅ UI: Login réussi, redirection vers dashboard...");
       router.replace("/dashboard");
-    } catch {
-      setError("Numéro ou mot de passe incorrect.");
+    } catch (err: any) {
+      console.error("🔥 UI: Erreur attrapée dans handleLogin :", err);
+      setError("Numéro ou mot de passe incorrect. (" + (err?.message || "Erreur inconnue") + ")");
     } finally {
       setLoading(false);
     }
   }
 
   async function handleGoogle() {
+    console.log("🖱️ UI: Bouton 'Google' cliqué !");
     setError("");
     setLoading(true);
     try {
       await loginWithGoogle();
-      router.replace("/dashboard");
+      // La redirection est gérée par le onAuthStateChanged après le retour de Google
     } catch (err: any) {
-      console.error("🔥 ERREUR GOOGLE DÉTAILLÉE :", err);
-      
-      // Messages d'erreur clairs selon le code Firebase
-      if (err.code === "auth/popup-closed-by-user") {
+      console.error("🔥 UI: Erreur Google attrapée :", err);
+      if (err.code === "auth/popup-closed-by-user" || err.code === "auth/cancelled-popup-request") {
         setError("La fenêtre de connexion a été fermée prématurément.");
       } else if (err.code === "auth/unauthorized-domain") {
         setError("Erreur de config : Ce domaine n'est pas autorisé dans Firebase.");
-      } else if (err.code === "auth/popup-blocked") {
-        setError("La fenêtre pop-up a été bloquée par votre navigateur.");
       } else {
-        setError("Connexion Google échouée. Vérifiez la console pour les détails.");
+        setError("Connexion Google échouée. Vérifiez la console.");
       }
     } finally {
       setLoading(false);

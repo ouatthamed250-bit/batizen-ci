@@ -29,44 +29,51 @@ export default function RegisterPage() {
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
+    console.log("🖱️ UI: Bouton 'Créer mon compte' cliqué !");
     setError("");
     
-    // Validation du mot de passe
     if (passwordStrength && passwordStrength.strength === 'weak') {
+      console.log("⚠️ UI: Mot de passe faible, blocage");
       setError("Votre mot de passe est trop faible. Veuillez le renforcer.");
       return;
     }
     
-    // Validation du numéro de téléphone
     const cleanPhone = form.phone.replace(/\s/g, '');
     if (cleanPhone.length < 8) {
+      console.log("⚠️ UI: Numéro trop court, blocage");
       setError("Le numéro de téléphone doit contenir au moins 8 chiffres.");
       return;
     }
     
     setLoading(true);
     try {
-      // Transforme le numéro en email Firebase
       const firebaseEmail = cleanPhone + '@batizen.ci';
+      console.log("➡️ UI: Appel de la fonction register() avec:", firebaseEmail);
+      
       await register(firebaseEmail, form.password, form.name);
+      
+      console.log("✅ UI: Inscription réussie, redirection vers dashboard...");
       router.replace("/dashboard");
-    } catch (err: unknown) {
-      const msg = (err as { code?: string })?.code;
+    } catch (err: any) {
+      console.error("🔥 UI: Erreur attrapée dans handleRegister :", err);
+      const msg = err?.code;
       if (msg === "auth/email-already-in-use") setError("Ce numéro est déjà utilisé.");
       else if (msg === "auth/weak-password") setError("Mot de passe trop faible (6 caractères min).");
-      else setError("Erreur lors de la création du compte.");
+      else setError("Erreur lors de la création du compte: " + (err?.message || "Inconnue"));
     } finally {
       setLoading(false);
     }
   }
 
   async function handleGoogle() {
+    console.log("🖱️ UI: Bouton 'Google' (Inscription) cliqué !");
     setError("");
     setLoading(true);
     try {
       await loginWithGoogle();
-      router.replace("/dashboard");
-    } catch {
+      // La redirection est gérée par le onAuthStateChanged après le retour de Google
+    } catch (err: any) {
+      console.error("🔥 UI: Erreur Google attrapée :", err);
       setError("Connexion Google annulée ou échouée.");
     } finally {
       setLoading(false);
@@ -147,7 +154,6 @@ export default function RegisterPage() {
             </label>
           ))}
 
-          {/* Password Strength Indicator */}
           {form.password && passwordStrength && (
             <div className="space-y-2 rounded-[16px] bg-white/80 p-4 border border-[#E7EBF5] backdrop-blur-sm">
               <div className="flex items-center justify-between">
