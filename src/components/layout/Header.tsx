@@ -52,7 +52,7 @@ export function Header() {
     <>
       {/* HEADER DASHBOARD - Glassmorphism premium */}
       {isDashboard && (
-        <header className="fixed top-0 left-0 right-0 z-50 h-16 flex items-center justify-between bg-white/80 dark:bg-[#081423]/80 backdrop-blur-xl px-4 border-b border-white/30 dark:border-[#1D3557]/50">
+        <header className="gpu-accelerated fixed top-0 left-0 right-0 z-50 h-16 flex items-center justify-between bg-white/80 dark:bg-[#081423]/80 backdrop-blur-xl px-4 border-b border-white/30 dark:border-[#1D3557]/50">
           {/* Gauche : Hamburger */}
           <button
             onClick={() => setMenuOpen(true)}
@@ -91,7 +91,7 @@ export function Header() {
 
       {/* HEADER AUTRES PAGES - Bleu simplifié #0D2B6B avec arrondi */}
       {!isDashboard && (
-        <header className="fixed top-0 left-0 right-0 z-50 h-16 flex items-center justify-between bg-[#0D2B6B] rounded-b-3xl px-4">
+        <header className="gpu-accelerated fixed top-0 left-0 right-0 z-50 h-16 flex items-center justify-between bg-[#0D2B6B] rounded-b-3xl px-4">
           {/* Gauche : Hamburger */}
           <button
             onClick={() => setMenuOpen(true)}

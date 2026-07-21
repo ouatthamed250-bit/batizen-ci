@@ -802,3 +802,31 @@ select {
 .animate-marquee-slow {
   animation: marquee-slow 30s linear infinite;
 }
+
+/* ============================================================
+   SCROLL PHYSICS iOS (momentum scrolling natif)
+   ============================================================ */
+html, body {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  scroll-behavior: smooth;
+}
+
+/* Conteneur scrollable premium */
+.ios-scroll {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: auto; /* Active le rubber-band natif */
+  scroll-behavior: smooth;
+}
+
+/* Cache la scrollbar (Chrome/Safari/Firefox) */
+.ios-scroll::-webkit-scrollbar { display: none; }
+.ios-scroll { scrollbar-width: none; -ms-overflow-style: none; }
+
+/* Accélération GPU pour éviter les saccades */
+.gpu-accelerated {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
