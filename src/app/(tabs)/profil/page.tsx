@@ -3,7 +3,6 @@
 import { Bell, ChevronRight, FileText, HelpCircle, Lock, LogOut, Settings, ShieldCheck, UserRound, Star, Zap } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { BottomNav } from "@/components/layout/BottomNav";
 import { Badge } from "@/components/ui/Badge";
 import { PremiumButton } from "@/components/ui/PremiumButton";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
@@ -165,9 +164,7 @@ export default function ProfilePage() {
               </p>
             </div>
           </div>
-
         </main>
-        <BottomNav />
     </>
   );
 }

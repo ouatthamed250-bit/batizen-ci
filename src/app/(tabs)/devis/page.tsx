@@ -1,4 +1,3 @@
-import { BottomNav } from "@/components/layout/BottomNav";
 import { PremiumHeader } from "@/components/layout/PremiumHeader";
 import { ScreenWrapper } from "@/components/layout/ScreenWrapper";
 import { QuoteCard } from "@/components/cards/QuoteCard";
@@ -33,7 +32,7 @@ export default async function QuotesPage() {
           <div className="grid size-20 place-items-center rounded-[28px] bg-[#F7F9FC] text-[#6B7280]">
             <Calculator size={36} aria-hidden />
           </div>
-          <h2 className="mt-5 text-xl font-black text-[#0D2B6B]">Aucun devis pour l&apos;instant</h2>
+          <h2 className="mt-5 text-xl font-black text-[#0D2B6B]">Aucun devis pour l'instant</h2>
           <p className="mt-2 max-w-xs text-sm text-[#6B7280]">
             Lancez une simulation pour générer votre premier devis.
           </p>
@@ -54,8 +53,6 @@ export default async function QuotesPage() {
           ))}
         </div>
       )}
-
-      <BottomNav />
     </ScreenWrapper>
   );
 }

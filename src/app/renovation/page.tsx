@@ -6,12 +6,9 @@ import { cn } from "@/lib/helpers";
 import { PremiumButton } from "@/components/ui/PremiumButton";
 import { PremiumHeader } from "@/components/layout/PremiumHeader";
 import { PremiumCard } from "@/components/ui/PremiumCard";
-import { ScreenWrapper } from "@/components/layout/ScreenWrapper";
-import { BottomNav } from "@/components/layout/BottomNav";
 import { Badge } from "@/components/ui/Badge";
 import { BackButton } from "@/components/ui/BackButton";
 import PlanGenerator from "@/components/plans/PlanGenerator";
-import { PageBackground } from "@/components/layout/PageBackground";
 import BtpBackground from "@/components/btp/BtpBackground";
 import { formatFcfa } from "@/utils/currency";
 import { RenovationEngine, type TravauxRenovation, type EtatMaison } from "@/services/RenovationEngine";
@@ -57,27 +54,23 @@ export default function RenovationPage() {
   );
 
   const pageContent = step === 5 ? (
-    <ScreenWrapper>
-      <div className="flex min-h-[80vh] flex-col items-center justify-center text-center px-6">
-        <div className="grid size-24 place-items-center rounded-full bg-[#22C55E] text-white shadow-[0_20px_40px_rgba(34,197,94,0.3)] animate-bounceIn">
-          <CheckCircle2 size={48} />
-        </div>
-        <h1 className="mt-8 text-2xl font-black text-[#0D2B6B]">Demande envoyée !</h1>
-        <p className="mt-3 max-w-[280px] text-sm text-[#6B7280]">Un expert BÂTIZEN vous contacte sous 2h pour programmer une visite technique.</p>
-        {result && (
-          <div className="mt-6 rounded-[20px] bg-[#EAF2FF] px-6 py-4 text-center">
-            <p className="text-xs font-black uppercase text-[#6B7280]">Budget estimé</p>
-            <p className="mt-1 text-3xl font-black text-[#0D2B6B]">{formatFcfa(result.total)}</p>
-            <p className="mt-1 text-xs text-[#6B7280]">Durée estimée : ~{result.dureeJours} jours</p>
-          </div>
-        )}
-        <PremiumButton className="mt-8 w-full max-w-xs" href="/dashboard">Retour au tableau de bord</PremiumButton>
+    <div className="flex min-h-[80vh] flex-col items-center justify-center text-center px-6">
+      <div className="grid size-24 place-items-center rounded-full bg-[#22C55E] text-white shadow-[0_20px_40px_rgba(34,197,94,0.3)] animate-bounceIn">
+        <CheckCircle2 size={48} />
       </div>
-    </ScreenWrapper>
+      <h1 className="mt-8 text-2xl font-black text-[#0D2B6B]">Demande envoyée !</h1>
+      <p className="mt-3 max-w-[280px] text-sm text-[#6B7280]">Un expert BÂTIZEN vous contacte sous 2h pour programmer une visite technique.</p>
+      {result && (
+        <div className="mt-6 rounded-[20px] bg-[#EAF2FF] px-6 py-4 text-center">
+          <p className="text-xs font-black uppercase text-[#6B7280]">Budget estimé</p>
+          <p className="mt-1 text-3xl font-black text-[#0D2B6B]">{formatFcfa(result.total)}</p>
+          <p className="mt-1 text-xs text-[#6B7280]">Durée estimée : ~{result.dureeJours} jours</p>
+        </div>
+      )}
+      <PremiumButton className="mt-8 w-full max-w-xs" href="/dashboard">Retour au tableau de bord</PremiumButton>
+    </div>
   ) : (
-    <ScreenWrapper>
-      <PremiumHeader />
-
+    <>
       <div className="mb-6 flex items-center gap-3">
         <BackButton onClick={back} />
         <div className="flex-1">
@@ -98,7 +91,7 @@ export default function RenovationPage() {
                 <PaintBucket size={28} className="text-[#22C55E]" />
                 <div>
                   <h2 className="text-xl font-black text-[#0D2B6B]">Votre maison</h2>
-                  <p className="text-sm text-[#6B7280]">Décrivez le bien à rénover</p>
+                  <p className="text-sm text-[#6B7280]">Décrivez le bien à rénouver</p>
                 </div>
               </div>
 
@@ -115,7 +108,7 @@ export default function RenovationPage() {
 
                 <div>
                   <div className="flex justify-between text-sm font-bold text-[#6B7280] mb-2">
-                    <span>Surface à rénover</span>
+                    <span>Surface à rénouver</span>
                     <span className="font-black text-[#0D2B6B]">{surface} m²</span>
                   </div>
                   <input type="range" min="20" max="500" step="5" value={surface} onChange={e => setSurface(parseInt(e.target.value))} className="w-full" />
@@ -274,9 +267,7 @@ export default function RenovationPage() {
           </button>
         </div>
       </div>
-
-      <BottomNav />
-    </ScreenWrapper>
+    </>
   );
 
   return (

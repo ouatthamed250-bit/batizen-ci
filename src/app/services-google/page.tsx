@@ -1,5 +1,4 @@
 import { Cloud, Database, KeyRound } from "lucide-react";
-import { BottomNav } from "@/components/layout/BottomNav";
 import { PremiumHeader } from "@/components/layout/PremiumHeader";
 import { ScreenWrapper } from "@/components/layout/ScreenWrapper";
 import { Badge } from "@/components/ui/Badge";
@@ -28,7 +27,6 @@ export default function GoogleServicesPage() {
           );
         })}
       </div>
-      <BottomNav />
     </ScreenWrapper>
   );
 }

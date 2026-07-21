@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BottomNav } from "@/components/layout/BottomNav";
 import { ScreenWrapper } from "@/components/layout/ScreenWrapper";
 import { PremiumButton } from "@/components/ui/PremiumButton";
 import { HardHat } from "lucide-react";
@@ -159,7 +158,6 @@ export default function ProjectsPage() {
       )}
 
       <ChatBot />
-      <BottomNav />
     </ScreenWrapper>
   );
 }

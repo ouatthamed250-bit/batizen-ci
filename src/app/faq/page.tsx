@@ -1,6 +1,5 @@
 import { HelpCircle } from "lucide-react";
 import faq from "@/data/faq.json";
-import { BottomNav } from "@/components/layout/BottomNav";
 import { PremiumHeader } from "@/components/layout/PremiumHeader";
 import { ScreenWrapper } from "@/components/layout/ScreenWrapper";
 
@@ -39,8 +38,6 @@ export default function FaqPage() {
           </div>
         ))}
       </div>
-
-      <BottomNav />
     </ScreenWrapper>
   );
 }
