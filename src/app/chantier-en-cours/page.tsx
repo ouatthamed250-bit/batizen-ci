@@ -48,8 +48,10 @@ export default function ChantierEnCoursPage() {
   const globalProgress = Math.round(JALONS.reduce((s, j) => s + j.progress, 0) / JALONS.length);
 
   const pageContent = (
-    <div className="min-h-screen pt-24 pb-24 px-2">
+    // CORRECTION 1 : pt-8 au lieu de pt-24 pour éviter le grand vide en haut
+    <div className="min-h-screen pt-8 pb-24 px-2">
       <div className="mx-auto max-w-[430px] space-y-6">
+        
         {/* En-tête projet */}
         <div className="rounded-[25px] border border-white/20 bg-white/10 p-6 shadow-lg backdrop-blur-xl border-t-[6px] border-t-[#FF6B00]">
           <div className="flex items-start justify-between gap-4">
@@ -58,7 +60,7 @@ export default function ChantierEnCoursPage() {
               <h1 className="mt-1 text-2xl font-black text-white">Villa Riviera Signature</h1>
               <p className="text-sm text-blue-100">Cocody, Abidjan · Gros Œuvre en cours</p>
             </div>
-            <button aria-label="Partager" className="grid size-11 place-items-center rounded-full bg-white/20 text-[#FF6B00] transition hover:bg-[#FF6B00] hover:text-white">
+            <button aria-label="Partager" className="grid size-11 place-items-center rounded-full bg-white/20 text-[#FF6B00] transition hover:bg-[#FF6B00] hover:text-white active:scale-95">
               <Share2 size={18} />
             </button>
           </div>
@@ -92,7 +94,7 @@ export default function ChantierEnCoursPage() {
 
         {/* Alertes */}
         {ALERTES.map((a, i) => (
-          <div key={i} className={`flex items-start gap-3 rounded-[18px] p-4 text-sm font-semibold ${
+          <div key={i} className={`flex items-start gap-3 rounded-[18px] p-4 text-sm font-semibold backdrop-blur-md ${
             a.type === "warning" ? "bg-[#FF6B00]/20 border border-[#FF6B00]/30 text-white" : "bg-white/10 border border-white/20 text-blue-100"
           }`}>
             <span className="mt-0.5 shrink-0">{a.type === "warning" ? "⚠️" : "ℹ️"}</span>
@@ -108,8 +110,8 @@ export default function ChantierEnCoursPage() {
               const isActive = activeJalon === j.id;
               return (
                 <button key={j.id} onClick={() => setActiveJalon(isActive ? null : j.id)}
-                  className={`w-full rounded-[20px] border p-4 text-left transition-all ${
-                    j.status === "active" ? "border-[#FF6B00] bg-white/20 shadow-[0_8px_24px_rgba(255,107,0,0.1)]" :
+                  className={`w-full rounded-[20px] border p-4 text-left transition-all active:scale-[0.98] ${
+                    j.status === "active" ? "border-[#FF6B00] bg-white/20 shadow-[0_8px_24px_rgba(255,107,0,0.15)]" :
                     j.status === "done" ? "border-green-400/30 bg-white/10" : "border-white/20 bg-white/5"
                   }`}>
                   <div className="flex items-center gap-3">
@@ -121,8 +123,8 @@ export default function ChantierEnCoursPage() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
-                        <p className="font-black text-white">{j.phase}</p>
-                        <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                        <p className="font-black text-white truncate">{j.phase}</p>
+                        <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
                           j.status === "done" ? "bg-white/20 text-green-400" :
                           j.status === "active" ? "bg-white/20 text-[#FF6B00]" : "bg-white/20 text-blue-200"
                         }`}>
@@ -136,25 +138,26 @@ export default function ChantierEnCoursPage() {
                         </div>
                       )}
                     </div>
-                    <ChevronRight size={16} className={`shrink-0 text-blue-200 transition-transform ${isActive && "rotate-90"}`} />
+                    <ChevronRight size={16} className={`shrink-0 text-blue-200 transition-transform duration-300 ${isActive ? "rotate-90" : ""}`} />
                   </div>
 
                   {isActive && (
                     <div className="mt-4 space-y-3 border-t border-white/20 pt-4">
                       <p className="text-sm text-blue-100">{j.description}</p>
                       <div className="grid grid-cols-2 gap-3">
-                        <div className="rounded-[14px] bg-white/5 p-3">
+                        {/* CORRECTION 2 : bg-white/10 au lieu de bg-white/5 pour meilleure visibilité */}
+                        <div className="rounded-[14px] bg-white/10 border border-white/10 p-3 backdrop-blur-sm">
                           <p className="text-[10px] font-black uppercase text-blue-200">Budget phase</p>
                           <p className="mt-1 font-black text-white">{formatFcfa(j.budgetPhase)}</p>
                         </div>
-                        <div className="rounded-[14px] bg-white/5 p-3">
+                        <div className="rounded-[14px] bg-white/10 border border-white/10 p-3 backdrop-blur-sm">
                           <p className="text-[10px] font-black uppercase text-blue-200">Dépensé</p>
                           <p className="mt-1 font-black text-[#FF6B00]">{formatFcfa(j.depense)}</p>
                         </div>
                       </div>
                       {j.status === "active" && (
-                        <button className="flex w-full items-center justify-center gap-2 rounded-[16px] bg-gradient-to-r from-[#FF6B00] to-[#FF8C00] py-3 text-sm font-black text-white shadow-[0_4px_15px_rgba(255,107,0,0.3)] transition active:scale-95">
-                          <CheckCircle2 size={16} /> Valider cette phase
+                        <button className="flex w-full items-center justify-center gap-2 rounded-[16px] bg-gradient-to-r from-[#FF6B00] to-[#FF8C00] py-3.5 text-sm font-black text-white shadow-[0_8px_20px_rgba(255,107,0,0.3)] transition-all active:scale-95 mt-2">
+                          <CheckCircle2 size={18} /> Valider cette phase
                         </button>
                       )}
                     </div>
@@ -169,23 +172,23 @@ export default function ChantierEnCoursPage() {
         <div>
           <div className="mb-3 flex items-center justify-between">
             <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-200">Photos chantier</p>
-            <button className="flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5 text-xs font-black text-[#FF6B00] transition hover:bg-[#FF6B00] hover:text-white">
+            <button className="flex items-center gap-1.5 rounded-full bg-white/20 border border-white/20 px-3 py-1.5 text-xs font-black text-[#FF6B00] transition hover:bg-[#FF6B00] hover:text-white hover:border-[#FF6B00] active:scale-95">
               <Camera size={12} /> Ajouter
             </button>
           </div>
           <div className="grid grid-cols-2 gap-3">
             {PHOTOS.map(p => (
-              <div key={p.id} className="overflow-hidden rounded-[18px] border border-white/20 bg-white/10">
+              <div key={p.id} className="overflow-hidden rounded-[18px] border border-white/20 bg-white/10 backdrop-blur-sm">
                 <div className="relative h-32 bg-white/5">
-                  <img src={p.src} alt={p.label} className="size-full object-cover" />
+                  <img src={p.src} alt={p.label} className="w-full h-full object-cover" loading="lazy" />
                 </div>
-                <div className="p-2">
-                  <p className="text-xs font-black text-white">{p.label}</p>
+                <div className="p-3">
+                  <p className="text-xs font-black text-white truncate">{p.label}</p>
                   <p className="text-[10px] text-blue-200">{p.date}</p>
                 </div>
               </div>
             ))}
-            <button className="flex h-full min-h-[120px] flex-col items-center justify-center gap-2 rounded-[18px] border-2 border-dashed border-white/20 bg-white/5 transition hover:border-[#FF6B00]/30">
+            <button className="flex h-full min-h-[120px] flex-col items-center justify-center gap-2 rounded-[18px] border-2 border-dashed border-white/20 bg-white/5 transition hover:border-[#FF6B00]/50 hover:bg-white/10 active:scale-95">
               <Camera size={24} className="text-blue-200" />
               <p className="text-xs font-bold text-blue-200">Nouvelle photo</p>
             </button>

@@ -30,8 +30,8 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="fr">
-      <body className="overflow-x-hidden">
+    <html lang="fr" suppressHydrationWarning>
+      <body className="overflow-x-hidden antialiased">
         <AuthProvider>
           <ThemeProvider>
             <LayoutWrapper>

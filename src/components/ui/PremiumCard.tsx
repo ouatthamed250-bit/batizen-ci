@@ -17,7 +17,7 @@ export function PremiumCard({
   const intensityClasses = {
     low: "backdrop-blur-sm",
     medium: "backdrop-blur-xl",
-    high: "backdrop-blur-3xl"
+    high: "backdrop-blur-2xl"
   };
 
   return (
@@ -25,11 +25,10 @@ export function PremiumCard({
       className={cn(
         "rounded-[28px] p-6 shadow-lg",
         variant === "glass" && "bg-white/10 border border-white/20",
-        variant === "elevated" && "bg-white border border-gray-100 shadow-xl",
-        variant === "default" && "bg-white",
+        variant === "elevated" && "bg-white/20 border border-white/30 shadow-xl",
+        variant === "default" && "bg-white/90",
         intensityClasses[intensity],
         "transition-all duration-300",
-        "dark:bg-[#081423]/80 dark:border-[#1D3557]/50 dark:text-white",
         className
       )}
     >

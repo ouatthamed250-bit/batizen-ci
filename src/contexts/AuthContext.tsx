@@ -50,13 +50,10 @@ function getStoredAuth(): { user: AuthUser } | null {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // Initialisation identique serveur/client (null/false) pour éviter le mismatch d'hydratation (#418).
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(() => hasFirebaseConfig());
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Hydratation depuis localStorage UNIQUEMENT après le montage côté client.
-  // Cela empêche le rendu serveur (user=null) de diverger du premier rendu client.
   useEffect(() => {
     const stored = getStoredAuth();
     if (stored?.user) {
@@ -65,16 +62,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Initialiser l'auth au démarrage
   useEffect(() => {
     if (!hasFirebaseConfig()) {
+      console.warn("⚠️ FIREBASE : Configuration non détectée. Mode Démo activé.");
       return;
     }
 
     const { auth, database } = getFirebaseServices();
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        // Récupérer les données complémentaires depuis la base
         let userData = null;
         try {
           const { get } = await import("firebase/database");
@@ -108,86 +104,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     if (!hasFirebaseConfig()) {
-      // Mode démo sans Firebase
-      const demoUser: AuthUser = {
-        uid: "demo-user-id",
-        email: email,
-        displayName: "Utilisateur Démo",
-        photoURL: null,
-        phoneNumber: null,
-      };
+      const demoUser: AuthUser = { uid: "demo-user-id", email, displayName: "Utilisateur Démo", photoURL: null, phoneNumber: null };
       setUser(demoUser);
       setIsAuthenticated(true);
       localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ user: demoUser }));
       return;
     }
-
     const { auth } = getFirebaseServices();
     await signInWithEmailAndPassword(auth, email, password);
   }, []);
 
   const register = useCallback(async (email: string, password: string, name: string) => {
     if (!hasFirebaseConfig()) {
-      // Mode démo sans Firebase
-      const demoUser: AuthUser = {
-        uid: "demo-user-id",
-        email: email,
-        displayName: name,
-        photoURL: null,
-        phoneNumber: email?.split('@')[0] || null, // Stocke le numéro depuis l'email temporaire
-      };
+      const demoUser: AuthUser = { uid: "demo-user-id", email, displayName: name, photoURL: null, phoneNumber: email?.split('@')[0] || null };
       setUser(demoUser);
       setIsAuthenticated(true);
       localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ user: demoUser }));
       return;
     }
-
     const { auth, database } = getFirebaseServices();
     const cred = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(cred.user, { displayName: name });
     
-    // Extraction du numéro de téléphone depuis l'email temporaire
     const phoneNumber = email?.split('@')[0] || null;
-    
-    // Écrire les données utilisateur dans Realtime Database avec le numéro de téléphone
     await set(ref(database, `users/${cred.user.uid}`), {
-      uid: cred.user.uid,
-      email: cred.user.email,
-      phoneNumber: phoneNumber,
-      displayName: name,
-      role: "client",
-      createdAt: Date.now(),
+      uid: cred.user.uid, email: cred.user.email, phoneNumber, displayName: name, role: "client", createdAt: Date.now(),
     });
   }, []);
 
   const loginWithGoogle = useCallback(async () => {
     if (!hasFirebaseConfig()) {
-      // Mode démo sans Firebase
-      const demoUser: AuthUser = {
-        uid: "demo-google-user-id",
-        email: "user@gmail.com",
-        displayName: "Utilisateur Google",
-        photoURL: null,
-        phoneNumber: null,
-      };
+      console.error("🚨 ERREUR CRITIQUE : Tentative de connexion Google en Mode Démo. L'utilisateur ne sera PAS créé dans Firebase.");
+      const demoUser: AuthUser = { uid: "demo-google-user-id", email: "user@gmail.com", displayName: "Utilisateur Google (Démo)", photoURL: null, phoneNumber: null };
       setUser(demoUser);
       setIsAuthenticated(true);
       localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ user: demoUser }));
       return;
     }
 
-    const { auth, googleProvider, database } = getFirebaseServices();
-    const result = await signInWithPopup(auth, googleProvider);
-    
-    // Écrire les données utilisateur dans Realtime Database (merge pour ne pas écraser)
-    await set(ref(database, `users/${result.user.uid}`), {
-      uid: result.user.uid,
-      email: result.user.email,
-      displayName: result.user.displayName || "Utilisateur Google",
-      photoURL: result.user.photoURL || null,
-      role: "client",
-      createdAt: Date.now(),
-    });
+    try {
+      const { auth, googleProvider, database } = getFirebaseServices();
+      const result = await signInWithPopup(auth, googleProvider);
+      
+      await set(ref(database, `users/${result.user.uid}`), {
+        uid: result.user.uid,
+        email: result.user.email,
+        displayName: result.user.displayName || "Utilisateur Google",
+        photoURL: result.user.photoURL || null,
+        role: "client",
+        createdAt: Date.now(),
+      });
+    } catch (error: any) {
+      console.error("🔥 ÉCHEC AUTHENTIFICATION GOOGLE :", error.code, error.message);
+      throw error; // On propage l'erreur pour que la page de login l'affiche
+    }
   }, []);
 
   const logout = useCallback(async () => {
@@ -201,15 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      loading,
-      login,
-      register,
-      loginWithGoogle,
-      logout,
-      isAuthenticated,
-    }}>
+    <AuthContext.Provider value={{ user, loading, login, register, loginWithGoogle, logout, isAuthenticated }}>
       {children}
     </AuthContext.Provider>
   );
