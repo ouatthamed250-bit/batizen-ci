@@ -39,7 +39,7 @@ export function BottomNav() {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 flex min-h-[70px] items-center justify-around bg-white/80 backdrop-blur-xl border-t border-white/30 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] pb-safe"
+      className="fixed inset-x-0 bottom-4 z-40 mx-auto flex max-w-[380px] min-h-[70px] items-center justify-around rounded-[32px] bg-white/80 backdrop-blur-xl border border-white/30 shadow-[0_8px_32px_rgba(0,0,0,0.12)] pb-safe px-2"
       aria-label="Navigation principale"
     >
       {navItems.map((item) => {

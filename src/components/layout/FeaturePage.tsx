@@ -39,7 +39,7 @@ export function FeaturePage({ title, subtitle, icon: Icon, bullets, primaryHref 
           </div>
         </section>
 
-        <PremiumCard glass className="animate-fadeInUp stagger-1 self-start">
+          <PremiumCard variant="glass" className="animate-fadeInUp stagger-1 self-start">
           <h2 className="text-xl font-black text-[#0D2B6B]">Fonctionnalités incluses</h2>
           <ul className="mt-5 space-y-3" aria-label="Liste des fonctionnalités">
             {bullets.map((bullet) => (
