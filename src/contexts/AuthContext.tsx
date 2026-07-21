@@ -5,12 +5,12 @@ import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signInWithPopup,
+  signInWithRedirect, // ✅ REMPLACÉ : On utilise la redirection au lieu du popup
   signOut,
   updateProfile,
 } from "firebase/auth";
 import { getFirebaseServices, hasFirebaseConfig } from "@/lib/firebase";
-import { ref, set } from "firebase/database";
+import { ref, set, get } from "firebase/database";
 
 export type AuthUser = {
   uid: string;
@@ -54,6 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(() => hasFirebaseConfig());
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
+  // Hydratation depuis localStorage
   useEffect(() => {
     const stored = getStoredAuth();
     if (stored?.user) {
@@ -62,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Écouteur d'état d'authentification Firebase
   useEffect(() => {
     if (!hasFirebaseConfig()) {
       console.warn("⚠️ FIREBASE : Configuration non détectée. Mode Démo activé.");
@@ -73,11 +75,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (firebaseUser) {
         let userData = null;
         try {
-          const { get } = await import("firebase/database");
           const snapshot = await get(ref(database, `users/${firebaseUser.uid}`));
           userData = snapshot.val();
         } catch {
           // ignore
+        }
+        
+        // Si l'utilisateur vient de se connecter via Google et n'a pas de données en base, on les crée
+        if (!userData && firebaseUser.providerData.some(p => p.providerId === 'google.com')) {
+          await set(ref(database, `users/${firebaseUser.uid}`), {
+            uid: firebaseUser.uid,
+            email: firebaseUser.email,
+            displayName: firebaseUser.displayName || "Utilisateur Google",
+            photoURL: firebaseUser.photoURL || null,
+            role: "client",
+            createdAt: Date.now(),
+          });
+          userData = { role: "client", createdAt: Date.now() };
         }
         
         const authUser: AuthUser = {
@@ -132,9 +146,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  // ✅ CORRECTION GOOGLE : Utilisation de la redirection pour éviter les blocages navigateur
   const loginWithGoogle = useCallback(async () => {
     if (!hasFirebaseConfig()) {
-      console.error("🚨 ERREUR CRITIQUE : Tentative de connexion Google en Mode Démo. L'utilisateur ne sera PAS créé dans Firebase.");
+      console.error("🚨 ERREUR CRITIQUE : Tentative de connexion Google en Mode Démo.");
       const demoUser: AuthUser = { uid: "demo-google-user-id", email: "user@gmail.com", displayName: "Utilisateur Google (Démo)", photoURL: null, phoneNumber: null };
       setUser(demoUser);
       setIsAuthenticated(true);
@@ -143,20 +158,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const { auth, googleProvider, database } = getFirebaseServices();
-      const result = await signInWithPopup(auth, googleProvider);
+      const { auth, googleProvider } = getFirebaseServices();
       
-      await set(ref(database, `users/${result.user.uid}`), {
-        uid: result.user.uid,
-        email: result.user.email,
-        displayName: result.user.displayName || "Utilisateur Google",
-        photoURL: result.user.photoURL || null,
-        role: "client",
-        createdAt: Date.now(),
-      });
+      // La redirection est beaucoup plus stable que le popup sur mobile et Chrome récent
+      await signInWithRedirect(auth, googleProvider);
+      
+      // Note : Après la redirection, le "onAuthStateChanged" ci-dessus détectera 
+      // automatiquement l'utilisateur et écrira ses données en base si nécessaire.
+      
     } catch (error: any) {
       console.error("🔥 ÉCHEC AUTHENTIFICATION GOOGLE :", error.code, error.message);
-      throw error; // On propage l'erreur pour que la page de login l'affiche
+      throw error;
     }
   }, []);
 
