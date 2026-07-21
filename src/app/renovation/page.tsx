@@ -82,7 +82,7 @@ export default function RenovationPage() {
         </div>
       </div>
 
-      <div className="space-y-6 pb-32">
+        <div className="space-y-6 pb-16 mx-2">
         {/* STEP 1 — Maison */}
         {step === 1 && (
           <>
