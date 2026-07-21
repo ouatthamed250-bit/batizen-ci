@@ -364,7 +364,7 @@ export default function DashboardClientPage() {
 `}</style>
     <div className="min-h-screen w-full">
       {/* px-2 pour les sections fill width */}
-      <div className="flex flex-col gap-5 pt-4 px-2">
+      <div className="flex flex-col gap-5 pt-12 px-2">
            
            {/* Salutation */}
            <div className="flex items-center gap-3 mb-2">
