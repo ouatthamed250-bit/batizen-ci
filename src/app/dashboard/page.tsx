@@ -111,13 +111,13 @@ function SummaryCard({ icon: Icon, label, value }: {
   value: string | number; 
 }) {
   return (
-    <div className="rounded-[22px] border border-white/30 bg-white/20 backdrop-blur-xl p-4 flex items-center gap-3 shadow-lg">
-      <div className="grid size-12 place-items-center rounded-[16px] text-white bg-gradient-to-br from-[#0B5FFF] to-[#0D2B6B]">
-        <Icon size={24} />
+    <div className="w-full rounded-[22px] border border-white/30 bg-white/20 backdrop-blur-xl p-3 flex flex-col items-center text-center gap-2 shadow-lg">
+      <div className="grid size-10 place-items-center rounded-[16px] text-white bg-gradient-to-br from-[#0B5FFF] to-[#0D2B6B]">
+        <Icon size={20} />
       </div>
-      <div>
-        <p className="text-xs font-bold text-white/80 uppercase tracking-wider">{label}</p>
-        <p className="text-lg font-black text-white drop-shadow-md">{value}</p>
+      <div className="w-full">
+        <p className="text-[10px] font-bold text-white/80 uppercase tracking-wider">{label}</p>
+        <p className="text-sm font-black text-white drop-shadow-md break-words">{value}</p>
       </div>
     </div>
   );
@@ -125,7 +125,7 @@ function SummaryCard({ icon: Icon, label, value }: {
 
 function SkeletonChantier() {
   return (
-    <div className="animate-pulse overflow-hidden rounded-[22px] border border-white/30 bg-white/20 backdrop-blur-xl">
+    <div className="animate-pulse overflow-hidden rounded-[22px] border border-white/30 bg-white/20 backdrop-blur-xl w-full">
       <div className="h-36 w-full bg-white/10" />
       <div className="space-y-2 p-4">
         <div className="h-4 w-2/3 rounded bg-white/20" />
@@ -149,15 +149,15 @@ function ChantierCard({ chantier, onModifier, onSupprimer }: {
     <motion.div 
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
-      className="overflow-hidden rounded-[22px] border border-white/30 bg-white/20 backdrop-blur-xl shadow-lg"
+      className="w-full overflow-hidden rounded-[22px] border border-white/30 bg-white/20 backdrop-blur-xl shadow-lg"
     >
       <div className="relative h-36 w-full bg-white/10">
         {photo ? <Image src={photo} alt={nom} fill className="object-cover" /> : <div className="grid size-full place-items-center text-white/60"><HardHat size={40} /></div>}
       </div>
       <div className="p-4">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="font-black text-white drop-shadow-md">{nom}</h3>
-          <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black text-white bg-[#0B5FFF] shadow-md">{statutLabel(chantier.statut)}</span>
+          <h3 className="font-black text-white drop-shadow-md break-words">{nom}</h3>
+          <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black text-white bg-[#0B5FFF] shadow-md whitespace-nowrap">{statutLabel(chantier.statut)}</span>
         </div>
         <p className="mt-0.5 flex items-center gap-1 text-xs text-white/80 drop-shadow-md">
           <HardHat size={12} /> {chantier.type || "—"} · {formatLocalisation(chantier.localisation)}
@@ -176,7 +176,7 @@ function ChantierCard({ chantier, onModifier, onSupprimer }: {
           <div className="mt-3 space-y-1">
             {chantier.plan_choisi && (
               <p className="text-xs text-white/80 drop-shadow-md">
-                🎯 Plan : <span className="font-bold text-white">{chantier.plan_choisi}</span>
+                🎯 Plan : <span className="font-bold text-white break-words">{chantier.plan_choisi}</span>
               </p>
             )}
             {chantier.rdv_date && (
@@ -194,7 +194,7 @@ function ChantierCard({ chantier, onModifier, onSupprimer }: {
         )}
         
         <div className="mt-4 flex flex-col gap-2">
-          <Link href={`/chantier/${chantier.id}`} className="flex flex-1 items-center justify-center gap-1.5 rounded-[16px] bg-gradient-to-r from-[#0B5FFF] to-[#0D2B6B] py-2.5 text-sm font-black text-white transition active:scale-95 shadow-lg">
+          <Link href={`/chantier/${chantier.id}`} className="flex w-full items-center justify-center gap-1.5 rounded-[16px] bg-gradient-to-r from-[#0B5FFF] to-[#0D2B6B] py-2.5 text-sm font-black text-white transition active:scale-95 shadow-lg">
             Voir détails <ChevronRight size={16} />
           </Link>
           
@@ -353,9 +353,11 @@ export default function DashboardClientPage() {
   }
 `}</style>
     <PremiumBackground>
-      <div className="pt-4 pb-16 px-4 min-h-screen">
-        <main className="flex flex-col gap-3 max-w-[430px] mx-auto">
-          <div className="flex items-center gap-3 mb-6">
+      {/* CORRECTION 1 & 2 : px-3 pour plus de largeur, pb-24 pour ne pas cacher le bas avec la nav */}
+      <div className="pt-4 pb-24 px-3 min-h-screen w-full">
+        {/* CORRECTION 3 : w-full max-w-lg au lieu de max-w-[430px] pour bien remplir l'écran */}
+        <main className="flex flex-col gap-4 w-full max-w-lg mx-auto">
+          <div className="flex items-center gap-3 mb-4">
             {(() => {
               const hour = new Date().getHours();
               const greeting = hour < 18 ? "Bonjour" : "Bonsoir";
@@ -377,7 +379,7 @@ export default function DashboardClientPage() {
             })()}
           </div>
 
-          <div className="w-full rounded-3xl p-5 bg-gradient-to-br from-[#1e3a8a] to-[#2563eb] text-white shadow-md mb-6">
+          <div className="w-full rounded-3xl p-5 bg-gradient-to-br from-[#1e3a8a] to-[#2563eb] text-white shadow-md mb-4">
             <WeatherWidget title="Météo du jour" />
           </div>
 
@@ -385,7 +387,7 @@ export default function DashboardClientPage() {
             {[
               { label: "Simulation", icon: "🧮", href: "/simulation", color: "bg-[#FF7A00]" },
               { label: "Nouveau Chantier", icon: "🏗️", href: "/nouveau-chantier", color: "bg-[#1e3a8a]" },
-              { label: "Rénovation", icon: "", href: "/renovation", color: "bg-green-600" }
+              { label: "Rénovation", icon: "🔨", href: "/renovation", color: "bg-green-600" }
             ].map((btn, i) => (
               <Link key={i} href={btn.href}
                 className={`flex flex-col items-center justify-center p-3 ${btn.color} text-white rounded-2xl shadow-lg transition active:scale-95`}
@@ -396,7 +398,7 @@ export default function DashboardClientPage() {
             ))}
           </div>
 
-          <section>
+          <section className="w-full">
             <SuperCalculateur
               surface={100}
               chambres={3}
@@ -412,7 +414,8 @@ export default function DashboardClientPage() {
           </section>
 
           {!loading && (
-            <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {/* CORRECTION 4 : grid-cols-2 sur mobile pour mettre les cartes côte à côte et gagner de la place */}
+            <section className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4 w-full">
               <SummaryCard icon={HardHat} label="Chantiers actifs" value={chantiersActifs} />
               <SummaryCard icon={Wallet} label="Dépensé ce mois" value={formatFcfa(depensesMois)} />
               <SummaryCard icon={CalendarClock} label="Prochain RDV" value={prochainRdv ? formatDateCourte(prochainRdv.rdv_date) : "Aucun"} />
@@ -421,16 +424,16 @@ export default function DashboardClientPage() {
           )}
 
           {!isAuthReady ? (
-            <div className="flex items-center justify-center py-12">
+            <div className="flex items-center justify-center py-12 w-full">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#FF7A00]"></div>
               <span className="ml-3 text-white">Chargement de vos chantiers...</span>
             </div>
           ) : loading ? (
-            <div className="space-y-3">
+            <div className="space-y-3 w-full">
               <SkeletonChantier /><SkeletonChantier />
             </div>
           ) : chantiers.length === 0 ? (
-            <div className="rounded-[22px] border border-dashed border-white/30 bg-white/20 p-8 text-center backdrop-blur-xl">
+            <div className="w-full rounded-[22px] border border-dashed border-white/30 bg-white/20 p-8 text-center backdrop-blur-xl">
               <HardHat size={48} className="mx-auto mb-3 text-white/60" />
               <p className="text-sm font-bold text-white/80 drop-shadow-md">Vous n'avez pas encore de chantier. Commencez par une simulation.</p>
               <Link href="/nouveau-chantier" className="mt-3 inline-flex items-center gap-2 rounded-[16px] bg-[#0B5FFF] px-6 py-2.5 text-sm font-black text-white shadow-lg">
@@ -438,9 +441,9 @@ export default function DashboardClientPage() {
               </Link>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-3 w-full">
               <h2 className="text-xs font-black uppercase tracking-[0.2em] text-white/80 drop-shadow-md">Mes chantiers</h2>
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-3 w-full"> {/* Retiré sm:grid-cols-2 pour forcer 1 colonne large et lisible sur mobile */}
                 {chantiers.map((c) => (
                   <ChantierCard key={c.id} chantier={c} onModifier={handleModifierChantier} onSupprimer={handleSupprimerChantier} />
                 ))}
@@ -448,7 +451,7 @@ export default function DashboardClientPage() {
             </div>
           )}
           
-          <div className="mt-6 p-4 bg-white/20 rounded-2xl border border-white/30 backdrop-blur-xl shadow-lg">
+          <div className="mt-6 p-4 w-full bg-white/20 rounded-2xl border border-white/30 backdrop-blur-xl shadow-lg">
             <h3 className="text-lg font-bold text-white mb-3 drop-shadow-md">🏗️ À PROPOS DE BÂTIZEN.CI</h3>
             <p className="text-sm text-white/90 mb-3 drop-shadow-md">
               BÂTIZEN.CI est votre partenaire BTP de confiance en Côte d'Ivoire. 
@@ -460,7 +463,7 @@ export default function DashboardClientPage() {
             </p>
           </div>
 
-          <div className="mt-4 p-4 bg-red-500/20 rounded-2xl border border-red-400/30 backdrop-blur-xl shadow-lg">
+          <div className="mt-4 p-4 w-full bg-red-500/20 rounded-2xl border border-red-400/30 backdrop-blur-xl shadow-lg">
             <h3 className="text-lg font-bold text-red-300 mb-3 drop-shadow-md">🚨 ALERTE ARNAQUE</h3>
             <p className="text-sm text-white/90 mb-2 font-semibold drop-shadow-md">
               ⚠️ BÂTIZEN.CI ne demande JAMAIS :
@@ -476,7 +479,7 @@ export default function DashboardClientPage() {
             </p>
           </div>
 
-          <div className="mt-4 p-4 bg-green-500/20 rounded-2xl border border-green-400/30 backdrop-blur-xl shadow-lg">
+          <div className="mt-4 p-4 w-full bg-green-500/20 rounded-2xl border border-green-400/30 backdrop-blur-xl shadow-lg">
             <h3 className="text-lg font-bold text-green-300 mb-3 drop-shadow-md">🤝 NOS ENGAGEMENTS</h3>
             <ul className="text-sm text-white/80 space-y-2">
               <li className="flex items-start">
@@ -504,23 +507,23 @@ export default function DashboardClientPage() {
 
           <ChatBot />
 
-          <div className="mt-8">
+          <div className="mt-8 w-full">
             <h3 className="font-black text-xl text-white mb-4 flex items-center gap-2 drop-shadow-md">
               🤝 Nos Partenaires de Confiance
             </h3>
-            <div className="flex gap-4 overflow-x-auto pb-4 snap-x scrollbar-hide">
+            <div className="flex gap-4 overflow-x-auto pb-4 snap-x scrollbar-hide w-full">
               {partenaires.map((partenaire: any) => (
                 <div key={partenaire.id} className="min-w-[280px] bg-white/20 rounded-2xl border border-white/30 backdrop-blur-xl shadow-lg p-4 flex flex-col items-center text-center snap-center">
                   {partenaire.photo_url ? (
                     <div className="w-20 h-20 rounded-full overflow-hidden mb-3 border-2 border-[#FF7A00]">
                       <img src={partenaire.photo_url} alt={partenaire.nom} className="w-full h-full object-cover" />
-                    </div>
+                </div>
                   ) : (
                     <div className="w-20 h-20 rounded-full bg-[#FF7A00]/20 flex items-center justify-center mb-3 text-3xl">
                       🏢
                     </div>
                   )}
-                  <h4 className="font-bold text-white text-lg mb-1 drop-shadow-md">{partenaire.nom}</h4>
+                  <h4 className="font-bold text-white text-lg mb-1 drop-shadow-md break-words w-full">{partenaire.nom}</h4>
                   <p className="text-sm text-white/80 line-clamp-3 drop-shadow-md">{partenaire.description || "Partenaire certifié BÂTIZEN"}</p>
                 </div>
               ))}
