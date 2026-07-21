@@ -11,6 +11,7 @@ import { ProgressBar } from "@/components/ui/ProgressBar";
 import SuperCalculateur from "@/components/btp/SuperCalculateur";
 import { getDatabase, ref as dbRef, onValue, update, query, orderByChild, equalTo } from "firebase/database";
 import ChatBot from "@/components/ChatBot";
+import BtpBackground from "@/components/btp/BtpBackground";
 
 /* ------------------------------------------------------------------ */
 /* Types                                                              */
@@ -336,7 +337,7 @@ export default function DashboardClientPage() {
     window.location.href = `/nouveau-chantier?edit=${id}`;
   };
 
-  return (
+  const pageContent = (
     <>
     <style>{`
   .wave-hand {
@@ -362,9 +363,7 @@ export default function DashboardClientPage() {
     100% { transform: translateX(-50%); }
   }
 `}</style>
-    <div className="min-h-screen w-full">
-      {/* px-2 pour les sections fill width */}
-      <div className="flex flex-col gap-5 pt-12 px-2">
+      <div className="flex flex-col gap-5 pt-12 px-2 pb-24">
            
            {/* Salutation */}
            <div className="flex items-center gap-3 mb-2">
@@ -563,7 +562,12 @@ export default function DashboardClientPage() {
              </div>
            </div>
          </div>
-    </div>
     </>
+  );
+
+  return (
+    <BtpBackground imageUrl="https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=2070&auto=format&fit=crop" overlay="medium">
+      {pageContent}
+    </BtpBackground>
   );
 }

@@ -371,60 +371,60 @@ export default function SimulationPage() {
                 style={preferences.style.architectural}
               />
 
-              {/* PLAN GRATUIT - Visible en premier */}
-              <div className="rounded-[24px] bg-gradient-to-br from-[#FF6B00]/20 to-[#FF8C00]/10 backdrop-blur-lg p-6 shadow-lg border-2 border-[#FF6B00]/50">
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="text-3xl">🎁</span>
-                  <h3 className="text-2xl font-black text-white">VOTRE PLAN GRATUIT</h3>
-                </div>
-                <p className="text-sm text-white/90 mb-4">
-                  ⚠️ Ceci est une maquette de base générée selon vos renseignements. 
-                  Nos experts vous fourniront un plan professionnel détaillé lors du rendez-vous.
-                </p>
-                
-                {/* Générateur 2D/3D avec bascule */}
-                <div className="bg-white rounded-xl p-4 mb-4">
-                  <div className="flex gap-2 mb-3">
-                    <button 
-                      onClick={() => setViewMode("2d")}
-                      className={`px-4 py-2 rounded-lg text-sm font-semibold ${viewMode === "2d" ? "bg-[#FF6B00] text-white" : "bg-gray-200 text-gray-700"}`}
-                    >
-                      📐 Vue 2D
-                    </button>
-                    <button 
-                      onClick={() => setViewMode("3d")}
-                      className={`px-4 py-2 rounded-lg text-sm font-semibold ${viewMode === "3d" ? "bg-[#FF6B00] text-white" : "bg-gray-200 text-gray-700"}`}
-                    >
-                      🏠 Vue 3D
-                    </button>
-                  </div>
-                  
-                  {viewMode === "2d" ? (
-                    <PlanGenerator2D
-                      surface={preferences.terrain.surface}
-                      largeur={preferences.terrain.largeur}
-                      longueur={preferences.terrain.longueur}
-                      chambres={preferences.batiment.chambres}
-                      sallesDeBain={preferences.batiment.sallesDeBain}
-                      etages={preferences.batiment.etages}
-                      garage={preferences.batiment.garage}
-                      piscine={preferences.batiment.piscine}
-                      style={preferences.style.architectural}
-                    />
-                  ) : (
-                    <PlanGenerator3D
-                      surface={preferences.terrain.surface}
-                      largeur={preferences.terrain.largeur}
-                      longueur={preferences.terrain.longueur}
-                      chambres={preferences.batiment.chambres}
-                      sallesDeBain={preferences.batiment.sallesDeBain}
-                      etages={preferences.batiment.etages}
-                      garage={preferences.batiment.garage}
-                      piscine={preferences.batiment.piscine}
-                      style={preferences.style.architectural}
-                    />
-                  )}
-                </div>
+                 {/* PLAN GRATUIT - Visible en premier */}
+               <div className="rounded-[24px] bg-gradient-to-br from-[#FF6B00]/20 to-[#FF8C00]/10 backdrop-blur-lg p-6 shadow-lg border-2 border-[#FF6B00]/50">
+                 <div className="flex items-center gap-3 mb-4">
+                   <span className="text-3xl">🎁</span>
+                   <h3 className="text-2xl font-black text-white">VOTRE PLAN GRATUIT</h3>
+                 </div>
+                 <p className="text-sm text-blue-100 mb-4">
+                   ⚠️ Ceci est une maquette de base générée selon vos renseignements. 
+                   Nos experts vous fourniront un plan professionnel détaillé lors du rendez-vous.
+                 </p>
+                 
+                 {/* Générateur 2D/3D avec bascule */}
+                 <div className="bg-white/10 rounded-xl p-4 mb-4 border border-white/20">
+                   <div className="flex gap-2 mb-3">
+                     <button 
+                       onClick={() => setViewMode("2d")}
+                       className={`px-4 py-2 rounded-lg text-sm font-semibold ${viewMode === "2d" ? "bg-[#FF6B00] text-white" : "bg-white/20 text-blue-200"}`}
+                     >
+                       📐 Vue 2D
+                     </button>
+                     <button 
+                       onClick={() => setViewMode("3d")}
+                       className={`px-4 py-2 rounded-lg text-sm font-semibold ${viewMode === "3d" ? "bg-[#FF6B00] text-white" : "bg-white/20 text-blue-200"}`}
+                     >
+                       🏠 Vue 3D
+                     </button>
+                   </div>
+                   
+                   {viewMode === "2d" ? (
+                     <PlanGenerator2D
+                       surface={preferences.terrain.surface}
+                       largeur={preferences.terrain.largeur}
+                       longueur={preferences.terrain.longueur}
+                       chambres={preferences.batiment.chambres}
+                       sallesDeBain={preferences.batiment.sallesDeBain}
+                       etages={preferences.batiment.etages}
+                       garage={preferences.batiment.garage}
+                       piscine={preferences.batiment.piscine}
+                       style={preferences.style.architectural}
+                     />
+                   ) : (
+                     <PlanGenerator3D
+                       surface={preferences.terrain.surface}
+                       largeur={preferences.terrain.largeur}
+                       longueur={preferences.terrain.longueur}
+                       chambres={preferences.batiment.chambres}
+                       sallesDeBain={preferences.batiment.sallesDeBain}
+                       etages={preferences.batiment.etages}
+                       garage={preferences.batiment.garage}
+                       piscine={preferences.batiment.piscine}
+                       style={preferences.style.architectural}
+                     />
+                   )}
+                 </div>
                 
                 <PremiumButton 
                   variant="primary"
