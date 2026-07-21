@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { Header } from "./Header";
 import { BottomNav } from "./BottomNav";
+import PremiumBackground from "./PremiumBackground";
 
 export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -21,14 +22,21 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
     return <>{children}</>;
   }
 
-// Pour toutes les autres pages (connectées) → interface complète
+  // Pour toutes les autres pages (connectées) → interface complète
   // Header gère déjà le hamburger + menu latéral intégré
   return (
     <>
       <Header />
-      <main className="flex-1 pt-20 pb-16 px-4 min-h-screen bg-[#f9fafb]">
-        {children}
-      </main>
+      <PremiumBackground>
+        <main className="flex-1 pt-20 pb-16 px-4 min-h-screen">
+          {/* Container mobile centré 430px max */}
+          <div className="mx-auto w-full max-w-[430px]">
+            <div className="min-h-screen">
+              {children}
+            </div>
+          </div>
+        </main>
+      </PremiumBackground>
       <BottomNav />
     </>
   );

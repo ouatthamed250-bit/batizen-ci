@@ -1,15 +1,23 @@
+/* Police Poppins - DOIT ÊTRE EN PREMIER */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 
 /* ============================================================
-   BÂTIZEN CI — DESIGN SYSTEM BTP / CHANTIER
-   Thème : Construction, matériaux, effets 3D industriels
+   BÂTIZEN CI — DESIGN SYSTEM PREMIUM MOBILE (Apple/Tesla)
+   Police: Poppins, Coins arrondis: 24-32px, Glassmorphism
    ============================================================ */
 
 :root {
-  /* ─── Couleurs BTP ─── */
-  --btp-orange: #FF6B00;
-  --btp-orange-dark: #CC5500;
-  --btp-orange-light: #FF8C00;
+  /* ─── Couleurs officielles ─── */
+  --primary: #0B5FFF;
+  --dark: #0D2B6B;
+  --orange: #FF7A00;
+  --background: #FFFFFF;
+  
+  /* ─── Couleurs BTP (compatibilité) ─── */
+  --btp-orange: #FF7A00;
+  --btp-orange-dark: #D97706;
+  --btp-orange-light: #FFB347;
   --btp-gris: #4A4A4A;
   --btp-gris-clair: #6B7280;
   --btp-jaune: #FFD700;
@@ -17,10 +25,8 @@
   --btp-blanc-casse: #F5F5F5;
   --btp-blanc: #FFFFFF;
 
-  /* ─── Couleurs legacy (compatibilité) ─── */
-  --primary: #0B5FFF;
+  /* ─── Variables supplémentaires ─── */
   --navy: #0D2B6B;
-  --orange: #FF7A00;
   --surface: #E8EDF5;
   --stroke: #C5D0E8;
   --text: #0A1628;
@@ -29,18 +35,24 @@
   --error: #EF4444;
   --warning: #F59E0B;
   --radius-card: 28px;
-  --radius-button: 20px;
-  --radius-input: 22px;
+  --radius-button: 24px;
+  --radius-input: 20px;
 
-  /* ─── Fonds BTP par page ─── */
-  --bg-home:    #F5F5F5;
-  --bg-dashboard: #F5F5F5;
-  --bg-profil:  #F5F5F5;
+  /* ─── Fonds par page ─── */
+  --bg-home:    #FFFFFF;
+  --bg-dashboard: #FFFFFF;
+  --bg-profil:  #FFFFFF;
 }
 
 .dark {
+  --primary: #4B8FFF;
+  --dark: #081423;
+  --orange: #FF8C00;
+  --background: #081423;
+  
   --btp-orange: #FF8C00;
   --btp-orange-dark: #CC6600;
+  --btp-orange-light: #FFB347;
   --btp-gris: #6B7280;
   --btp-gris-clair: #9CA3AF;
   --btp-jaune: #FFD700;
@@ -48,9 +60,7 @@
   --btp-blanc-casse: #1F2937;
   --btp-blanc: #374151;
 
-  --primary: #4B8FFF;
   --navy: #1A3B8E;
-  --orange: #FF9A30;
   --surface: #08142E;
   --stroke: #1E3A6E;
   --text: #E8F0FF;
@@ -59,9 +69,20 @@
   --error: #F87171;
   --warning: #FBBF24;
 
-  --bg-home:    #111827;
-  --bg-dashboard: #111827;
-  --bg-profil:  #111827;
+  --bg-home:    #081423;
+  --bg-dashboard: #081423;
+  --bg-profil:  #081423;
+}
+
+body {
+  font-family: 'Poppins', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* Typography headings */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Poppins', 'Inter', sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 /* ============================================================

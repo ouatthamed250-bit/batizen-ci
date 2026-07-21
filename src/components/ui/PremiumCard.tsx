@@ -28,6 +28,8 @@ export function PremiumCard({
         variant === "elevated" && "bg-white border border-gray-100 shadow-xl",
         variant === "default" && "bg-white",
         intensityClasses[intensity],
+        "transition-all duration-300",
+        "dark:bg-[#081423]/80 dark:border-[#1D3557]/50 dark:text-white",
         className
       )}
     >

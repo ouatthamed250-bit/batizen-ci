@@ -5,6 +5,7 @@ import { Home as HomeIcon, Plus, FolderKanban, Calculator, MessageCircle, UserRo
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/helpers";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const NAV_HEIGHT = 70;
 
@@ -12,6 +13,7 @@ export function BottomNav() {
   const pathname = usePathname();
   const router = useRouter();
   const { isAuthenticated } = useAuthContext();
+  const { theme } = useTheme();
 
   // Pages où la BottomNav doit être masquée
   const hideNavPaths = ["/", "/login", "/register", "/forgot-password"];
@@ -37,9 +39,16 @@ export function BottomNav() {
     }
   };
 
+  const isDark = theme === "dark";
+
   return (
     <nav
-      className="fixed inset-x-0 bottom-4 z-40 mx-auto flex max-w-[380px] min-h-[70px] items-center justify-around rounded-[32px] bg-white/80 backdrop-blur-xl border border-white/30 shadow-[0_8px_32px_rgba(0,0,0,0.12)] pb-safe px-2"
+      className={cn(
+        "fixed inset-x-0 bottom-4 z-40 mx-auto flex min-h-[70px] items-center justify-around rounded-[32px]",
+        "bg-white/80 backdrop-blur-xl border border-white/30 shadow-[0_8px_32px_rgba(0,0,0,0.12)] pb-safe px-2",
+        "dark:bg-[#081423]/80 dark:border-[#1D3557]/50 dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)]",
+        "max-w-[430px] w-full"
+      )}
       aria-label="Navigation principale"
     >
       {navItems.map((item) => {
@@ -54,19 +63,20 @@ export function BottomNav() {
               aria-label="Accueil"
               className={cn(
                 "relative flex min-w-16 flex-col items-center gap-1 text-xs transition-all duration-300 active:scale-90",
-                active ? "text-[var(--btp-orange)] font-semibold" : "text-gray-500 font-medium"
+                active ? "text-[#FF7A00] font-semibold" : "text-gray-500 font-medium",
+                "dark:text-gray-300"
               )}
             >
               <span className={cn(
                 "grid size-12 place-items-center rounded-full transition-all duration-300",
                 active 
                   ? "text-white shadow-lg" 
-                  : "text-[var(--btp-orange)]"
+                  : "text-[#FF7A00]"
               )}
                 style={{
                   background: active 
-                    ? "linear-gradient(135deg, var(--btp-orange), var(--btp-orange-light))" 
-                    : "rgba(255, 107, 0, 0.1)"
+                    ? "linear-gradient(135deg, #FF7A00, #D97706)" 
+                    : isDark ? "rgba(255, 122, 0, 0.2)" : "rgba(255, 122, 0, 0.1)"
                 }}
               >
                 <Icon size={22} aria-hidden />
@@ -74,7 +84,7 @@ export function BottomNav() {
               <span className="leading-none">{item.label}</span>
               {active && (
                 <span className="absolute -bottom-1 flex h-1 w-4 justify-center">
-                  <span className="block h-1 w-1 rounded-full bg-[var(--btp-orange)] shadow-[0_0_8px_var(--btp-orange)]" />
+                  <span className="block h-1 w-1 rounded-full bg-[#FF7A00] shadow-[0_0_8px_#FF7A00]" />
                 </span>
               )}
             </button>
@@ -89,7 +99,8 @@ export function BottomNav() {
             aria-current={active ? "page" : undefined}
             className={cn(
               "relative flex min-w-16 flex-col items-center gap-1 text-xs transition-all duration-300 active:scale-90",
-              active ? "text-[var(--btp-orange)] font-semibold" : "text-gray-500 font-medium"
+              active ? "text-[#FF7A00] font-semibold" : "text-gray-500 font-medium",
+              "dark:text-gray-300"
             )}
           >
             <span className={cn(
@@ -98,9 +109,9 @@ export function BottomNav() {
             )}
               style={{
                 background: active 
-                  ? "linear-gradient(135deg, var(--btp-orange), var(--btp-orange-light))" 
-                  : "rgba(255, 107, 0, 0.1)",
-                color: active ? "white" : "var(--btp-orange)"
+                  ? "linear-gradient(135deg, #FF7A00, #D97706)" 
+                  : isDark ? "rgba(255, 122, 0, 0.2)" : "rgba(255, 122, 0, 0.1)",
+                color: active ? "white" : "#FF7A00"
               }}
             >
               <Icon size={22} aria-hidden />
@@ -108,7 +119,7 @@ export function BottomNav() {
             <span className="leading-none">{item.label}</span>
             {active && (
               <span className="absolute -bottom-1 flex h-1 w-4 justify-center">
-                <span className="block h-1 w-1 rounded-full bg-[var(--btp-orange)] shadow-[0_0_8px_var(--btp-orange)]" />
+                <span className="block h-1 w-1 rounded-full bg-[#FF7A00] shadow-[0_0_8px_#FF7A00]" />
               </span>
             )}
           </Link>

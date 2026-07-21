@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { X, User } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import NotificationBell from "@/components/ui/NotificationBell";
 
 // Fonction helper pour les titres dynamiques
@@ -35,6 +36,7 @@ export function Header() {
   const { user, isAuthenticated } = useAuthContext();
   const pathname = usePathname();
   const router = useRouter();
+  const { theme } = useTheme();
   const isDashboard = pathname === "/dashboard" || pathname === "/dashboard/";
 
   // Ferme le menu quand on navigue
@@ -48,13 +50,13 @@ export function Header() {
 
   return (
     <>
-      {/* HEADER DASHBOARD - Fixed top blanc */}
+      {/* HEADER DASHBOARD - Glassmorphism premium */}
       {isDashboard && (
-        <header className="fixed top-0 left-0 right-0 z-50 h-16 flex items-center justify-between bg-white px-4 shadow-sm">
+        <header className="fixed top-0 left-0 right-0 z-50 h-16 flex items-center justify-between bg-white/80 dark:bg-[#081423]/80 backdrop-blur-xl px-4 border-b border-white/30 dark:border-[#1D3557]/50">
           {/* Gauche : Hamburger */}
           <button
             onClick={() => setMenuOpen(true)}
-            className="w-10 h-10 bg-[#1e3a8a] rounded-xl flex items-center justify-center text-white text-xl"
+            className="w-10 h-10 bg-gradient-to-br from-[#0B5FFF] to-[#0D2B6B] rounded-xl flex items-center justify-center text-white text-xl shadow-lg transition-all active:scale-95"
             aria-label="Ouvrir le menu"
           >
             ☰
@@ -63,7 +65,7 @@ export function Header() {
           {/* Centre : Logo */}
           <div className="flex items-center gap-2">
             <span className="text-xl">🏗️</span>
-            <h1 className="font-black text-lg text-[#FF7A00]">BÂTIZEN.CI</h1>
+            <h1 className="font-black text-lg bg-gradient-to-r from-[#0B5FFF] to-[#0D2B6B] bg-clip-text text-transparent">BÂTIZEN.CI</h1>
           </div>
 
           {/* Droite : Notifications + Avatar */}
@@ -71,7 +73,7 @@ export function Header() {
             {isAuthenticated && <NotificationBell />}
             
             {isAuthenticated && user ? (
-              <div className="w-10 h-10 bg-[#FF7A00] rounded-full flex items-center justify-center text-white font-bold">
+              <div className="w-10 h-10 bg-gradient-to-br from-[#FF7A00] to-[#D97706] rounded-full flex items-center justify-center text-white font-bold shadow-lg">
                 {initials}
               </div>
             ) : (
@@ -87,13 +89,13 @@ export function Header() {
         </header>
       )}
 
-      {/* HEADER AUTRES PAGES - Fixed top avec arrondi bas bleu */}
+      {/* HEADER AUTRES PAGES - Bleu simplifié #0D2B6B avec arrondi */}
       {!isDashboard && (
-        <header className="fixed top-0 left-0 right-0 z-50 h-16 flex items-center justify-between bg-[#1e3a8a] rounded-b-3xl px-4">
+        <header className="fixed top-0 left-0 right-0 z-50 h-16 flex items-center justify-between bg-[#0D2B6B] rounded-b-3xl px-4">
           {/* Gauche : Hamburger */}
           <button
             onClick={() => setMenuOpen(true)}
-            className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-white text-xl backdrop-blur-sm"
+            className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-white text-xl backdrop-blur-sm transition-all active:scale-95"
             aria-label="Ouvrir le menu"
           >
             ☰

@@ -30,11 +30,11 @@ export function PremiumButton({
 }: PremiumButtonProps) {
   
   const variants = {
-    primary: "bg-gradient-to-b from-[#FF8C00] to-[#CC5500] text-white hover:from-[#FF9A30] hover:to-[#E06000]",
-    secondary: "bg-gradient-to-b from-[#1A3B8E] to-[#081D4A] text-white hover:from-[#2550B0] hover:to-[#0D2B6B]",
-    success: "bg-gradient-to-b from-[#34D399] to-[#15803D] text-white hover:from-[#4ADE80] hover:to-[#16A34A]",
-    neutral: "bg-gradient-to-b from-[#9CA3AF] to-[#374151] text-white hover:from-[#B0B7C3] hover:to-[#4B5563]",
-    danger: "bg-gradient-to-b from-[#F87171] to-[#B91C1C] text-white hover:from-[#FCA5A5] hover:to-[#DC2626]",
+    primary: "bg-gradient-to-r from-[#0B5FFF] to-[#0D2B6B] text-white hover:from-[#2563EB] hover:to-[#1D4ED8]",
+    secondary: "bg-gradient-to-r from-[#FF7A00] to-[#D97706] text-white hover:from-[#FF8C00] hover:to-[#FF6B00]",
+    success: "bg-gradient-to-r from-[#22C55E] to-[#16A34A] text-white hover:from-[#34D399] hover:to-[#22C55E]",
+    neutral: "bg-gradient-to-r from-[#6B7280] to-[#4B5563] text-white hover:from-[#9CA3AF] hover:to-[#6B7280]",
+    danger: "bg-gradient-to-r from-[#EF4444] to-[#DC2626] text-white hover:from-[#F87171] hover:to-[#EF4444]",
     outline: "bg-transparent text-[#0D2B6B] border-2 border-[#0D2B6B] hover:bg-[#0D2B6B] hover:text-white",
     google: "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50",
   };
@@ -49,12 +49,11 @@ export function PremiumButton({
 
   const classes = cn(
     variants[variant],
-    "px-5 py-3 rounded-xl font-semibold text-sm",
+    "px-6 py-3 rounded-[24px] font-semibold text-sm",
     "shadow-lg shadow-black/20",
     "border border-white/20",
     "transition-all duration-200",
-    "hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/30",
-    "active:translate-y-0.5 active:shadow-md",
+    "hover:-translate-y-0.5 hover:shadow-xl active:scale-95",
     "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0",
     className
   );
