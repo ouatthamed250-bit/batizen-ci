@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { HardHat, BrickWall, ChevronRight, Calendar, Bell, CreditCard, Wallet, CalendarClock, Calculator } from "lucide-react";
+import { HardHat, BrickWall, ChevronRight, Calendar, Bell, CreditCard, Wallet, CalendarClock, Calculator, Megaphone } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { WeatherWidget } from "@/components/btp/WeatherWidget";
 import { ProgressBar } from "@/components/ui/ProgressBar";
@@ -111,9 +111,9 @@ function SummaryCard({ icon: Icon, label, value }: {
   value: string | number; 
 }) {
   return (
-    <div className="w-full rounded-[22px] border border-white/30 bg-white/20 backdrop-blur-xl p-3 flex flex-col items-center text-center gap-2 shadow-lg">
-      <div className="grid size-10 place-items-center rounded-[16px] text-white bg-gradient-to-br from-[#0B5FFF] to-[#0D2B6B]">
-        <Icon size={20} />
+    <div className="w-full rounded-[22px] border border-white/30 bg-white/20 backdrop-blur-xl p-4 flex flex-col items-center text-center gap-2 shadow-lg">
+      <div className="grid size-12 place-items-center rounded-[16px] text-white bg-gradient-to-br from-[#0B5FFF] to-[#0D2B6B]">
+        <Icon size={24} />
       </div>
       <div className="w-full">
         <p className="text-[10px] font-bold text-white/80 uppercase tracking-wider">{label}</p>
@@ -176,7 +176,7 @@ function ChantierCard({ chantier, onModifier, onSupprimer }: {
           <div className="mt-3 space-y-1">
             {chantier.plan_choisi && (
               <p className="text-xs text-white/80 drop-shadow-md">
-                🎯 Plan : <span className="font-bold text-white break-words">{chantier.plan_choisi}</span>
+                 Plan : <span className="font-bold text-white break-words">{chantier.plan_choisi}</span>
               </p>
             )}
             {chantier.rdv_date && (
@@ -189,7 +189,7 @@ function ChantierCard({ chantier, onModifier, onSupprimer }: {
         
         {(chantier.statut === "termine" || chantier.statut === "terminé") && (
           <p className="mt-3 text-xs text-white/80 drop-shadow-md">
-            🏁 Terminé le : <span className="font-bold text-white">{formatDateCourte(chantier.date_fin)}</span>
+             Terminé le : <span className="font-bold text-white">{formatDateCourte(chantier.date_fin)}</span>
           </p>
         )}
         
@@ -204,7 +204,7 @@ function ChantierCard({ chantier, onModifier, onSupprimer }: {
                 onClick={() => onModifier(chantier.id)}
                 className="flex-1 rounded-[14px] bg-white/20 py-2 text-xs font-bold text-white transition active:scale-95 shadow-lg"
               >
-                ✏️ Modifier
+                ️ Modifier
               </button>
               <button
                 onClick={() => onSupprimer(chantier.id, chantier.statut!)}
@@ -232,6 +232,14 @@ export default function DashboardClientPage() {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [promos, setPromos] = useState<Promo[]>([]);
   const [partenaires, setPartenaires] = useState<any[]>([]);
+
+  // Données de démo pour la bande défilante (à connecter à l'admin plus tard)
+  const annoncesDemo = [
+    "🎉 Promo: -10% sur votre premier chantier ce mois-ci !",
+    "📢 Nouveau: Suivi de chantier par drone disponible.",
+    "🔥 Offre spéciale: Audit gratuit pour les rénovations.",
+    "⚠️ Rappel: Pensez à valider vos devis en attente."
+  ];
 
   useEffect(() => {
     if (user?.uid) {
@@ -269,7 +277,7 @@ export default function DashboardClientPage() {
         setChantiers(mesChantiers);
         setLoading(false);
       } else {
-        console.log("⚠️ [CLIENT] Aucune donnée dans /chantiers");
+        console.log("️ [CLIENT] Aucune donnée dans /chantiers");
         setChantiers([]);
         setLoading(false);
       }
@@ -348,10 +356,20 @@ export default function DashboardClientPage() {
     60% { transform: rotate(0deg); }
     100% { transform: rotate(0deg); }
   }
+  .animate-marquee {
+    animation: marquee 25s linear infinite;
+  }
+  @keyframes marquee {
+    0% { transform: translateX(0%); }
+    100% { transform: translateX(-50%); }
+  }
 `}</style>
     <PremiumBackground>
-      <div className="pt-4 pb-24 px-3 min-h-screen w-full">
+      {/* Marges latérales augmentées à px-4 pour un petit espace propre sur les côtés */}
+      <div className="pt-4 pb-24 px-4 min-h-screen w-full">
         <main className="flex flex-col gap-4 w-full max-w-lg mx-auto">
+          
+          {/* Salutation */}
           <div className="flex items-center gap-3 mb-4">
             {(() => {
               const hour = new Date().getHours();
@@ -374,15 +392,29 @@ export default function DashboardClientPage() {
             })()}
           </div>
 
+          {/* NOUVEAU : Bande défilante transparente pour Promos/Annonces */}
+          <div className="w-full overflow-hidden bg-[#FF7A00]/10 backdrop-blur-md rounded-2xl border border-[#FF7A00]/30 py-2.5 mb-2 shadow-lg">
+            <div className="flex animate-marquee whitespace-nowrap gap-12">
+              {/* On duplique la liste pour un défilement infini fluide */}
+              {[...annoncesDemo, ...annoncesDemo].map((annonce, i) => (
+                <span key={i} className="text-sm font-bold text-[#FF7A00] drop-shadow-md flex items-center gap-2">
+                  <Megaphone size={14} /> {annonce}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Météo : Prend presque tout l'écran (w-full) */}
           <div className="w-full rounded-3xl p-5 bg-gradient-to-br from-[#1e3a8a] to-[#2563eb] text-white shadow-md mb-4">
             <WeatherWidget title="Météo du jour" />
           </div>
 
-          <div className="grid grid-cols-3 gap-3 mb-6">
+          {/* Boutons d'action */}
+          <div className="grid grid-cols-3 gap-3 mb-6 w-full">
             {[
               { label: "Simulation", icon: "🧮", href: "/simulation", color: "bg-[#FF7A00]" },
               { label: "Nouveau Chantier", icon: "🏗️", href: "/nouveau-chantier", color: "bg-[#1e3a8a]" },
-              { label: "Rénovation", icon: "🔨", href: "/renovation", color: "bg-green-600" }
+              { label: "Rénovation", icon: "", href: "/renovation", color: "bg-green-600" }
             ].map((btn, i) => (
               <Link key={i} href={btn.href}
                 className={`flex flex-col items-center justify-center p-3 ${btn.color} text-white rounded-2xl shadow-lg transition active:scale-95`}
@@ -408,8 +440,9 @@ export default function DashboardClientPage() {
             />
           </section>
 
+          {/* Cartes Résumé : 2 colonnes qui prennent toute la largeur */}
           {!loading && (
-            <section className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4 w-full">
+            <section className="grid grid-cols-2 gap-3 w-full">
               <SummaryCard icon={HardHat} label="Chantiers actifs" value={chantiersActifs} />
               <SummaryCard icon={Wallet} label="Dépensé ce mois" value={formatFcfa(depensesMois)} />
               <SummaryCard icon={CalendarClock} label="Prochain RDV" value={prochainRdv ? formatDateCourte(prochainRdv.rdv_date) : "Aucun"} />
@@ -417,6 +450,7 @@ export default function DashboardClientPage() {
             </section>
           )}
 
+          {/* Liste des chantiers */}
           {!isAuthReady ? (
             <div className="flex items-center justify-center py-12 w-full">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#FF7A00]"></div>
@@ -445,6 +479,7 @@ export default function DashboardClientPage() {
             </div>
           )}
           
+          {/* Sections Infos (À propos, Arnaque, Engagements) */}
           <div className="mt-6 p-4 w-full bg-white/20 rounded-2xl border border-white/30 backdrop-blur-xl shadow-lg">
             <h3 className="text-lg font-bold text-white mb-3 drop-shadow-md">🏗️ À PROPOS DE BÂTIZEN.CI</h3>
             <p className="text-sm text-white/90 mb-3 drop-shadow-md">
@@ -501,9 +536,10 @@ export default function DashboardClientPage() {
 
           <ChatBot />
 
+          {/* Partenaires : Garde le format carrousel horizontal (min-w-[280px]) */}
           <div className="mt-8 w-full">
             <h3 className="font-black text-xl text-white mb-4 flex items-center gap-2 drop-shadow-md">
-              🤝 Nos Partenaires de Confiance
+               Nos Partenaires de Confiance
             </h3>
             <div className="flex gap-4 overflow-x-auto pb-4 snap-x scrollbar-hide w-full">
               {partenaires.map((partenaire: any) => (
@@ -514,7 +550,7 @@ export default function DashboardClientPage() {
                     </div>
                   ) : (
                     <div className="w-20 h-20 rounded-full bg-[#FF7A00]/20 flex items-center justify-center mb-3 text-3xl">
-                      🏢
+                      
                     </div>
                   )}
                   <h4 className="font-bold text-white text-lg mb-1 drop-shadow-md break-words w-full">{partenaire.nom}</h4>
