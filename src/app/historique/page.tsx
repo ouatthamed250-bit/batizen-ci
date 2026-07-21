@@ -2,20 +2,18 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { motion, type Variants } from "framer-motion";
 import {
   HardHat,
   CalendarClock,
   Download,
-  Image as ImageIcon,
   Star,
-  ChevronRight,
   FileText,
 } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { rtdbGetListByChild } from "@/lib/rtdb";
 import { formatFcfa } from "@/utils/currency";
+import BtpBackground from "@/components/btp/BtpBackground";
 
 type Chantier = {
   id: string;
@@ -36,9 +34,7 @@ type Chantier = {
 
 const containerVariants: Variants = {
   hidden: {},
-  show: {
-    transition: { staggerChildren: 0.12, delayChildren: 0.1 },
-  },
+  show: { transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
 };
 
 const itemVariants: Variants = {
@@ -60,10 +56,10 @@ function formatDateFr(d?: string): string {
 
 function SkeletonCard() {
   return (
-    <div className="animate-pulse rounded-[22px] border border-[#E7EBF5] bg-white p-5 shadow-[0_8px_24px_rgba(16,24,40,0.06)]">
-      <div className="mb-3 size-11 rounded-[14px] bg-[#E7EBF5]" />
-      <div className="mb-2 h-3 w-1/2 rounded bg-[#E7EBF5]" />
-      <div className="h-6 w-2/3 rounded bg-[#E7EBF5]" />
+    <div className="animate-pulse rounded-[22px] border border-white/20 bg-white/10 p-5 shadow-lg backdrop-blur-xl">
+      <div className="mb-3 size-11 rounded-[14px] bg-white/20" />
+      <div className="mb-2 h-3 w-1/2 rounded bg-white/20" />
+      <div className="h-6 w-2/3 rounded bg-white/20" />
     </div>
   );
 }
@@ -84,55 +80,33 @@ export default function HistoriquePage() {
       }
 
       const mesChantiers = await rtdbGetListByChild<Chantier>("chantiers", "client_id", uid);
-      
       if (cancelled) return;
 
       const termines = mesChantiers.filter(
         (c) => (c.statut || c.status) === "termine" || (c.statut || c.status) === "terminé"
       );
-      
+
       setChantiersTermines(termines);
       setLoading(false);
     }
 
     load();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [user?.uid]);
 
-  return (
-    <main className="pt-20 pb-16 px-4 min-h-screen bg-[#f9fafb]">
+  const pageContent = (
+    <div className="min-h-screen pt-24 pb-24 px-2">
       {/* Header */}
-      <header className="relative overflow-hidden">
-        <div className="absolute inset-0">
-          <Image
-            src="/images/chantier-bg.jpg"
-            alt=""
-            fill
-            priority
-            className="object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-[#0D2B6B]/90 via-[#0D2B6B]/75 to-[#0D2B6B]/95" />
-        </div>
+      <div className="mb-8 mx-2">
+        <h1 className="text-3xl font-black tracking-[-0.03em] text-white md:text-4xl">
+          📚 Chantiers terminés
+        </h1>
+        <p className="mt-1 text-sm font-semibold text-blue-100">
+          Retrouvez tous vos projets achevés
+        </p>
+      </div>
 
-        <div className="relative px-4 pt-10 pb-8 sm:px-6">
-          <motion.div
-            initial={{ opacity: 0, y: -16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <h1 className="text-2xl font-black tracking-[-0.03em] text-white sm:text-3xl">
-              📚 Chantiers terminés
-            </h1>
-            <p className="mt-1 text-sm font-semibold text-white/80">
-              Retrouvez tous vos projets achevés
-            </p>
-          </motion.div>
-        </div>
-      </header>
-
-      <div className="mx-auto w-full max-w-3xl space-y-6 px-4 pt-6 sm:px-6">
+      <div className="mx-2 space-y-4">
         {loading ? (
           <motion.div
             className="grid gap-4 sm:grid-cols-2"
@@ -140,23 +114,18 @@ export default function HistoriquePage() {
             initial="hidden"
             animate="show"
           >
-            <SkeletonCard />
-            <SkeletonCard />
+            <SkeletonCard /><SkeletonCard />
           </motion.div>
         ) : chantiersTermines.length === 0 ? (
           <motion.div
             variants={fadeUp}
             initial="hidden"
             animate="show"
-            className="rounded-[22px] border border-dashed border-[#E7EBF5] bg-white p-8 text-center"
+            className="rounded-[22px] border border-dashed border-white/20 bg-white/10 p-8 text-center backdrop-blur-xl"
           >
-            <HardHat size={48} className="mx-auto mb-3 text-[#9CA3AF]" />
-            <p className="text-sm font-bold text-[#6B7280]">
-              Vous n'avez pas encore de chantier terminé
-            </p>
-            <p className="mt-1 text-xs text-[#9CA3AF]">
-              Vos chantiers terminés apparaîtront ici
-            </p>
+            <HardHat size={48} className="mx-auto mb-3 text-blue-200" />
+            <p className="text-sm font-bold text-white">Vous n'avez pas encore de chantier terminé</p>
+            <p className="mt-1 text-xs text-blue-100">Vos chantiers terminés apparaîtront ici</p>
           </motion.div>
         ) : (
           <motion.div
@@ -172,26 +141,26 @@ export default function HistoriquePage() {
                 <motion.div
                   key={c.id}
                   variants={itemVariants}
-                  className="overflow-hidden rounded-[22px] border border-[#E7EBF5] bg-white shadow-[0_8px_24px_rgba(16,24,40,0.06)] backdrop-blur-sm"
+                  className="overflow-hidden rounded-[22px] border border-white/20 bg-white/10 p-4 shadow-lg backdrop-blur-xl"
                 >
-                  <div className="relative h-36 w-full bg-[#E7EBF5]">
+                  <div className="relative h-36 w-full rounded-[16px] bg-white/5 overflow-hidden mb-4">
                     {photo ? (
-                      <Image src={photo} alt={nom} fill className="object-cover" />
+                      <img src={photo} alt={nom} className="w-full h-full object-cover" />
                     ) : (
-                      <div className="grid size-full place-items-center text-[#9CA3AF]">
+                      <div className="grid size-full place-items-center text-blue-200">
                         <HardHat size={40} />
                       </div>
                     )}
-                    <div className="absolute top-3 right-3 rounded-full bg-[#3B82F6] px-2 py-0.5 text-[10px] font-black text-white">
+                    <div className="absolute top-3 right-3 rounded-full bg-green-500/30 px-2 py-0.5 text-[10px] font-black text-white">
                       🏁 Terminé
                     </div>
                   </div>
-                  <div className="p-4">
-                    <h3 className="font-black text-[#0D2B6B]">{nom}</h3>
-                    <p className="mt-0.5 flex items-center gap-1 text-xs text-[#6B7280]">
+                  <div className="p-2">
+                    <h3 className="font-black text-white">{nom}</h3>
+                    <p className="mt-0.5 flex items-center gap-1 text-xs text-blue-200">
                       <HardHat size={12} /> {c.type || "—"} · {c.localisation || "—"}
                     </p>
-                    <div className="mt-3 space-y-1 text-xs text-[#6B7280]">
+                    <div className="mt-3 space-y-1 text-xs text-blue-200">
                       <p className="flex items-center gap-1">
                         <CalendarClock size={12} /> Début: {formatDateFr(c.date_debut)}
                       </p>
@@ -207,17 +176,17 @@ export default function HistoriquePage() {
                     <div className="mt-4 grid grid-cols-2 gap-2">
                       <Link
                         href={`/chantier/${c.id}?tab=photos`}
-                        className="flex items-center justify-center gap-1.5 rounded-[16px] bg-[linear-gradient(135deg,#3B82F6,#0D2B6B)] py-2 text-xs font-black text-white transition active:scale-95"
+                        className="flex items-center justify-center gap-1.5 rounded-[16px] bg-gradient-to-r from-[#0B5FFF] to-[#0D2B6B] py-2 text-xs font-black text-white transition active:scale-95"
                       >
-                        <ImageIcon size={14} /> Album
+                        📷 Album
                       </Link>
-                      <button className="flex items-center justify-center gap-1.5 rounded-[16px] bg-[#0B5FFF] py-2 text-xs font-black text-white transition active:scale-95">
-                        <Download size={14} /> Passeport
+                      <button className="flex items-center justify-center gap-1.5 rounded-[16px] bg-white/20 py-2 text-xs font-black text-white transition active:scale-95">
+                        📄 Passeport
                       </button>
                     </div>
                     <Link
                       href={`/chantier/${c.id}`}
-                      className="mt-2 flex items-center justify-center gap-1.5 rounded-[16px] border border-[#E7EBF5] py-2 text-xs font-black text-[#0D2B6B] transition hover:bg-[#E7EBF5] active:scale-95"
+                      className="mt-2 flex items-center justify-center gap-1.5 rounded-[16px] border border-white/20 py-2 text-xs font-black text-blue-200 transition hover:bg-white/20 active:scale-95"
                     >
                       Laisser un avis <Star size={14} className="text-[#FF7A00]" />
                     </Link>
@@ -228,7 +197,12 @@ export default function HistoriquePage() {
           </motion.div>
         )}
       </div>
-    </main>
+    </div>
+  );
+
+  return (
+    <BtpBackground imageUrl="https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=2070&auto=format&fit=crop" overlay="medium">
+      {pageContent}
+    </BtpBackground>
   );
 }
-

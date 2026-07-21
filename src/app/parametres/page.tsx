@@ -5,6 +5,7 @@ import { Settings, Bell, Mail, Smartphone, CheckCircle2 } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { ref, set, get } from "firebase/database";
 import { getFirebaseServices } from "@/lib/firebase";
+import BtpBackground from "@/components/btp/BtpBackground";
 
 type NotificationPreferences = {
   chantier_active: boolean;
@@ -61,15 +62,15 @@ export default function SettingsPage() {
   };
 
   const PreferenceItem = ({ label, description, checked, onToggle }: { label: string; description: string; checked: boolean; onToggle: () => void }) => (
-    <div className="flex items-center justify-between rounded-[14px] border border-[#E7EBF5] bg-white p-4 shadow-sm">
+    <div className="flex items-center justify-between rounded-[14px] border border-white/20 bg-white/10 p-4 shadow-lg backdrop-blur-xl">
       <div className="flex-1">
-        <p className="font-black text-[#0D2B6B]">{label}</p>
-        <p className="text-xs text-[#6B7280]">{description}</p>
+        <p className="font-black text-white">{label}</p>
+        <p className="text-xs text-blue-100">{description}</p>
       </div>
       <button
         type="button"
         onClick={onToggle}
-        className={`relative ml-3 grid size-12 place-items-center rounded-full transition ${checked ? "bg-[#22C55E] text-white" : "bg-[#F3F4F6] text-[#9CA3AF]"}`}
+        className={`relative ml-3 grid size-12 place-items-center rounded-full transition ${checked ? "bg-[#22C55E] text-white" : "bg-white/20 text-blue-200"}`}
         aria-label={checked ? "Activé" : "Désactivé"}
       >
         <CheckCircle2 size={22} />
@@ -77,23 +78,20 @@ export default function SettingsPage() {
     </div>
   );
 
-  return (
-    <main className="pt-20 pb-16 px-4 min-h-screen bg-[#f9fafb]">
-      <div className="relative overflow-hidden bg-[#0D2B6B] pb-16 pt-12">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0D2B6B] to-[#1E40AF]" />
-        <div className="relative px-4">
-          <h1 className="text-3xl font-black text-white">⚙️ Paramètres</h1>
-          <p className="mt-1 text-sm font-semibold text-white/70">Gérez vos préférences de notifications</p>
-        </div>
+  const pageContent = (
+    <div className="min-h-screen pt-24 pb-24 px-2">
+      <div className="mb-8 mx-2">
+        <h1 className="text-3xl font-black text-white">⚙️ Paramètres</h1>
+        <p className="mt-1 text-sm font-semibold text-blue-100">Gérez vos préférences de notifications</p>
       </div>
 
-      <div className="mx-auto max-w-3xl px-4 -mt-8 space-y-4">
-        <div className="rounded-2xl border border-[#E7EBF5] bg-white p-4 shadow-[0_8px_24px_rgba(16,24,40,0.06)]">
+      <div className="mx-2 space-y-4">
+        <div className="rounded-2xl border border-white/20 bg-white/10 p-4 shadow-lg backdrop-blur-xl">
           <div className="mb-3 flex items-center gap-2">
             <Bell className="text-[#FF7A00]" size={18} />
-            <h2 className="font-black text-[#0D2B6B]">Notifications</h2>
+            <h2 className="font-black text-white">Notifications</h2>
           </div>
-          <p className="mb-4 text-xs text-[#6B7280]">Choisissez les événements pour lesquels vous souhaitez être notifié.</p>
+          <p className="mb-4 text-xs text-blue-100">Choisissez les événements pour lesquels vous souhaitez être notifié.</p>
           <div className="space-y-3">
             <PreferenceItem label="Chantier activé" description="Recevoir une notification quand un chantier passe en cours" checked={prefs.chantier_active} onToggle={() => toggle("chantier_active")} />
             <PreferenceItem label="Chantier terminé" description="Recevoir une notification quand un chantier est terminé" checked={prefs.chantier_termine} onToggle={() => toggle("chantier_termine")} />
@@ -106,28 +104,34 @@ export default function SettingsPage() {
             type="button"
             onClick={save}
             disabled={saving}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-[16px] bg-[#0D2B6B] py-3 text-sm font-black text-white transition active:scale-95 disabled:opacity-50"
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-[16px] bg-gradient-to-r from-[#0B5FFF] to-[#0D2B6B] py-3 text-sm font-black text-white transition active:scale-95 disabled:opacity-50"
           >
             {saving ? "Enregistrement..." : saved ? "✓ Enregistré" : "Enregistrer les préférences"}
           </button>
         </div>
 
-        <div className="rounded-2xl border border-[#E7EBF5] bg-white p-4 shadow-[0_8px_24px_rgba(16,24,40,0.06)]">
+        <div className="rounded-2xl border border-white/20 bg-white/10 p-4 shadow-lg backdrop-blur-xl">
           <div className="mb-3 flex items-center gap-2">
             <Mail className="text-[#FF7A00]" size={18} />
-            <h2 className="font-black text-[#0D2B6B]">Notifications push</h2>
+            <h2 className="font-black text-white">Notifications push</h2>
           </div>
-          <p className="text-xs text-[#6B7280]">Les notifications push sont activées par défaut sur votre appareil.</p>
+          <p className="text-xs text-blue-100">Les notifications push sont activées par défaut sur votre appareil.</p>
         </div>
 
-        <div className="rounded-2xl border border-[#E7EBF5] bg-white p-4 shadow-[0_8px_24px_rgba(16,24,40,0.06)]">
+        <div className="rounded-2xl border border-white/20 bg-white/10 p-4 shadow-lg backdrop-blur-xl">
           <div className="mb-3 flex items-center gap-2">
             <Smartphone className="text-[#FF7A00]" size={18} />
-            <h2 className="font-black text-[#0D2B6B]">Notifications in-app</h2>
+            <h2 className="font-black text-white">Notifications in-app</h2>
           </div>
-          <p className="text-xs text-[#6B7280]">Les notifications dans l'application sont toujours actives. Consultez la page <a href="/notifications" className="font-bold text-[#0B5FFF]">Notifications</a> pour voir votre historique.</p>
+          <p className="text-xs text-blue-100">Les notifications dans l'application sont toujours actives. Consultez la page <a href="/notifications" className="font-bold text-blue-300">Notifications</a> pour voir votre historique.</p>
         </div>
       </div>
-    </main>
+    </div>
+  );
+
+  return (
+    <BtpBackground imageUrl="https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=2070&auto=format&fit=crop" overlay="medium">
+      {pageContent}
+    </BtpBackground>
   );
 }

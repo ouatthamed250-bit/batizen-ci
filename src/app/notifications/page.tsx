@@ -23,6 +23,7 @@ import {
   getNotificationColor,
   type Notification,
 } from "@/lib/notifications";
+import BtpBackground from "@/components/btp/BtpBackground";
 
 type FilterType = "all" | "unread" | "chantier_active" | "chantier_termine" | "nouveau_message";
 
@@ -80,34 +81,31 @@ export default function NotificationsPage() {
     return <IconComponent size={24} />;
   };
 
-  return (
-    <main className="min-h-screen bg-[#F7F9FC]">
-      {/* Header avec image de fond */}
-      <div className="relative overflow-hidden bg-[#0D2B6B] pb-16 pt-12">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0D2B6B] to-[#1E40AF]" />
-        <div className="relative px-4">
-          <Link
-            href="/dashboard"
-            className="mb-4 inline-flex items-center gap-1 text-sm font-bold text-white/80 transition hover:text-white"
-          >
-            <ArrowLeft size={16} /> Retour
-          </Link>
-          <h1 className="text-3xl font-black text-white">🔔 Mes notifications</h1>
-          <p className="mt-1 text-sm font-semibold text-white/70">
-            {unreadCount > 0 ? `${unreadCount} notification${unreadCount > 1 ? "s" : ""} non lue${unreadCount > 1 ? "s" : ""}` : "Toutes les notifications sont lues"}
-          </p>
-        </div>
+  const pageContent = (
+    <main className="min-h-screen pt-24 pb-24 px-2">
+      {/* Header */}
+      <div className="mb-8 mx-2">
+        <Link
+          href="/dashboard"
+          className="mb-4 inline-flex items-center gap-1 text-sm font-bold text-blue-100 transition hover:text-white"
+        >
+          <ArrowLeft size={16} /> Retour
+        </Link>
+        <h1 className="text-3xl font-black text-white">🔔 Mes notifications</h1>
+        <p className="mt-1 text-sm font-semibold text-blue-100">
+          {unreadCount > 0 ? `${unreadCount} notification${unreadCount > 1 ? "s" : ""} non lue${unreadCount > 1 ? "s" : ""}` : "Toutes les notifications sont lues"}
+        </p>
       </div>
 
-      <div className="mx-auto max-w-3xl px-4 -mt-8">
+      <div className="mx-2 space-y-4">
         {/* Filtres et actions */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-2xl border border-[#E7EBF5] bg-white p-4 shadow-[0_8px_24px_rgba(16,24,40,0.06)]"
+          className="rounded-2xl border border-white/20 bg-white/10 p-4 shadow-lg backdrop-blur-xl"
         >
           <div className="flex flex-wrap items-center gap-2">
-            <Filter size={18} className="text-[#6B7280]" />
+            <Filter size={18} className="text-blue-200" />
             <div className="flex flex-wrap gap-2">
               {[
                 { value: "all", label: "Toutes" },
@@ -122,7 +120,7 @@ export default function NotificationsPage() {
                   className={`rounded-full px-4 py-2 text-xs font-black transition ${
                     filter === f.value
                       ? "bg-[#0D2B6B] text-white"
-                      : "bg-[#F7F9FC] text-[#6B7280] hover:bg-[#E7EBF5]"
+                      : "bg-white/20 text-blue-200 hover:bg-white/30"
                   }`}
                 >
                   {f.label}
@@ -143,24 +141,24 @@ export default function NotificationsPage() {
         </motion.div>
 
         {/* Liste des notifications */}
-        <div className="mt-4 space-y-3">
+        <div className="space-y-3">
           {loading ? (
             <div className="animate-pulse space-y-3">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-24 rounded-2xl bg-[#E7EBF5]" />
+                <div key={i} className="h-24 rounded-2xl bg-white/20" />
               ))}
             </div>
           ) : filteredNotifications.length === 0 ? (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="rounded-2xl border border-dashed border-[#E7EBF5] bg-white p-12 text-center"
+              className="rounded-2xl border border-dashed border-white/20 bg-white/10 p-12 text-center backdrop-blur-xl"
             >
               <CheckCircle2 size={48} className="mx-auto text-[#22C55E]" />
-              <p className="mt-4 text-lg font-black text-[#0D2B6B]">
+              <p className="mt-4 text-lg font-black text-white">
                 {filter === "unread" ? "Toutes les notifications sont lues" : "Aucune notification"}
               </p>
-              <p className="mt-1 text-sm text-[#6B7280]">
+              <p className="mt-1 text-sm text-blue-100">
                 {filter === "unread"
                   ? "Vous êtes à jour !"
                   : "Vous n'avez pas encore reçu de notifications"}
@@ -174,7 +172,7 @@ export default function NotificationsPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className={`rounded-2xl border border-[#E7EBF5] bg-white p-4 shadow-[0_8px_24px_rgba(16,24,40,0.06)] transition hover:shadow-[0_8px_24px_rgba(16,24,40,0.12)] ${
+                  className={`rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-blur-xl transition ${
                     !notif.lu ? "ring-2 ring-[#FF7A00]/20" : ""
                   }`}
                 >
@@ -191,19 +189,19 @@ export default function NotificationsPage() {
                     <div className="flex-1">
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <p className="font-black text-[#0D2B6B]">{notif.message}</p>
+                          <p className="font-black text-white">{notif.message}</p>
                           {notif.chantierNom && (
-                            <p className="mt-1 text-xs text-[#6B7280]">
+                            <p className="mt-1 text-xs text-blue-100">
                               📁 {notif.chantierNom}
                             </p>
                           )}
                         </div>
                         {!notif.lu && (
-                          <span className="size-2 shrink-0 rounded-full bg-[#EF4444]" />
+                          <span className="size-2 shrink-0 rounded-full bg-red-400" />
                         )}
                       </div>
 
-                      <p className="mt-2 text-[10px] text-[#6B7280]">
+                      <p className="mt-2 text-[10px] text-blue-200">
                         {formatNotificationDate(notif.dateCreation)}
                       </p>
 
@@ -220,7 +218,7 @@ export default function NotificationsPage() {
                         {!notif.lu && (
                           <button
                             onClick={() => handleMarkAsRead(notif.id)}
-                            className="flex items-center gap-1 rounded-full bg-[#F7F9FC] px-4 py-1.5 text-xs font-black text-[#6B7280] transition hover:bg-[#E7EBF5]"
+                            className="flex items-center gap-1 rounded-full bg-white/20 px-4 py-1.5 text-xs font-black text-blue-200 transition hover:bg-white/30"
                           >
                             <CheckCheck size={14} />
                             Marquer comme lu
@@ -236,5 +234,11 @@ export default function NotificationsPage() {
         </div>
       </div>
     </main>
+  );
+
+  return (
+    <BtpBackground imageUrl="https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=2070&auto=format&fit=crop" overlay="light">
+      {pageContent}
+    </BtpBackground>
   );
 }
