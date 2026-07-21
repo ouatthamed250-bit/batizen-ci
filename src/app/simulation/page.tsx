@@ -147,7 +147,7 @@ export default function SimulationPage() {
 
   return (
     <BtpBackground imageUrl="https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=2070&auto=format&fit=crop" overlay="medium">
-      <div className="mx-auto max-w-4xl px-4 pt-20">
+      <div className="mx-2 pt-20 pb-24">
         <ChatBot />
         <div className="text-center mb-6">
           <h1 className="text-3xl font-black text-white drop-shadow-lg">🏠 Simulateur IA</h1>
