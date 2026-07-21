@@ -32,12 +32,12 @@ export default function ProfilePage() {
 
   return (
     <>
-      <main className="ios-scroll pt-4 pb-16 px-4 min-h-screen">
-          <div className="w-full px-2 py-4">
+      <main className="ios-scroll pt-4 pb-16 px-2 min-h-screen">
+          <div className="w-full py-4">
 
             <div className="space-y-5">
               {/* ── Hero identité ── */}
-              <div className="relative overflow-hidden rounded-[32px] p-6 bg-gradient-to-br from-[#0D2B6B] to-[#1A1040]">
+              <div className="relative overflow-hidden rounded-[32px] p-6 bg-gradient-to-br from-[#0D2B6B] to-[#1A1040] mx-2">
                 {/* Orbes déco */}
                 <div className="pointer-events-none absolute -right-12 -top-12 size-48 rounded-full opacity-[0.12] blur-[50px] bg-[#FF7A00]" />
                 <div className="pointer-events-none absolute -bottom-8 -left-8 size-40 rounded-full opacity-[0.15] blur-[40px] bg-[#0B5FFF]" />
@@ -98,7 +98,7 @@ export default function ProfilePage() {
               </div>
 
               {/* ── Slogan ── */}
-              <div className="rounded-[20px] border px-5 py-4" style={{
+              <div className="rounded-[20px] border px-5 py-4 mx-2" style={{
                 borderColor: "rgba(255,122,0,0.2)",
                 background: "linear-gradient(135deg,rgba(255,122,0,0.06),rgba(11,95,255,0.04))"
               }}>
@@ -110,7 +110,7 @@ export default function ProfilePage() {
               </div>
 
               {/* ── Sécurité & préférences ── */}
-              <div className="overflow-hidden rounded-[24px] border bg-white/20 backdrop-blur-xl shadow-lg border-white/30">
+              <div className="overflow-hidden rounded-[24px] border bg-white/20 backdrop-blur-xl shadow-lg border-white/30 mx-2">
                 <div className="flex items-center gap-3 border-b px-5 py-4 border-b border-white/20">
                   <div className="grid size-10 place-items-center rounded-[14px] text-white shadow-[0_4px_12px_rgba(11,95,255,0.3)] bg-gradient-to-br from-[#0B5FFF] to-[#0D2B6B]">
                     <ShieldCheck size={20} />
@@ -127,7 +127,7 @@ export default function ProfilePage() {
               </div>
 
               {/* ── Menu items ── */}
-              <div className="space-y-2">
+              <div className="space-y-2 mx-2">
                 {menuItems.map((item, i) => (
                   <a key={item.href} href={item.href} aria-label={item.label}
                     className={cn(
@@ -152,7 +152,7 @@ export default function ProfilePage() {
 
               {/* ── Déconnexion ── */}
               <button type="button" onClick={handleLogout} aria-label="Se déconnecter"
-                className="flex w-full items-center justify-center gap-2.5 rounded-[20px] border-2 py-4 text-sm font-black transition-all active:scale-[0.98] bg-red-500/20 border-red-400/30 text-red-300 shadow-lg"
+                className="flex w-full items-center justify-center gap-2.5 rounded-[20px] border-2 py-4 text-sm font-black transition-all active:scale-[0.98] bg-red-500/20 border-red-400/30 text-red-300 shadow-lg mx-2"
               >
                 <LogOut size={18} aria-hidden />
                 Se déconnecter

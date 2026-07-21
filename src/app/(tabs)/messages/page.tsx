@@ -9,7 +9,7 @@ export default async function MessagesPage() {
     <>
       <main className="ios-scroll min-h-screen pt-4 pb-16 px-2">
         <div className="w-full">
-            <div className="mb-7">
+            <div className="mb-7 mx-2">
               <p className="text-xs font-black uppercase tracking-[0.18em] text-white drop-shadow-md">Messages</p>
               <h1 className="mt-2 text-4xl font-black tracking-[-0.04em] text-white md:text-5xl drop-shadow-lg">
                 Communication chantier
@@ -17,11 +17,11 @@ export default async function MessagesPage() {
               <p className="mt-2 text-white/80 drop-shadow-md">Tous vos échanges avec l'équipe BÂTIZEN.</p>
             </div>
 
-            <div className="mb-6 flex justify-center sm:justify-start">
+            <div className="mb-6 flex justify-center sm:justify-start mx-2">
               <WeatherWidget title="Météo de votre rendez-vous" />
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-3 mx-2">
               {messages.map((message) => (
                 <article
                   key={message.id}

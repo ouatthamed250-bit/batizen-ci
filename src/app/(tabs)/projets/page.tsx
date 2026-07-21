@@ -100,7 +100,7 @@ export default function ProjectsPage() {
 
   return (
     <ScreenWrapper>
-      <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
+      <div className="mb-7 flex flex-wrap items-end justify-between gap-4 mx-2">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.18em] text-[#0B5FFF]">Archive</p>
           <h1 className="mt-2 text-4xl font-black tracking-[-0.04em] text-[#111827] md:text-5xl">
@@ -118,11 +118,11 @@ export default function ProjectsPage() {
       </div>
 
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
+        <div className="flex flex-col items-center justify-center py-20 text-center mx-2">
           <div className="animate-pulse">Chargement...</div>
         </div>
       ) : chantiers.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
+        <div className="flex flex-col items-center justify-center py-20 text-center mx-2">
           <div className="grid size-20 place-items-center rounded-[28px] bg-[#F7F9FC] text-[#6B7280]">
             <HardHat size={36} aria-hidden />
           </div>
@@ -132,7 +132,7 @@ export default function ProjectsPage() {
           </p>
         </div>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-6 lg:grid-cols-2 mx-2">
           {chantiers.map((chantier) => (
             <Link key={chantier.id} href={`/chantier/${chantier.id}`}>
               <div className="rounded-[20px] border border-white/50 bg-white/90 p-5 shadow-lg backdrop-blur-sm hover:shadow-xl transition cursor-pointer">
