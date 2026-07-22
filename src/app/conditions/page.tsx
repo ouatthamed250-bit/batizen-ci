@@ -1,3 +1,5 @@
+"use client"; // ✅ Ajouté pour autoriser le passage du composant icône (fix erreur build prerendering)
+
 import { FileText } from "lucide-react";
 import { FeaturePage } from "@/components/layout/FeaturePage";
 
