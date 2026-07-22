@@ -14,8 +14,9 @@ export function PremiumHeader() {
 
   async function handleLogout() {
     try {
+      // logout() gère désormais aussi la suppression du cookie de session
+      // serveur HttpOnly (__session) via /api/auth/logout.
       await logout();
-      document.cookie = "batizen_admin=; path=/; max-age=0";
       window.location.href = "/login";
     } catch (error) {
       console.error("Erreur déconnexion:", error);

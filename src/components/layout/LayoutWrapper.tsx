@@ -5,7 +5,13 @@ import { PremiumHeader } from "./PremiumHeader";
 import { BottomNav } from "./BottomNav";
 import PremiumBackground from "./PremiumBackground";
 
-export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
+interface LayoutWrapperProps {
+  children: React.ReactNode;
+  showHeader?: boolean;
+  showBottomNav?: boolean;
+}
+
+export default function LayoutWrapper({ children, showHeader: showHeaderProp = true, showBottomNav = true }: LayoutWrapperProps) {
   const pathname = usePathname();
 
   // 1. Pages publiques ou admin : AUCUN layout (ni header, ni bottom nav)
@@ -24,8 +30,9 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
   const isDashboard = pathname === "/dashboard";
   const isProfile = pathname === "/profil" || pathname?.startsWith("/profil");
   
-  // On affiche le header PARTOUT, sauf si c'est le dashboard ou le profil
-  const showHeader = !isDashboard && !isProfile;
+  // On affiche le header PARTOUT, sauf si c'est le dashboard ou le profil,
+  // sauf si la page appelante a explicitement désactivé le header via la prop showHeader.
+  const showHeader = showHeaderProp && !isDashboard && !isProfile;
 
   return (
     <PremiumBackground>
@@ -39,7 +46,7 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
       </main>
       
       {/* La barre de navigation du bas reste toujours visible */}
-      <BottomNav />
+      {showBottomNav && <BottomNav />}
     </PremiumBackground>
   );
 }

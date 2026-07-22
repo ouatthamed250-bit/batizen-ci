@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import { database } from "@/lib/firebase";
+import { timingSafeEqualString } from "@/lib/security";
 
 export const runtime = "edge";
 
 export async function GET(request: Request) {
   const secret = request.headers.get("x-cron-secret");
-  if (!secret || secret !== process.env.CRON_SECRET) {
+  const expectedSecret = process.env.CRON_SECRET;
+  // 🔒 Comparaison à temps constant pour éviter une timing attack permettant
+  // de deviner CRON_SECRET caractère par caractère via le temps de réponse.
+  if (!secret || !expectedSecret || !timingSafeEqualString(secret, expectedSecret)) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 

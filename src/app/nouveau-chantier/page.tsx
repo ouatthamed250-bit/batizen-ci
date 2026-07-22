@@ -7,9 +7,6 @@ import { ArrowRight, ArrowLeft, CheckCircle2, HardHat, MapPin, Wallet, Calendar,
 import { useAuthContext } from "@/contexts/AuthContext";
 import { ref, set, onValue } from "firebase/database";
 import { getFirebaseServices } from "@/lib/firebase";
-import { PHOTOS_CHANTIER } from "@/data/photos-chantier";
-import BtpPageBackground from "@/components/btp/BtpPageBackground";
-import { PremiumHeader } from "@/components/layout/PremiumHeader";
 import { PremiumButton } from "@/components/ui/PremiumButton";
 import { formatFcfa } from "@/utils/currency";
 import PlanGenerator2D from "@/components/simulation/PlanGenerator2D";
@@ -248,8 +245,7 @@ function NouveauChantierContent() {
   // Show success screen after submission
   if (loading && chantierId) {
     return (
-      <BtpPageBackground imageUrl={PHOTOS_CHANTIER.nouveauChantier} overlayClassName="bg-gradient-to-b from-black/60 via-black/70 to-black/80">
-        <div className="min-h-screen pt-24 flex items-center justify-center">
+        <div className="min-h-screen pt-4 flex items-center justify-center">
           <div className="rounded-[24px] bg-white/10 backdrop-blur-xl p-8 border border-white/20 max-w-md w-full mx-4 text-center">
             <CheckCircle2 size={64} className="text-[#22C55E] mx-auto mb-4" />
             <h2 className="text-2xl font-black text-white mb-4">✅ Projet soumis avec succès !</h2>
@@ -300,16 +296,12 @@ function NouveauChantierContent() {
             </div>
           </div>
         </div>
-      </BtpPageBackground>
     );
   }
 
   return (
-    <BtpPageBackground imageUrl={PHOTOS_CHANTIER.nouveauChantier} overlayClassName="bg-gradient-to-b from-black/60 via-black/70 to-black/80">
-      <div className="min-h-screen">
-        <PremiumHeader />
-        
-        <main className="min-h-screen pt-6 pb-24">
+      <div>
+        <main className="pt-2 pb-4">
           <div className="mx-2 pb-6">
             {prefilledData && (
               <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-6 mx-2 rounded-[18px] bg-white/20 border border-white/30 p-4">
@@ -362,7 +354,6 @@ function NouveauChantierContent() {
           </div>
         </main>
       </div>
-    </BtpPageBackground>
   );
 }
 

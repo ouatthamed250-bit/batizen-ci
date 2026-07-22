@@ -75,16 +75,15 @@ export default function AdminDashboardPage() {
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    // Vérification de sécurité côté client (double couche)
-    const verified = document.cookie.includes('batizen_admin=1');
-    const role = document.cookie.includes('user_role=admin');
-    
-    if (!verified || !role) {
+    // 🔒 Vérification de sécurité côté client basée sur le rôle réel (custom claim
+    // Firebase), et non plus sur des cookies non-HttpOnly falsifiables depuis la
+    // console du navigateur. La protection serveur est assurée par le middleware.
+    if (authLoading) return;
+
+    if (!user || user.role !== "admin") {
       router.push('/login?redirect=admin');
       return;
     }
-
-    if (!user?.uid) return;
 
     const db = getDatabase();
     const usersRef = ref(db, 'users');

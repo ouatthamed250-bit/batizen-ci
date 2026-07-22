@@ -5,6 +5,7 @@ import {
   ref,
   get,
   set,
+  update,
   query,
   orderByChild,
   equalTo,
@@ -83,12 +84,35 @@ export async function rtdbGetListByChild<T = Record<string, unknown>>(
 
 /**
  * Écrit une valeur à un chemin Firebase Realtime Database.
+ * ⚠️ ATTENTION : `set()` REMPLACE INTÉGRALEMENT le nœud ciblé. Si vous ne
+ * passez qu'un objet partiel (ex: { statut: "actif" }), toutes les autres
+ * propriétés existantes à ce chemin seront DÉFINITIVEMENT PERDUES.
+ * Pour une mise à jour partielle, utilisez `rtdbUpdate` à la place.
  */
 export async function rtdbSet<T = unknown>(path: string, value: T): Promise<void> {
   const r = dbRef(path);
   if (!r) return;
   try {
     await set(r, value);
+  } catch {
+    // silencieux
+  }
+}
+
+/**
+ * Met à jour partiellement un ou plusieurs champs à un chemin donné, SANS
+ * écraser le reste des données existantes (contrairement à `rtdbSet`).
+ * À privilégier systématiquement pour toute mise à jour partielle d'un objet
+ * (ex: changer un statut, un champ, etc.).
+ */
+export async function rtdbUpdate(
+  path: string,
+  values: Record<string, unknown>
+): Promise<void> {
+  const r = dbRef(path);
+  if (!r) return;
+  try {
+    await update(r, values);
   } catch {
     // silencieux
   }

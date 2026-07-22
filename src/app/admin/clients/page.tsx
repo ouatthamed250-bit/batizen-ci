@@ -2,7 +2,7 @@
 
 import { useState, useEffect, type FormEvent } from "react";
 import { Search, Pause, Play, AlertCircle, CheckCircle2 } from "lucide-react";
-import { rtdbGetList, rtdbGet, rtdbSet } from "@/lib/rtdb";
+import { rtdbGetList, rtdbGet, rtdbUpdate } from "@/lib/rtdb";
 import { getDatabase, ref, onValue } from "firebase/database";
 import { useAuthContext } from "@/contexts/AuthContext";
 
@@ -104,7 +104,10 @@ export default function AdminClientsPage() {
   // Suspendre/Réactiver un client
   const toggleSuspension = async (clientId: string, suspend: boolean, raison?: string) => {
     try {
-      await rtdbSet(`users/${clientId}`, {
+      // 🔒 CORRECTIF SÉCURITÉ/DONNÉES : `rtdbSet` REMPLACE tout le nœud
+      // users/{clientId}, effaçant email, rôle, nom, etc. On utilise désormais
+      // `rtdbUpdate` qui ne modifie QUE les champs fournis.
+      await rtdbUpdate(`users/${clientId}`, {
         statutCompte: suspend ? "suspendu" : "actif",
         raisonSuspension: suspend && raison ? raison : null
       });

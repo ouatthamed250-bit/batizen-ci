@@ -6,7 +6,6 @@ import { useAuthContext } from "@/contexts/AuthContext";
 import { getDatabase, ref, onValue, query, orderByChild, equalTo } from "firebase/database";
 import Link from "next/link";
 import ChatBot from "@/components/ChatBot";
-import BtpBackground from "@/components/btp/BtpBackground";
 
 // ✅ NOUVEAUX IMPORTS : Types et Utilitaires centralisés
 import type { Chantier } from "@/types/chantier";
@@ -52,8 +51,8 @@ export default function ProjectsPage() {
     return () => unsubscribe();
   }, [user?.uid]);
 
-  const pageContent = (
-    <div className="min-h-screen pt-8 pb-24 px-2"> {/* ✅ pt-8 au lieu de pt-24 pour s'aligner avec le header */}
+  return (
+    <div className="pt-2 pb-4">
       <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-200">Archive</p>
@@ -121,11 +120,5 @@ export default function ProjectsPage() {
         <ChatBot />
       </div>
     </div>
-  );
-
-  return (
-    <BtpBackground imageUrl="https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=2070&auto=format&fit=crop" overlay="medium">
-      {pageContent}
-    </BtpBackground>
   );
 }

@@ -97,14 +97,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           });
           userData = { role: "client", createdAt: Date.now() };
         }
-        
+
+        // 🔒 SÉCURITÉ CRITIQUE : le rôle "admin" ne doit JAMAIS être déterminé par une
+        // donnée modifiable côté client (Realtime Database). N'importe quel utilisateur
+        // connecté pouvait auparavant écrire users/{uid}/role = "admin" depuis la
+        // console du navigateur et obtenir un accès complet aux pages /admin.
+        //
+        // On se base donc UNIQUEMENT sur le custom claim Firebase "role", qui ne peut
+        // être attribué que côté serveur (Firebase Admin SDK / scripts/set-admin-role.js).
+        // Un utilisateur ne peut pas falsifier son propre idToken pour s'auto-attribuer
+        // ce claim.
+        let isAdminClaim = false;
+        try {
+          const tokenResult = await firebaseUser.getIdTokenResult();
+          isAdminClaim = tokenResult.claims?.role === "admin";
+        } catch (err) {
+          console.error("Erreur lecture des custom claims:", err);
+        }
+
         const authUser: AuthUser = {
            uid: firebaseUser.uid,
            email: firebaseUser.email,
            displayName: firebaseUser.displayName || userData?.displayName || null,
            photoURL: firebaseUser.photoURL || userData?.photoURL || null,
            phoneNumber: userData?.phoneNumber || firebaseUser.phoneNumber || null,
-           role: userData?.role || "client",
+           role: isAdminClaim ? "admin" : "client",
          };
         console.log("✅ Auth: Connexion réussie pour", authUser.email);
         setUser(authUser);
@@ -192,6 +209,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (hasFirebaseConfig()) {
       const { auth } = getFirebaseServices();
       await signOut(auth);
+    }
+    // 🔒 Supprime aussi le cookie de session serveur HttpOnly (__session).
+    // Sans cet appel, le cookie reste valide jusqu'à son expiration (24h)
+    // même après une "déconnexion" côté client, laissant l'accès /admin ouvert.
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch (err) {
+      console.error("Erreur suppression session serveur:", err);
     }
     setUser(null);
     setIsAuthenticated(false);

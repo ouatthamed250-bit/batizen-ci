@@ -48,9 +48,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       try {
         const auth = getAuth();
         await signOut(auth);
-        document.cookie = "batizen_admin=; path=/; max-age=0";
-        document.cookie = "user_role=; path=/; max-age=0";
-        localStorage.removeItem("batizen_admin_session");
+        // 🔒 Supprime le vrai cookie de session serveur HttpOnly (__session).
+        // Les anciens cookies "batizen_admin"/"user_role" étaient falsifiables
+        // depuis la console du navigateur et ne protégeaient rien.
+        await fetch("/api/auth/logout", { method: "POST" });
       } catch (error) {
         console.error("Logout error:", error);
       }

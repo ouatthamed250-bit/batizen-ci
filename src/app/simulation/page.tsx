@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, ArrowRight, Sparkles, CheckCircle2 } from "lucide-react";
 import { PremiumButton } from "@/components/ui/PremiumButton";
 import { formatFcfa } from "@/utils/currency";
-import BtpBackground from "@/components/btp/BtpBackground";
 import SuperCalculateur from "@/components/btp/SuperCalculateur";
 import PlanGenerator2D from "@/components/simulation/PlanGenerator2D";
 import PlanGenerator3D from "@/components/simulation/PlanGenerator3D";
@@ -146,9 +145,7 @@ export default function SimulationPage() {
   };
 
   return (
-    <BtpBackground imageUrl="https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=2070&auto=format&fit=crop" overlay="medium">
-      <div className="absolute inset-0 bg-[#0D2B6B]/40 backdrop-blur-sm" />
-      <div className="mx-2 pt-20 pb-24">
+    <div className="mx-2 pt-2 pb-4">
         <ChatBot />
         <div className="text-center mb-6">
           <h1 className="text-3xl font-black text-white drop-shadow-lg">🏠 Simulateur IA</h1>
@@ -472,6 +469,5 @@ export default function SimulationPage() {
           )}
         </AnimatePresence>
       </div>
-    </BtpBackground>
   );
 }

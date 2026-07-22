@@ -1,15 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { X, Lock } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { getFirebaseServices } from "@/lib/firebase";
-import { ref, update } from "firebase/database";
-
-// ⚠️ IDÉAL : Déplacer cette valeur dans ton fichier .env.local (ex: NEXT_PUBLIC_ADMIN_SECRET)
-// Pour l'instant, on la garde ici pour que ça fonctionne immédiatement.
-const ADMIN_SECRET_PASSWORD = "batizen2026"; 
 
 interface AdminSecretModalProps {
   isOpen: boolean;
@@ -24,53 +18,63 @@ export default function AdminSecretModal({ isOpen, onClose }: AdminSecretModalPr
 
   if (!isOpen) return null;
 
-  const handleVerify = async (e: React.FormEvent) => {
+  /**
+   * Vérifie le mot de passe admin et crée une session cookie sécurisée
+   * Le mot de passe est maintenant vérifié côté serveur via l'API
+   */
+  async function handleVerify(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
-      // 1. Vérification du mot de passe
-      if (password !== ADMIN_SECRET_PASSWORD) {
-        setError("Mot de passe administrateur incorrect.");
-        setLoading(false);
-        return;
-      }
-
-      // 2. Vérification que l'utilisateur est bien connecté
-      if (!user?.uid) {
+      // 1. Vérifier que l'utilisateur est bien connecté
+      if (!user) {
         setError("Vous devez être connecté avec un compte pour activer ce mode.");
         setLoading(false);
         return;
       }
 
-      // 3. Mise à jour du rôle dans Firebase Realtime Database
-      const { database } = getFirebaseServices();
-      const userRef = ref(database, `users/${user.uid}`);
+      // 2. Récupérer l'idToken Firebase côté client
+      const { auth } = getFirebaseServices();
+      const currentUser = auth.currentUser;
       
-      await update(userRef, {
-        role: "admin",
-        updatedAt: Date.now(),
+      if (!currentUser) {
+        setError("Utilisateur non authentifié. Veuillez vous reconnecter.");
+        setLoading(false);
+        return;
+      }
+
+      const idToken = await currentUser.getIdToken();
+
+      // 3. Appeler l'API côté serveur pour créer le session cookie
+      // Le serveur vérifie le mot de passe admin ET le rôle dans Firebase
+      const response = await fetch("/api/auth/session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ idToken, password }),
       });
 
-      // 4. Définition des cookies pour le middleware Next.js
-      // max-age=86400 = 24 heures
-      document.cookie = `batizen_admin=1; path=/; max-age=86400; SameSite=Lax`;
-      document.cookie = `user_role=admin; path=/; max-age=86400; SameSite=Lax`;
+      const data = await response.json();
 
-      // 5. Redirection FORCÉE
-      // On utilise window.location.href au lieu de router.push pour forcer un 
-      // rechargement complet de la page. C'est OBLIGATOIRE pour que le middleware.ts 
-      // côté serveur puisse lire les nouveaux cookies que nous venons de définir.
+      if (!response.ok) {
+        // L'API renvoie une erreur (mauvais mot de passe ou rôle non admin)
+        setError(data.error || "Accès administrateur refusé.");
+        setLoading(false);
+        return;
+      }
+
+      // 4. Redirection vers le dashboard admin (le cookie est déjà posé côté serveur)
       window.location.href = "/admin/dashboard";
 
     } catch (err: any) {
       console.error("🔥 Erreur lors de l'activation du mode admin :", err);
       setError("Une erreur est survenue. Vérifiez votre connexion internet.");
-    } finally {
       setLoading(false);
     }
-  };
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fadeIn">
@@ -97,7 +101,7 @@ export default function AdminSecretModal({ isOpen, onClose }: AdminSecretModalPr
         <form onSubmit={handleVerify} className="space-y-4">
           <div>
             <label className="mb-2 block text-sm font-semibold text-[#111827]">
-              Mot de passe secret
+              Mot de passe secret administrateur
             </label>
             <input
               type="password"
