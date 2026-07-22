@@ -7,7 +7,8 @@ export type Localisation = {
   ville?: string;
 };
 
-export type StatutChantier = "en_attente" | "en_cours" | "termine" | "suspendu";
+// ✅ Ajout de "en_attente_rdv", "terminé" et "string" pour éviter les blocages futurs avec Firebase
+export type StatutChantier = "en_attente" | "en_attente_rdv" | "en_cours" | "termine" | "terminé" | "suspendu" | string;
 
 export type Chantier = {
   id: string;
@@ -17,9 +18,14 @@ export type Chantier = {
   statut?: StatutChantier;
   localisation?: Localisation;
   budget_total?: number;
+  budget?: number;
   date_debut?: string;
+  date_fin?: string;
   date_fin_prevue?: string;
-  userId?: string; // Pour filtrer par utilisateur
+  rdv_date?: string;
+  plan_choisi?: string;
+  userId?: string;
+  actif?: boolean;
   createdAt?: number;
-  [key: string]: any; // Pour permettre d'autres champs dynamiques de Firebase
+  [key: string]: any; // Permet d'accepter d'autres champs dynamiques de Firebase sans faire planter le build
 };
