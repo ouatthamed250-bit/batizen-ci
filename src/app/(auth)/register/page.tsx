@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ArrowRight, Lock, MapPin, Phone, User, Shield, AlertCircle } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
-import { checkPasswordStrength } from "@/hooks/useAuth";
+import { validateAndFormatPhone, checkPasswordStrength } from "@/utils/validators"; // ✅ NOUVEAU
+import { GoogleIcon } from "@/components/ui/GoogleIcon";                         // ✅ NOUVEAU
 import { BackButton } from "@/components/ui/BackButton";
 import BtpBackground from "@/components/btp/BtpBackground";
 
@@ -29,52 +30,54 @@ export default function RegisterPage() {
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
-    console.log("🖱️ UI: Bouton 'Créer mon compte' cliqué !");
     setError("");
     
     if (passwordStrength && passwordStrength.strength === 'weak') {
-      console.log("⚠️ UI: Mot de passe faible, blocage");
       setError("Votre mot de passe est trop faible. Veuillez le renforcer.");
-      return;
-    }
-    
-    const cleanPhone = form.phone.replace(/\s/g, '');
-    if (cleanPhone.length < 8) {
-      console.log("⚠️ UI: Numéro trop court, blocage");
-      setError("Le numéro de téléphone doit contenir au moins 8 chiffres.");
       return;
     }
     
     setLoading(true);
     try {
-      const firebaseEmail = cleanPhone + '@batizen.ci';
-      console.log("➡️ UI: Appel de la fonction register() avec:", firebaseEmail);
+      // ✅ Utilisation du helper centralisé
+      const validation = validateAndFormatPhone(form.phone);
       
-      await register(firebaseEmail, form.password, form.name);
-      
-      console.log("✅ UI: Inscription réussie, redirection vers dashboard...");
+      if (!validation.isValid) {
+        setError(validation.error || "Numéro de téléphone invalide.");
+        setLoading(false);
+        return;
+      }
+
+      await register(validation.firebaseEmail, form.password, form.name);
       router.replace("/dashboard");
     } catch (err: any) {
-      console.error("🔥 UI: Erreur attrapée dans handleRegister :", err);
-      const msg = err?.code;
-      if (msg === "auth/email-already-in-use") setError("Ce numéro est déjà utilisé.");
-      else if (msg === "auth/weak-password") setError("Mot de passe trop faible (6 caractères min).");
-      else setError("Erreur lors de la création du compte: " + (err?.message || "Inconnue"));
+      if (err?.code === "auth/email-already-in-use") {
+        setError("Ce numéro de téléphone est déjà associé à un compte existant.");
+      } else if (err?.code === "auth/weak-password") {
+        setError("Le mot de passe est trop faible (6 caractères minimum requis par Firebase).");
+      } else if (err?.code === "auth/invalid-email") {
+        setError("Format d'email invalide.");
+      } else {
+        setError(err?.message || "Une erreur est survenue lors de la création du compte.");
+      }
     } finally {
       setLoading(false);
     }
   }
 
   async function handleGoogle() {
-    console.log("🖱️ UI: Bouton 'Google' (Inscription) cliqué !");
     setError("");
     setLoading(true);
     try {
       await loginWithGoogle();
-      // La redirection est gérée par le onAuthStateChanged après le retour de Google
     } catch (err: any) {
-      console.error("🔥 UI: Erreur Google attrapée :", err);
-      setError("Connexion Google annulée ou échouée.");
+      if (err.code === "auth/popup-closed-by-user" || err.code === "auth/cancelled-popup-request") {
+        setError("La fenêtre de connexion a été fermée prématurément.");
+      } else if (err.code === "auth/unauthorized-domain") {
+        setError("Erreur de configuration : domaine non autorisé.");
+      } else {
+        setError("Connexion Google échouée. Vérifiez la console.");
+      }
     } finally {
       setLoading(false);
     }
@@ -184,7 +187,7 @@ export default function RegisterPage() {
           )}
 
           {error && (
-            <div className="flex items-start gap-3 rounded-[16px] bg-red-50 p-4 border border-red-200">
+            <div className="flex items-start gap-3 rounded-[16px] bg-red-50 p-4 border border-red-200 animate-fadeInUp">
               <AlertCircle size={20} className="shrink-0 text-red-600 mt-0.5" />
               <p className="text-sm font-semibold text-red-600">{error}</p>
             </div>
@@ -216,7 +219,7 @@ export default function RegisterPage() {
             aria-label="S'inscrire avec Google"
             className="group flex h-[56px] w-full items-center justify-center gap-3 rounded-[20px] border-2 border-[#E7EBF5] bg-white text-sm font-bold text-[#111827] transition-all hover:border-[#0B5FFF]/40 hover:shadow-[0_8px_24px_rgba(11,95,255,0.12)] active:scale-[0.97] disabled:opacity-60"
           >
-            <svg width="22" height="22" viewBox="0 0 48 48" aria-hidden className="transition-transform group-hover:scale-110"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+            <GoogleIcon className="w-5 h-5 transition-transform group-hover:scale-110" /> {/* ✅ Icône Google propre */}
             S'inscrire avec Google
           </button>
         </form>

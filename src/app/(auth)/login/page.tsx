@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { ArrowRight, Cloud, Headphones, Lock, Phone, ShieldCheck } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { validateAndFormatPhone } from "@/utils/validators"; // ✅ NOUVEAU
+import { GoogleIcon } from "@/components/ui/GoogleIcon";     // ✅ NOUVEAU
 import AdminSecretModal from "@/components/auth/AdminSecretModal";
 
 export const dynamic = "force-static";
@@ -52,45 +54,44 @@ export default function LoginPage() {
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
-    console.log("🖱️ UI: Bouton 'Se connecter' cliqué !");
     setError("");
     setLoading(true);
+    
     try {
-      const cleanPhone = phone.replace(/\s/g, '');
-      if (cleanPhone.length < 8) {
-        console.log("⚠️ UI: Numéro trop court");
-        setError("Le numéro de téléphone doit contenir au moins 8 chiffres.");
+      // ✅ Utilisation du helper centralisé
+      const validation = validateAndFormatPhone(phone);
+      
+      if (!validation.isValid) {
+        setError(validation.error || "Numéro invalide");
         setLoading(false);
         return;
       }
-      const firebaseEmail = cleanPhone + '@batizen.ci';
-      console.log("➡️ UI: Appel de la fonction login() avec:", firebaseEmail);
-      
-      await login(firebaseEmail, password);
-      
-      console.log("✅ UI: Login réussi, redirection vers dashboard...");
+
+      await login(validation.firebaseEmail, password);
       router.replace("/dashboard");
     } catch (err: any) {
-      console.error("🔥 UI: Erreur attrapée dans handleLogin :", err);
-      setError("Numéro ou mot de passe incorrect. (" + (err?.message || "Erreur inconnue") + ")");
+      if (err?.code === "auth/invalid-credential" || err?.code === "auth/wrong-password" || err?.code === "auth/user-not-found") {
+        setError("Numéro de téléphone ou mot de passe incorrect.");
+      } else if (err?.code === "auth/too-many-requests") {
+        setError("Trop de tentatives. Veuillez réessayer plus tard.");
+      } else {
+        setError(err?.message || "Une erreur est survenue lors de la connexion.");
+      }
     } finally {
       setLoading(false);
     }
   }
 
   async function handleGoogle() {
-    console.log("🖱️ UI: Bouton 'Google' cliqué !");
     setError("");
     setLoading(true);
     try {
       await loginWithGoogle();
-      // La redirection est gérée par le onAuthStateChanged après le retour de Google
     } catch (err: any) {
-      console.error("🔥 UI: Erreur Google attrapée :", err);
       if (err.code === "auth/popup-closed-by-user" || err.code === "auth/cancelled-popup-request") {
         setError("La fenêtre de connexion a été fermée prématurément.");
       } else if (err.code === "auth/unauthorized-domain") {
-        setError("Erreur de config : Ce domaine n'est pas autorisé dans Firebase.");
+        setError("Erreur de configuration : domaine non autorisé.");
       } else {
         setError("Connexion Google échouée. Vérifiez la console.");
       }
@@ -123,7 +124,15 @@ export default function LoginPage() {
             <span className="mb-2 block text-sm font-semibold text-white">Numéro de téléphone</span>
             <div className="flex h-[56px] items-center gap-3 rounded-[18px] bg-white/20 px-4 transition focus-within:ring-2 focus-within:ring-[#0B5FFF]/20">
               <Phone size={18} className="shrink-0 text-white" aria-hidden />
-              <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="ex: 07 07 07 07 07" type="tel" autoComplete="tel" required className="flex-1 bg-transparent text-sm font-semibold text-white outline-none placeholder:text-white/60" />
+              <input 
+                value={phone} 
+                onChange={e => setPhone(e.target.value)} 
+                placeholder="ex: 07 07 07 07 07" 
+                type="tel" 
+                autoComplete="tel" 
+                required 
+                className="flex-1 bg-transparent text-sm font-semibold text-white outline-none placeholder:text-white/60" 
+              />
             </div>
           </label>
 
@@ -131,7 +140,15 @@ export default function LoginPage() {
             <span className="mb-2 block text-sm font-semibold text-white">Mot de passe</span>
             <div className="flex h-[56px] items-center gap-3 rounded-[18px] bg-white/20 px-4 transition focus-within:ring-2 focus-within:ring-[#0B5FFF]/20">
               <Lock size={18} className="shrink-0 text-white" aria-hidden />
-              <input value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" type="password" autoComplete="current-password" required className="flex-1 bg-transparent text-sm font-semibold text-white outline-none placeholder:text-white/60" />
+              <input 
+                value={password} 
+                onChange={e => setPassword(e.target.value)} 
+                placeholder="••••••••" 
+                type="password" 
+                autoComplete="current-password" 
+                required 
+                className="flex-1 bg-transparent text-sm font-semibold text-white outline-none placeholder:text-white/60" 
+              />
             </div>
           </label>
 
@@ -139,10 +156,21 @@ export default function LoginPage() {
             <Link href="/forgot-password" className="font-bold text-white hover:underline">Mot de passe oublié ?</Link>
           </div>
 
-          {error && <p className="rounded-[14px] bg-red-500/20 px-4 py-3 text-sm font-semibold text-red-300 border border-red-500/30">{error}</p>}
+          {error && (
+            <p className="rounded-[14px] bg-red-500/20 px-4 py-3 text-sm font-semibold text-red-300 border border-red-500/30 animate-fadeInUp">
+              {error}
+            </p>
+          )}
 
-          <button type="submit" disabled={loading} aria-label="Se connecter" className="mt-4 flex h-[58px] w-full items-center justify-center gap-3 rounded-[20px] bg-gradient-to-b from-[#FF8C00] to-[#CC5500] text-white shadow-lg transition active:scale-[0.97] disabled:opacity-60">
-            <div className="grid size-9 place-items-center rounded-full bg-white/20"><ArrowRight size={18} aria-hidden /></div>
+          <button 
+            type="submit" 
+            disabled={loading} 
+            aria-label="Se connecter" 
+            className="mt-4 flex h-[58px] w-full items-center justify-center gap-3 rounded-[20px] bg-gradient-to-b from-[#FF8C00] to-[#CC5500] text-white shadow-lg transition active:scale-[0.97] disabled:opacity-60"
+          >
+            <div className="grid size-9 place-items-center rounded-full bg-white/20">
+              <ArrowRight size={18} aria-hidden />
+            </div>
             <span className="text-base font-black">{loading ? "Connexion…" : "Se connecter"}</span>
           </button>
 
@@ -152,8 +180,14 @@ export default function LoginPage() {
             <div className="h-px flex-1 bg-white/20" />
           </div>
 
-          <button type="button" onClick={handleGoogle} disabled={loading} aria-label="Continuer avec Google" className="mt-4 flex h-[54px] w-full items-center justify-center gap-3 rounded-[18px] border border-white/20 bg-white/20 text-sm font-bold text-white transition-all hover:border-white/30 active:scale-[0.97] disabled:opacity-60">
-            <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+          <button 
+            type="button" 
+            onClick={handleGoogle} 
+            disabled={loading} 
+            aria-label="Continuer avec Google" 
+            className="mt-4 flex h-[54px] w-full items-center justify-center gap-3 rounded-[18px] border border-white/20 bg-white/20 text-sm font-bold text-white transition-all hover:border-white/30 active:scale-[0.97] disabled:opacity-60"
+          >
+            <GoogleIcon className="w-5 h-5" /> {/* ✅ Icône Google propre */}
             Continuer avec Google
           </button>
         </form>
