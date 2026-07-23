@@ -19,8 +19,9 @@ import {
   MessageCircle,
   Calendar,
 } from "lucide-react";
-import { getAuth, signOut } from "firebase/auth";
+import { signOut } from 'firebase/auth';
 import { useAuthContext } from "@/contexts/AuthContext";
+import { getFirebaseServices } from '../../lib';
 
 const SIDEBAR = [
   { key: "dashboard", label: "Tableau de bord", icon: BarChart3, href: "/admin/dashboard" },
@@ -46,7 +47,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const handleLogout = async () => {
     if (typeof window !== "undefined") {
       try {
-        const auth = getAuth();
+        const { auth } = getFirebaseServices();
         await signOut(auth);
         // 🔒 Supprime le vrai cookie de session serveur HttpOnly (__session).
         // Les anciens cookies "batizen_admin"/"user_role" étaient falsifiables
@@ -86,7 +87,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="min-h-screen bg-[#111827] text-white">
       {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-white/10 bg-[#0B111E] p-4 lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-white/10 bg-[#0F0F15] p-4 lg:flex">
         <div className="mb-6 flex items-center gap-2 px-2">
           <div className="grid size-9 place-items-center rounded-[12px] bg-[#FF7A00] font-black">B</div>
           <span className="text-lg font-black tracking-tight">BÂTIZEN Admin</span>
@@ -118,7 +119,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Mobile top bar */}
-      <div className="flex items-center justify-between border-b border-white/10 bg-[#0B111E] px-4 py-3 lg:hidden">
+      <div className="flex items-center justify-between border-b border-white/10 bg-[#0F0F15] px-4 py-3 lg:hidden">
         <span className="font-black">BÂTIZEN Admin</span>
         <button type="button" onClick={() => setOpen(true)} aria-label="Menu">
           <Menu size={24} />
@@ -129,7 +130,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {open && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/60" onClick={() => setOpen(false)} />
-          <aside className="absolute inset-y-0 left-0 flex w-64 flex-col bg-[#0B111E] p-4">
+          <aside className="absolute inset-y-0 left-0 flex w-64 flex-col bg-[#0F0F15] p-4">
             <div className="mb-6 flex items-center justify-between px-2">
               <span className="text-lg font-black">Admin</span>
               <button type="button" onClick={() => setOpen(false)} aria-label="Fermer">

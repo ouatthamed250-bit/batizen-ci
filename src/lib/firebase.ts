@@ -3,9 +3,23 @@ import { getAuth, GoogleAuthProvider, type Auth } from "firebase/auth";
 import { getDatabase, type Database } from "firebase/database";
 import { getStorage, type FirebaseStorage } from "firebase/storage";
 
+/**
+ * Interface unifiée des services Firebase.
+ * 
+ * Utilisation recommandée :
+ *   import { getFirebaseServices } from '@/lib/firebase';
+ *   const { db, auth, storage } = getFirebaseServices();
+ * 
+ * Au lieu de :
+ *   import { getDatabase } from 'firebase/database'; // ❌ À ÉVITER
+ *   const db = getDatabase();                         // crée une nouvelle instance
+ */
 export type FirebaseServices = {
   app: FirebaseApp;
   auth: Auth;
+  /** Alias de `database` pour plus de clarté */
+  db: Database;
+  /** Ancien nom, conservé pour rétrocompatibilité */
   database: Database;
   storage: FirebaseStorage;
   googleProvider: GoogleAuthProvider;
@@ -59,6 +73,7 @@ export function getFirebaseServices(): FirebaseServices {
   return {
     app: firebaseApp,
     auth: firebaseAuth,
+    db: firebaseDatabase,
     database: firebaseDatabase,
     storage: firebaseStorage,
     googleProvider: firebaseGoogleProvider,

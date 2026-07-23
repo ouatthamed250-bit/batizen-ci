@@ -1,19 +1,17 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { verifySessionCookie } from '@/lib/firebase-admin';
+import { getAuth } from 'firebase-admin/auth';
+import { getDatabase } from 'firebase-admin/database';
+import { verifySessionCookie, firebaseAdmin } from '@/lib/firebase-admin';
 
 /**
- * Middleware Next.js - Protection des routes admin
+ * Middleware Next.js — Protection des routes /admin/*
  *
- * 🔒 SÉCURITÉ : Le middleware vérifie désormais RÉELLEMENT la validité du cookie
- * de session (__session) et le rôle admin (custom claim), via l'Admin SDK
- * Firebase (verifySessionCookie). Auparavant, seule la PRÉSENCE du cookie était
- * vérifiée : un cookie expiré, révoqué, ou falsifié (valeur non-vide quelconque)
- * suffisait à passer ce filtre, laissant la vérification réelle uniquement au
- * rendu client (facilement contournable).
+ * 🔒 Deux niveaux de vérification :
+ *   1. Custom claim Firebase (via session cookie) — PRIORITAIRE
+ *   2. Fallback Realtime Database (users/{uid}/role) — FALLBACK
  *
- * Nécessite `runtime: 'nodejs'` car firebase-admin utilise des API Node.js
- * non disponibles dans le runtime Edge.
+ * Nécessite `runtime: 'nodejs'` car firebase-admin utilise des API Node.js.
  */
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
@@ -21,15 +19,40 @@ export async function middleware(request: NextRequest) {
   if (path.startsWith('/admin')) {
     const sessionCookie = request.cookies.get('__session')?.value;
 
-    const isValidAdmin = await verifySessionCookie(sessionCookie);
+    // ── 1. Vérification par custom claim (rapide, prioritaire) ──
+    let isValidAdmin = await verifySessionCookie(sessionCookie);
 
+    // ── 2. Fallback Realtime Database (si custom claim échoue) ──
+    // Utile pour les admins créés via /make-me-admin qui n'ont que
+    // le rôle "admin" dans la DB mais pas encore de custom claim.
+    if (!isValidAdmin && sessionCookie) {
+      try {
+        const adminAuth = getAuth(firebaseAdmin);
+        const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, true);
+        const uid = decodedToken.uid;
+
+        const adminDb = getDatabase(firebaseAdmin);
+        const snapshot = await adminDb.ref(`users/${uid}/role`).once('value');
+
+        if (snapshot.val() === 'admin') {
+          isValidAdmin = true;
+          console.log(`✅ Middleware DB fallback : admin via DB (uid: ${uid})`);
+        }
+      } catch {
+        // Échec silencieux : on garde isValidAdmin = false
+      }
+    }
+
+    // ── Redirection si non admin ──
     if (!isValidAdmin) {
       const url = request.nextUrl.clone();
       url.pathname = '/login';
       url.searchParams.set('redirect', 'admin');
       const response = NextResponse.redirect(url);
+
       // Nettoie un éventuel cookie invalide/expiré
       response.cookies.set('__session', '', { path: '/', maxAge: 0 });
+
       return response;
     }
   }

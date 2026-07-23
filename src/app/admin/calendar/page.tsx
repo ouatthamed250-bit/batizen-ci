@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Calendar, CalendarDays, Calendar as CalendarIcon } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
-import { getDatabase, ref as dbRef, onValue, push, update } from "firebase/database";
 import { getFirebaseServices } from "@/lib/firebase";
 
 export default function AdminCalendarPage() {

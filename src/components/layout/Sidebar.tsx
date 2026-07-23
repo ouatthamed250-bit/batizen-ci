@@ -167,7 +167,7 @@ export default function Sidebar() {
                   >
                     {item.icon}
                   </span>
-                  <span className="text-base font-bold text-[#F5F5F5] group-hover:text-white">{item.label}</span>
+                  <span className="text-base font-bold dark:text-[#F5F5F5] text-gray-900 group-hover:text-white">{item.label}</span>
                   <span className="ml-auto text-sm text-white/0 transition-all duration-300 group-hover:text-white/80">→</span>
                 </button>
               );
@@ -198,7 +198,7 @@ export default function Sidebar() {
                 >
                   {item.icon}
                 </span>
-                <span className="text-base font-bold text-[#F5F5F5] group-hover:text-white">{item.label}</span>
+                <span className="text-base font-bold dark:text-[#F5F5F5] text-gray-900 group-hover:text-white">{item.label}</span>
                 <span className="ml-auto text-sm text-white/0 transition-all duration-300 group-hover:text-white/80">→</span>
               </Link>
             );

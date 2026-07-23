@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import { PremiumHeader } from "./PremiumHeader";
 import { BottomNav } from "./BottomNav";
-import PremiumBackground from "./PremiumBackground";
+import PremiumBackground from "@/components/background/PremiumBackground";
 
 interface LayoutWrapperProps {
   children: React.ReactNode;

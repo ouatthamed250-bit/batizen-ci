@@ -180,9 +180,14 @@ function NouveauChantierContent() {
       setChantierId(chantierIdToUse);
 
       // Données du chantier
+      // 🔒 SÉCURITÉ ADMIN-CLIENT :
+      // - adminId est ABSENT à la création (l'admin prendra en charge plus tard)
+      // - statut = "en_attente" tant que l'admin n'a pas validé
+      // - client_id = userId = UID du client connecté
       const chantierData = {
         id: chantierIdToUse,
         userId: user?.uid || "inconnu",
+        client_id: user?.uid || "inconnu",
         nom: formData.nom || "Chantier sans nom",
         type: formData.type || "construction",
         surface: Number(formData.surfaceConstruite) || 150,

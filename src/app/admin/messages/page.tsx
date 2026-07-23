@@ -2,8 +2,8 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { Search } from "lucide-react";
-import { getDatabase, ref, onValue, push, set, update, query, orderByChild, limitToLast } from "firebase/database";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { getFirebaseServices } from '../../../lib';
 
 type Message = {
   id: string;
@@ -34,7 +34,7 @@ export default function AdminMessagesPage() {
   useEffect(() => {
     if (!user?.uid) return;
 
-    const db = getDatabase();
+    const { db: db } = getFirebaseServices();
     
     // Écoute des messages avec filtre limitToLast(100) pour compatibilité règles strictes
     console.log("✅ [SEC] Messages admin chargés avec filtre");
@@ -101,7 +101,7 @@ export default function AdminMessagesPage() {
     e.preventDefault();
     if (!replyText.trim() || !selectedClient) return;
 
-    const db = getDatabase();
+    const { db: db } = getFirebaseServices();
     const msgRef = push(ref(db, "messages"));
     
     await set(msgRef, {

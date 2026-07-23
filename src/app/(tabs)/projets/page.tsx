@@ -3,13 +3,13 @@
 import { useEffect, useState } from "react";
 import { HardHat } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
-import { getDatabase, ref, onValue, query, orderByChild, equalTo } from "firebase/database";
 import Link from "next/link";
 import ChatBot from "@/components/ChatBot";
 
 // ✅ NOUVEAUX IMPORTS : Types et Utilitaires centralisés
 import type { Chantier } from "@/types/chantier";
 import { formatDateCourte, formatLocalisation } from "@/utils/formatters";
+import { getFirebaseServices } from '../../../lib';
 
 export default function ProjectsPage() {
   const { user } = useAuthContext();
@@ -22,7 +22,7 @@ export default function ProjectsPage() {
       return;
     }
 
-    const db = getDatabase();
+    const { db: db } = getFirebaseServices();
     const chantiersRef = ref(db, 'chantiers');
     
     // ✅ OPTIMISATION MAJEURE : Filtrer côté serveur (Firebase) par userId

@@ -3,8 +3,8 @@
 import { useState, useEffect, type FormEvent } from "react";
 import { Search, Pause, Play, AlertCircle, CheckCircle2 } from "lucide-react";
 import { rtdbGetList, rtdbGet, rtdbUpdate } from "@/lib/rtdb";
-import { getDatabase, ref, onValue } from "firebase/database";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { getFirebaseServices } from '../../../lib';
 
 type Client = {
   id: string;
@@ -72,7 +72,7 @@ export default function AdminClientsPage() {
 
   // Chargement des compteurs de création en temps réel
   useEffect(() => {
-    const db = getDatabase();
+    const { db: db } = getFirebaseServices();
     const unsub = onValue(ref(db, "users"), (snapshot) => {
       const data = snapshot.val();
       if (data) {

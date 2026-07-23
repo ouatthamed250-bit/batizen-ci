@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { FileText, CreditCard, MessageCircle, Image, Calendar } from "lucide-react";
-import { getDatabase, ref as dbRef, onValue } from "firebase/database";
-
+import { getFirebaseServices } from '../../lib';
 interface StatsResumeProps {
   chantierId: string;
 }
@@ -40,7 +39,7 @@ export default function StatsResume({ chantierId }: StatsResumeProps) {
   });
 
   useEffect(() => {
-    const db = getDatabase();
+    const { db: db } = getFirebaseServices();
     
     // Compter les rapports du chantier
     const rapportsRef = dbRef(db, `rapports`);

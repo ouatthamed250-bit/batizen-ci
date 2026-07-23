@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Mail, Send, CheckCircle2 } from "lucide-react";
-import { sendPasswordResetEmail } from "firebase/auth";
+import { sendPasswordResetEmail } from 'firebase/auth';
 import { getFirebaseServices } from "@/lib/firebase";
 import BtpBackground from "@/components/btp/BtpBackground";
 

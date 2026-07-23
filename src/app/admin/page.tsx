@@ -23,8 +23,8 @@ import {
 } from "recharts";
 import { subscribeToAdminNotifications, markAsRead, type Notification } from "@/lib/notifications";
 import { useAuthContext } from "@/contexts/AuthContext";
-import { getDatabase, ref as dbRef, onValue, update, push, set, get, remove } from "firebase/database";
 import { uploadToCloudinary } from "@/lib/cloudinary";
+import { getFirebaseServices } from '../../lib';
 
 type Localisation = {
   adresse?: string;
@@ -277,7 +277,7 @@ const getLastInteraction = (client: any): { type: string; date: number; label: s
 };
 
 async function updateChantier(chantierId: string, updates: Partial<Chantier>) {
-  const db = getDatabase();
+  const { db: db } = getFirebaseServices();
   try {
     await update(dbRef(db, `chantiers/${chantierId}`), updates);
     console.log(`✅ Chantier ${chantierId} mis à jour:`, updates);
@@ -341,7 +341,7 @@ useEffect(() => {
       return;
     }
 
-    const db = getDatabase();
+    const { db: db } = getFirebaseServices();
 
     console.log("🔍 [DIAG] User connecté:", {
       uid: user?.uid,
@@ -598,7 +598,7 @@ const promotionsRef = dbRef(db, 'promotions');
     if (partenaireForm.photo) {
       photo_url = await handleImageUpload(partenaireForm.photo);
     }
-    const db = getDatabase();
+    const { db: db } = getFirebaseServices();
     const newRef = push(dbRef(db, 'partenaires'));
     await set(newRef, {
       nom: partenaireForm.nom,
@@ -617,7 +617,7 @@ const promotionsRef = dbRef(db, 'promotions');
     if (promoForm.image) {
       image_url = await handleImageUpload(promoForm.image);
     }
-    const db = getDatabase();
+    const { db: db } = getFirebaseServices();
     const newRef = push(dbRef(db, 'promotions'));
     await set(newRef, {
       titre: promoForm.titre,
@@ -633,7 +633,7 @@ const promotionsRef = dbRef(db, 'promotions');
 
   const handleDeletePromo = async (id: string) => {
     if (!confirm("Supprimer cette promotion ?")) return;
-    const db = getDatabase();
+    const { db: db } = getFirebaseServices();
     await update(dbRef(db, `promotions/${id}`), { active: false, supprime: true });
     setMessage({ type: "success", text: "Promotion supprimée !" });
   };
@@ -641,7 +641,7 @@ const promotionsRef = dbRef(db, 'promotions');
   const handleEditPromo = async (promo: Promotion) => {
     const nouveauTitre = prompt("Nouveau titre :", promo.titre);
     if (nouveauTitre && nouveauTitre.trim()) {
-      const db = getDatabase();
+      const { db: db } = getFirebaseServices();
       await update(dbRef(db, `promotions/${promo.id}`), { titre: nouveauTitre.trim() });
       setMessage({ type: "success", text: "Titre de la promotion modifié !" });
     }
@@ -650,7 +650,7 @@ const promotionsRef = dbRef(db, 'promotions');
   const handleEditPartenaire = async (partenaire: Partenaire) => {
     const nouveauNom = prompt("Nouveau nom :", partenaire.nom);
     if (nouveauNom && nouveauNom.trim()) {
-      const db = getDatabase();
+      const { db: db } = getFirebaseServices();
       await update(dbRef(db, `partenaires/${partenaire.id}`), { nom: nouveauNom.trim() });
       setMessage({ type: "success", text: "Nom du partenaire modifié !" });
     }
@@ -658,7 +658,7 @@ const promotionsRef = dbRef(db, 'promotions');
 
   const handleDeletePartenaire = async (id: string) => {
     if (!confirm("Supprimer ce partenaire ?")) return;
-    const db = getDatabase();
+    const { db: db } = getFirebaseServices();
     await update(dbRef(db, `partenaires/${id}`), { actif: false, dateSuppression: Date.now() });
     setMessage({ type: "success", text: "Partenaire supprimé !" });
   };
@@ -666,7 +666,7 @@ const promotionsRef = dbRef(db, 'promotions');
   const handleEditOuvrier = async (ouvrier: Ouvrier) => {
     const nouveauNom = prompt("Nouveau nom :", ouvrier.nom);
     if (nouveauNom && nouveauNom.trim()) {
-      const db = getDatabase();
+      const { db: db } = getFirebaseServices();
       await update(dbRef(db, `ouvriers/${ouvrier.id}`), { nom: nouveauNom.trim() });
       setMessage({ type: "success", text: "Nom de l'ouvrier modifié !" });
     }
@@ -674,7 +674,7 @@ const promotionsRef = dbRef(db, 'promotions');
 
   const handleDeleteOuvrier = async (id: string) => {
     if (!confirm("Supprimer cet ouvrier ?")) return;
-    const db = getDatabase();
+    const { db: db } = getFirebaseServices();
     await update(dbRef(db, `ouvriers/${id}`), { actif: false, dateSuppression: Date.now() });
     setMessage({ type: "success", text: "Ouvrier supprimé !" });
   };
@@ -682,7 +682,7 @@ const promotionsRef = dbRef(db, 'promotions');
   const handleAddOuvrier = async (e: FormEvent) => {
     e.preventDefault();
     if (!ouvrierForm.nom || !ouvrierForm.specialite) return;
-    const db = getDatabase();
+    const { db: db } = getFirebaseServices();
     const newRef = push(dbRef(db, 'ouvriers'));
     await set(newRef, {
       nom: ouvrierForm.nom,
@@ -703,7 +703,7 @@ const promotionsRef = dbRef(db, 'promotions');
   const handleAddMateriau = async (e: FormEvent) => {
     e.preventDefault();
     if (!materiauForm.nom || !materiauForm.categorie) return;
-    const db = getDatabase();
+    const { db: db } = getFirebaseServices();
     const newRef = push(dbRef(db, 'materiaux'));
     await set(newRef, {
       nom: materiauForm.nom,
@@ -939,7 +939,7 @@ const promotionsRef = dbRef(db, 'promotions');
                       <div className="mt-auto flex flex-col gap-2 pt-3">
                         <button
                           onClick={async () => {
-                            const db = getDatabase();
+                            const { db: db } = getFirebaseServices();
                             await update(dbRef(db, `partenaires/${p.id}`), { actif: !p.actif, dateModification: Date.now() });
                           }}
                           className={`w-full rounded-full px-3 py-1 text-xs font-bold border transition ${
@@ -985,7 +985,7 @@ const promotionsRef = dbRef(db, 'promotions');
                       <div className="mt-auto flex flex-col gap-2 pt-3">
                         <button
                           onClick={async () => {
-                            const db = getDatabase();
+                            const { db: db } = getFirebaseServices();
                             await update(dbRef(db, `promotions/${p.id}`), { active: !p.active, dateModification: Date.now() });
                           }}
                           className={`w-full rounded-full px-3 py-1 text-xs font-bold border transition ${

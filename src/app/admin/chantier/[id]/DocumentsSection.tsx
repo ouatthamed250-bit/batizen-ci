@@ -3,9 +3,9 @@
 import { useState, useEffect, useRef } from "react";
 import { FileText, Upload, Download, Trash2, FileDown } from "lucide-react";
 import { rtdbGetList } from "@/lib/rtdb";
-import { getDatabase, ref, push, update, onValue, type Unsubscribe } from "firebase/database";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { getFirebaseServices } from '../../../../lib';
 
 type Document = {
   id: string;
@@ -29,7 +29,7 @@ interface DocumentsSectionProps {
  */
 export default function DocumentsSection({ chantierId }: DocumentsSectionProps) {
   const { user } = useAuthContext();
-  const db = getDatabase();
+  const { db: db } = getFirebaseServices();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);

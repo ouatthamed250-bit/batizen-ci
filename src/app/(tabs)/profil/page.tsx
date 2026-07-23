@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/Badge";
 import { PremiumButton } from "@/components/ui/PremiumButton";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { cn } from "@/lib/helpers";
 

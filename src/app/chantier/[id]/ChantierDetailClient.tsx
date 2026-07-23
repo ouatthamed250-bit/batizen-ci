@@ -52,6 +52,7 @@ import { ref, push, onValue, type Unsubscribe } from "firebase/database";
 import { getFirebaseServices } from "@/lib/firebase";
 import SuperCalculateur from "@/components/btp/SuperCalculateur";
 import ChatBot from "@/components/ChatBot";
+import { getFirebaseServices } from '../../../lib';
 
 /* ------------------------------------------------------------------ */
 /* Types                                                              */
@@ -438,7 +439,7 @@ const [medias, setMedias] = useState<any[]>([]);
         if (!cancelled && id) {
           // ✅ RÈGLE CRITIQUE : Utiliser query() pour filtrer par chantierId - sinon Firebase bloque l'accès
           const { getDatabase, query, orderByChild, equalTo, ref: dbRef } = await import("firebase/database");
-          const db = getDatabase();
+          const { db: db } = getFirebaseServices();
           
 const [plan, med, docsFiltered, notesFiltered, rapportsFiltered] = await Promise.all([
             rtdbGetList<Etape>(`chantiers/${id}/planning`),

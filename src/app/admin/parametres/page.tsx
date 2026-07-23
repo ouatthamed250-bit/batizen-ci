@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Key, Eye, EyeOff, Save, AlertCircle } from "lucide-react";
-import { getAuth, signOut, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
-
+import { signOut, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
+import { getFirebaseServices } from '../../../lib';
 export default function AdminParametresPage() {
   const [ancienMdp, setAncienMdp] = useState("");
   const [nouveauMdp, setNouveauMdp] = useState("");
@@ -35,7 +35,7 @@ export default function AdminParametresPage() {
     setMessage(null);
 
     try {
-      const auth = getAuth();
+      const { auth } = getFirebaseServices();
       const user = auth.currentUser;
 
       if (!user) {
@@ -76,7 +76,7 @@ export default function AdminParametresPage() {
     if (!confirm("Êtes-vous sûr de vouloir vous déconnecter ?")) return;
     
     try {
-      const auth = getAuth();
+      const { auth } = getFirebaseServices();
       await signOut(auth);
       window.location.href = "/login";
     } catch (error) {

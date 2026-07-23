@@ -29,9 +29,9 @@ import GestionEquipe from "@/components/admin/GestionEquipeHierarchique";
 import AlbumChantierAdmin from "@/components/admin/AlbumChantierAdmin";
 import PaiementsSection from "./PaiementsSection";
 import DocumentsSection from "./DocumentsSection";
-import { ref, push, update, onValue, type Unsubscribe, getDatabase } from "firebase/database";
 import { getFirebaseServices } from "@/lib/firebase";
 import { getContratTemplate } from "@/lib/documents-templates";
+import { getFirebaseServices } from '../../../../lib';
 
 type Localisation = {
   adresse?: string;
@@ -1399,7 +1399,7 @@ function MessagerieSection({ chantierId, clientUserId }: { chantierId: string; c
     console.log("🔌 Connexion messagerie établie pour le chantier:", chantierId);
     console.log("✅ [SEC-ADMIN] Requête messages compatible règles strictes (admin-only)");
     
-    const db = getDatabase();
+    const { db: db } = getFirebaseServices();
     const messagesRef = ref(database, 'messages');
     
     const unsub = onValue(messagesRef, (snapshot) => {
