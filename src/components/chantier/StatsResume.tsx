@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { FileText, CreditCard, MessageCircle, Image, Calendar } from "lucide-react";
-import { getFirebaseServices } from '../../lib';
+import { getFirebaseServices } from '../../lib/firebase';
 interface StatsResumeProps {
   chantierId: string;
 }

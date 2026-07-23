@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Key, Eye, EyeOff, Save, AlertCircle } from "lucide-react";
 import { signOut, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
-import { getFirebaseServices } from '../../../lib';
+import { getFirebaseServices } from '../../../lib/firebase';
 export default function AdminParametresPage() {
   const [ancienMdp, setAncienMdp] = useState("");
   const [nouveauMdp, setNouveauMdp] = useState("");

@@ -24,7 +24,7 @@ import {
 import { subscribeToAdminNotifications, markAsRead, type Notification } from "@/lib/notifications";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { uploadToCloudinary } from "@/lib/cloudinary";
-import { getFirebaseServices } from '../../lib';
+import { getFirebaseServices } from '../../lib/firebase';
 
 type Localisation = {
   adresse?: string;

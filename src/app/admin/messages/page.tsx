@@ -3,7 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Search } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
-import { getFirebaseServices } from '../../../lib';
+import { getFirebaseServices } from '../../../lib/firebase';
 
 type Message = {
   id: string;

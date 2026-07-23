@@ -5,7 +5,7 @@ import { FileText, Upload, Download, Trash2, FileDown } from "lucide-react";
 import { rtdbGetList } from "@/lib/rtdb";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { useAuthContext } from "@/contexts/AuthContext";
-import { getFirebaseServices } from '../../../../lib';
+import { getFirebaseServices } from '../../../../lib/firebase';
 
 type Document = {
   id: string;

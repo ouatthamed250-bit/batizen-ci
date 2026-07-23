@@ -4,7 +4,7 @@ import { useState, useEffect, type FormEvent } from "react";
 import { Search, Pause, Play, AlertCircle, CheckCircle2 } from "lucide-react";
 import { rtdbGetList, rtdbGet, rtdbUpdate } from "@/lib/rtdb";
 import { useAuthContext } from "@/contexts/AuthContext";
-import { getFirebaseServices } from '../../../lib';
+import { getFirebaseServices } from '../../../lib/firebase';
 
 type Client = {
   id: string;

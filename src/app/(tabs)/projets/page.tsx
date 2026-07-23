@@ -9,7 +9,7 @@ import ChatBot from "@/components/ChatBot";
 // ✅ NOUVEAUX IMPORTS : Types et Utilitaires centralisés
 import type { Chantier } from "@/types/chantier";
 import { formatDateCourte, formatLocalisation } from "@/utils/formatters";
-import { getFirebaseServices } from '../../../lib';
+import { getFirebaseServices } from '../../../lib/firebase';
 
 export default function ProjectsPage() {
   const { user } = useAuthContext();

@@ -31,7 +31,7 @@ import PaiementsSection from "./PaiementsSection";
 import DocumentsSection from "./DocumentsSection";
 import { getFirebaseServices } from "@/lib/firebase";
 import { getContratTemplate } from "@/lib/documents-templates";
-import { getFirebaseServices } from '../../../../lib';
+import { getFirebaseServices } from '../../../../lib/firebase';
 
 type Localisation = {
   adresse?: string;

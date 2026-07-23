@@ -8,7 +8,7 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { useChantiers } from '@/hooks/useChantiers';
 import type { Chantier } from '@/types/chantier';
 import { formatDateCourte } from '@/utils/formatters';
-import { getFirebaseServices } from '../../../lib';
+import { getFirebaseServices } from '../../../lib/firebase';
 
 type Localisation = {
   adresse?: string;

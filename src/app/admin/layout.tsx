@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { signOut } from 'firebase/auth';
 import { useAuthContext } from "@/contexts/AuthContext";
-import { getFirebaseServices } from '../../lib';
+import { getFirebaseServices } from '../../lib/firebase';
 
 const SIDEBAR = [
   { key: "dashboard", label: "Tableau de bord", icon: BarChart3, href: "/admin/dashboard" },
