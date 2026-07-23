@@ -64,7 +64,7 @@ export function PremiumHeader() {
           aria-label="Mon profil"
         >
           {user?.photoURL ? (
-            <Image src={user.photoURL} alt={user.displayName ?? "Profil"} width={44} height={44} className="size-full object-cover" />
+            <Image src={user.photoURL} alt={user.displayName ?? "Profil"} width={44} height={44} loading="lazy" className="size-full object-cover" />
           ) : (
             <span className="text-sm font-black">{initials}</span>
           )}

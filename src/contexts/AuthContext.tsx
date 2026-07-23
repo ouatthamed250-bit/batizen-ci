@@ -12,6 +12,7 @@ import {
 } from "firebase/auth";
 import { getFirebaseServices, hasFirebaseConfig } from "@/lib/firebase";
 import { ref, set, get } from "firebase/database";
+import { logger } from "@/utils/logger";
 
 export type AuthUser = {
   uid: string;
@@ -57,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const stored = getStoredAuth();
     if (stored?.user) {
-      console.log("✅ Auth: Utilisateur restauré depuis le localStorage");
+      logger.debug("✅ Auth: Utilisateur restauré depuis le localStorage");
       setUser(stored.user);
       setIsAuthenticated(true);
     }
@@ -69,11 +70,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    console.log("🔄 Auth: Démarrage de onAuthStateChanged...");
     const { auth, database } = getFirebaseServices();
+
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result) {
+          logger.debug("✅ Auth: Retour de redirection Google réussi pour", result.user.email);
+        }
+      })
+      .catch((error) => {
+        console.error("🔥 ERREUR retour redirection Google:", error.code, error.message);
+      });
+
+    logger.debug("🔄 Auth: Démarrage de onAuthStateChanged...");
     
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      console.log("👀 Auth: onAuthStateChanged déclenché. Utilisateur:", firebaseUser ? firebaseUser.email : "NULL");
+      logger.debug("👀 Auth: onAuthStateChanged déclenché. Utilisateur:", firebaseUser ? firebaseUser.email : "NULL");
       
       if (firebaseUser) {
         let userData = null;
@@ -86,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         // Si c'est une nouvelle connexion Google, on crée la fiche en base
         if (!userData && firebaseUser.providerData.some(p => p.providerId === 'google.com')) {
-          console.log("📝 Auth: Création de la fiche utilisateur Google en base de données...");
+          logger.debug("📝 Auth: Création de la fiche utilisateur Google en base de données...");
           await set(ref(database, `users/${firebaseUser.uid}`), {
             uid: firebaseUser.uid,
             email: firebaseUser.email,
@@ -123,12 +135,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
            phoneNumber: userData?.phoneNumber || firebaseUser.phoneNumber || null,
            role: isAdminClaim ? "admin" : "client",
          };
-        console.log("✅ Auth: Connexion réussie pour", authUser.email);
+        logger.debug("✅ Auth: Connexion réussie pour", authUser.email);
         setUser(authUser);
         setIsAuthenticated(true);
         localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ user: authUser }));
       } else {
-        console.log("❌ Auth: Déconnexion ou aucun utilisateur.");
+        logger.debug("❌ Auth: Déconnexion ou aucun utilisateur.");
         setUser(null);
         setIsAuthenticated(false);
         localStorage.removeItem(AUTH_STORAGE_KEY);
@@ -140,7 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    console.log("🔑 Auth: Tentative de login avec", email);
+    logger.debug("🔑 Auth: Tentative de login avec", email);
     if (!hasFirebaseConfig()) {
       const demoUser: AuthUser = { uid: "demo-user-id", email, displayName: "Utilisateur Démo", photoURL: null, phoneNumber: null };
       setUser(demoUser);
@@ -150,11 +162,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const { auth } = getFirebaseServices();
     await signInWithEmailAndPassword(auth, email, password);
-    console.log("✅ Auth: Login email/password réussi");
+    logger.debug("✅ Auth: Login email/password réussi");
   }, []);
 
   const register = useCallback(async (email: string, password: string, name: string) => {
-    console.log("📝 Auth: Tentative d'inscription pour", email, "nom:", name);
+    logger.debug("📝 Auth: Tentative d'inscription pour", email, "nom:", name);
     if (!hasFirebaseConfig()) {
       const demoUser: AuthUser = { uid: "demo-user-id", email, displayName: name, photoURL: null, phoneNumber: email?.split('@')[0] || null };
       setUser(demoUser);
@@ -165,9 +177,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     try {
       const { auth, database } = getFirebaseServices();
-      console.log("➡️ Appel de createUserWithEmailAndPassword...");
+      logger.debug("➡️ Appel de createUserWithEmailAndPassword...");
       const cred = await createUserWithEmailAndPassword(auth, email, password);
-      console.log("✅ Utilisateur créé dans Firebase Auth. UID:", cred.user.uid);
+      logger.debug("✅ Utilisateur créé dans Firebase Auth. UID:", cred.user.uid);
       
       await updateProfile(cred.user, { displayName: name });
       
@@ -180,7 +192,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         role: "client", 
         createdAt: Date.now(),
       });
-      console.log("✅ Fiche utilisateur créée dans Realtime Database");
+      logger.debug("✅ Fiche utilisateur créée dans Realtime Database");
     } catch (error: any) {
       console.error("🔥 ERREUR CRITIQUE INSCRIPTION:", error.code, error.message);
       throw error; // ⚠️ C'est crucial : on doit lancer l'erreur pour que la page d'inscription l'affiche
@@ -188,7 +200,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const loginWithGoogle = useCallback(async () => {
-    console.log("🔵 Auth: Tentative de connexion Google (Redirect)...");
+    logger.debug("🔵 Auth: Tentative de connexion Google (Redirect)...");
     if (!hasFirebaseConfig()) {
       console.error("🚨 ERREUR CRITIQUE : Mode Démo.");
       return;
@@ -197,7 +209,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const { auth, googleProvider } = getFirebaseServices();
       await signInWithRedirect(auth, googleProvider);
-      console.log("➡️ Redirection vers Google en cours...");
+      logger.debug("➡️ Redirection vers Google en cours...");
     } catch (error: any) {
       console.error("🔥 ÉCHEC AUTHENTIFICATION GOOGLE:", error.code, error.message);
       throw error;
@@ -205,7 +217,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
-    console.log("🚪 Auth: Déconnexion...");
+    logger.debug("🚪 Auth: Déconnexion...");
     if (hasFirebaseConfig()) {
       const { auth } = getFirebaseServices();
       await signOut(auth);

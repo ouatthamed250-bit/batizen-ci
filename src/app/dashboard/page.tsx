@@ -10,7 +10,9 @@ import { WeatherWidget } from "@/components/btp/WeatherWidget";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import SuperCalculateur from "@/components/btp/SuperCalculateur";
 import { getDatabase, ref as dbRef, onValue, update, query, orderByChild, equalTo } from "firebase/database";
-import ChatBot from "@/components/ChatBot";
+import { logger } from "@/utils/logger";
+import dynamic from "next/dynamic";
+const ChatBot = dynamic(() => import("@/components/ChatBot"), { ssr: false });
 
 // ✅ NOUVEAUX IMPORTS : Types et Utilitaires centralisés
 import type { Chantier } from "@/types/chantier";
@@ -24,6 +26,12 @@ const ANNONCES_DEMO = [
   "📢 Nouveau: Suivi de chantier par drone disponible.",
   "🔥 Offre spéciale: Audit gratuit pour les rénovations.",
   "⚠️ Rappel: Pensez à valider vos devis en attente."
+];
+
+const ACTIONS_RAPIDES = [
+  { label: "Simulation", icon: "🧮", href: "/simulation", color: "bg-[#FF7A00]" },
+  { label: "Nouveau Chantier", icon: "🏗️", href: "/nouveau-chantier", color: "bg-[#1e3a8a]" },
+  { label: "Rénovation", icon: "🔨", href: "/renovation", color: "bg-green-600" }
 ];
 
 /* ------------------------------------------------------------------ */
@@ -184,7 +192,7 @@ export default function DashboardClientPage() {
         setLoading(false);
       }
     }, (error) => {
-      console.error("❌ Erreur chargement chantiers:", error);
+      logger.error("❌ Erreur chargement chantiers:", error);
       setLoading(false);
     });
 
@@ -285,11 +293,7 @@ export default function DashboardClientPage() {
 
         {/* Boutons d'action */}
         <div className="grid grid-cols-3 gap-3 w-full">
-          {[
-            { label: "Simulation", icon: "🧮", href: "/simulation", color: "bg-[#FF7A00]" },
-            { label: "Nouveau Chantier", icon: "🏗️", href: "/nouveau-chantier", color: "bg-[#1e3a8a]" },
-            { label: "Rénovation", icon: "🔨", href: "/renovation", color: "bg-green-600" }
-          ].map((btn, i) => (
+          {ACTIONS_RAPIDES.map((btn, i) => (
             <Link key={i} href={btn.href}
               className={`flex flex-col items-center justify-center p-3 ${btn.color} text-white rounded-[22px] shadow-lg transition active:scale-95`}
             >
