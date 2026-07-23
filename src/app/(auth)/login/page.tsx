@@ -68,7 +68,6 @@ export default function LoginPage() {
       }
 
       await login(validation.firebaseEmail, password);
-      router.replace("/dashboard");
     } catch (err: any) {
       if (err?.code === "auth/invalid-credential" || err?.code === "auth/wrong-password" || err?.code === "auth/user-not-found") {
         setError("Numéro de téléphone ou mot de passe incorrect.");
@@ -122,8 +121,8 @@ export default function LoginPage() {
         <form className="animate-fadeInUp stagger-3 mt-4 w-full max-w-sm space-y-4" onSubmit={handleLogin}>
           <label className="block">
             <span className="mb-2 block text-sm font-semibold text-white">Numéro de téléphone</span>
-            <div className="flex h-[56px] items-center gap-3 rounded-[18px] bg-white/20 px-4 transition focus-within:ring-2 focus-within:ring-[#0B5FFF]/20">
-              <Phone size={18} className="shrink-0 text-white" aria-hidden />
+            <div className="flex h-[58px] items-center gap-3 rounded-[18px] bg-white/90 backdrop-blur-sm px-4 shadow-[0_4px_16px_rgba(16,24,40,0.08)] transition-all focus-within:ring-2 focus-within:ring-[#0B5FFF]/30 focus-within:shadow-[0_8px_24px_rgba(11,95,255,0.15)] border border-[#E7EBF5]">
+              <Phone size={20} className="shrink-0 text-[#0B5FFF]" aria-hidden />
               <input 
                 value={phone} 
                 onChange={e => setPhone(e.target.value)} 
@@ -131,15 +130,15 @@ export default function LoginPage() {
                 type="tel" 
                 autoComplete="tel" 
                 required 
-                className="flex-1 bg-transparent text-sm font-semibold text-white outline-none placeholder:text-white/60" 
+                className="flex-1 bg-transparent text-sm font-semibold text-[#111827] outline-none placeholder:text-[#6B7280]" 
               />
             </div>
           </label>
 
           <label className="block">
             <span className="mb-2 block text-sm font-semibold text-white">Mot de passe</span>
-            <div className="flex h-[56px] items-center gap-3 rounded-[18px] bg-white/20 px-4 transition focus-within:ring-2 focus-within:ring-[#0B5FFF]/20">
-              <Lock size={18} className="shrink-0 text-white" aria-hidden />
+            <div className="flex h-[58px] items-center gap-3 rounded-[18px] bg-white/90 backdrop-blur-sm px-4 shadow-[0_4px_16px_rgba(16,24,40,0.08)] transition-all focus-within:ring-2 focus-within:ring-[#0B5FFF]/30 focus-within:shadow-[0_8px_24px_rgba(11,95,255,0.15)] border border-[#E7EBF5]">
+              <Lock size={20} className="shrink-0 text-[#0B5FFF]" aria-hidden />
               <input 
                 value={password} 
                 onChange={e => setPassword(e.target.value)} 
@@ -147,7 +146,7 @@ export default function LoginPage() {
                 type="password" 
                 autoComplete="current-password" 
                 required 
-                className="flex-1 bg-transparent text-sm font-semibold text-white outline-none placeholder:text-white/60" 
+                className="flex-1 bg-transparent text-sm font-semibold text-[#111827] outline-none placeholder:text-[#6B7280]" 
               />
             </div>
           </label>

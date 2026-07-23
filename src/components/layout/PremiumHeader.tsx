@@ -74,7 +74,7 @@ export function PremiumHeader() {
         <button
           onClick={handleLogout}
           aria-label="Se déconnecter"
-          className="grid size-11 place-items-center rounded-full bg-[#F7F9FC] text-[#6B7280] transition hover:bg-red-50 hover:text-red-500 active:scale-95 dark:bg-[#1E3A6E] dark:text-[#8B9BB3] dark:hover:bg-red-900/30 dark:hover:text-red-400"
+          className="grid size-11 place-items-center rounded-full bg-[#F7F9FC] text-[#6B7280] transition hover:bg-red-50 hover:text-red-500 active:scale-95 dark:bg-[#0D2B6B] dark:text-white dark:hover:bg-red-900/30 dark:hover:text-red-400"
         >
           <LogOut size={21} aria-hidden />
         </button>

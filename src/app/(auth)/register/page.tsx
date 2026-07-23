@@ -32,10 +32,7 @@ export default function RegisterPage() {
     e.preventDefault();
     setError("");
     
-    if (passwordStrength && passwordStrength.strength === 'weak') {
-      setError("Votre mot de passe est trop faible. Veuillez le renforcer.");
-      return;
-    }
+    
     
     setLoading(true);
     try {
@@ -157,11 +154,23 @@ export default function RegisterPage() {
             </label>
           ))}
 
-          {form.password && passwordStrength && (
+          {form.password && passwordStrength?.strength === 'weak' && (
+            <div className="flex items-start gap-3 rounded-[16px] bg-amber-50 p-4 border border-amber-300 animate-fadeInUp">
+              <AlertCircle size={20} className="shrink-0 text-amber-600 mt-0.5" />
+              <div>
+                <p className="text-sm font-bold text-amber-800">Mot de passe faible</p>
+                <p className="mt-1 text-xs text-amber-700">
+                  Pour un meilleur sécurité, utilisez au moins 8 caractères avec des majuscules, chiffres et symboles.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {form.password && passwordStrength && passwordStrength.strength !== 'weak' && (
             <div className="space-y-2 rounded-[16px] bg-white/80 p-4 border border-[#E7EBF5] backdrop-blur-sm">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-[#111827]">Force du mot de passe</span>
-                <span className={`text-xs font-bold ${passwordStrength.strength === 'weak' ? 'text-red-600' : passwordStrength.strength === 'medium' ? 'text-yellow-600' : 'text-green-600'}`}>
+                <span className={`text-xs font-bold ${passwordStrength.strength === 'medium' ? 'text-yellow-600' : 'text-green-600'}`}>
                   {getStrengthText(passwordStrength.strength)}
                 </span>
               </div>

@@ -160,19 +160,15 @@ export default function DashboardClientPage() {
   const [partenaires, setPartenaires] = useState<any[]>([]);
 
   useEffect(() => {
-    if (user?.uid) {
-      setIsAuthReady(true);
-    } else {
-      setIsAuthReady(false);
+    const uid = user?.uid;
+    if (!uid) {
+      setLoading(false);
+      return;
     }
-  }, [user?.uid]);
-
-  useEffect(() => {
-    if (!isAuthReady || !user?.uid) return;
 
     const db = getDatabase();
     const chantiersRef = dbRef(db, 'chantiers');
-    const q = query(chantiersRef, orderByChild("userId"), equalTo(user.uid));
+    const q = query(chantiersRef, orderByChild("userId"), equalTo(uid));
     
     const unsubChantiers = onValue(q, (snapshot) => {
       const data = snapshot.val();
@@ -193,7 +189,7 @@ export default function DashboardClientPage() {
     });
 
     return () => unsubChantiers();
-  }, [isAuthReady, user?.uid]);
+  }, [user?.uid]);
 
   useEffect(() => {
     const db = getDatabase();
