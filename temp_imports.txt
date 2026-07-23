@@ -1,6 +1,0 @@
-src\app\(tabs)\projets\page.tsx:12:import { getFirebaseServices } from '../../../lib';
-src\app\admin\clients\page.tsx:7:import { getFirebaseServices } from '../../../lib';
-src\app\admin\dashboard\page.tsx:11:import { getFirebaseServices } from '../../../lib';
-src\app\admin\messages\page.tsx:6:import { getFirebaseServices } from '../../../lib';
-src\app\admin\parametres\page.tsx:7:import { getFirebaseServices } from '../../../lib';
-src\app\chantier\[id]\ChantierDetailClient.tsx:55:import { getFirebaseServices } from '../../../lib';
