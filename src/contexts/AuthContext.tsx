@@ -5,8 +5,7 @@ import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signInWithRedirect,
-  getRedirectResult, // ✅ Ajouté pour gérer le retour de redirection
+  signInWithPopup,
   signOut,
   updateProfile,
 } from "firebase/auth";
@@ -71,16 +70,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const { auth, database } = getFirebaseServices();
-
-    getRedirectResult(auth)
-      .then((result) => {
-        if (result) {
-          logger.debug("✅ Auth: Retour de redirection Google réussi pour", result.user.email);
-        }
-      })
-      .catch((error) => {
-        console.error("🔥 ERREUR retour redirection Google:", error.code, error.message);
-      });
 
     logger.debug("🔄 Auth: Démarrage de onAuthStateChanged...");
     
@@ -208,8 +197,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       const { auth, googleProvider } = getFirebaseServices();
-      await signInWithRedirect(auth, googleProvider);
-      logger.debug("➡️ Redirection vers Google en cours...");
+      const result = await signInWithPopup(auth, googleProvider);
+      logger.debug("✅ Auth: Connexion Google (popup) réussie pour", result.user.email);
     } catch (error: any) {
       console.error("🔥 ÉCHEC AUTHENTIFICATION GOOGLE:", error.code, error.message);
       throw error;
