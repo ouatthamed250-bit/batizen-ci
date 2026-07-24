@@ -21,6 +21,22 @@ const nextConfig: NextConfig = {
 	// firebase-admin qui utilise jwks-rsa/jose en ESM — incompatible avec
 	// le bundling CommonJS de Next.js en production serverless Vercel)
 	serverExternalPackages: ["firebase-admin", "jose", "jwks-rsa"],
+	// Header nécessaire pour que la popup Google OAuth fonctionne
+	// Cross-Origin-Opener-Policy bloque window.closed si la valeur est 'same-origin'
+	// 'same-origin-allow-popups' permet à la popup de communiquer avec la fenêtre parente
+	async headers() {
+		return [
+			{
+				source: '/:path*',
+				headers: [
+					{
+						key: 'Cross-Origin-Opener-Policy',
+						value: 'same-origin-allow-popups',
+					},
+				],
+			},
+		];
+	},
 };
 
 export default nextConfig;
