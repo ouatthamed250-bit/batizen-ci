@@ -85,9 +85,9 @@
 
     "messages": {
       ".read": "auth != null",
-      "$chantierId": {
-        ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('chantiers').child($chantierId).child('userId').val() == auth.uid || root.child('chantiers').child($chantierId).child('client_id').val() == auth.uid)",
-        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('chantiers').child($chantierId).child('userId').val() == auth.uid || root.child('chantiers').child($chantierId).child('client_id').val() == auth.uid)"
+      "$messageId": {
+        ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || (data.exists() && data.child('chantierId').exists() && root.child('chantiers').child(data.child('chantierId').val()).child('userId').val() == auth.uid) || (data.exists() && data.child('chantierId').exists() && root.child('chantiers').child(data.child('chantierId').val()).child('client_id').val() == auth.uid))",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || (data.exists() && data.child('chantierId').exists() && root.child('chantiers').child(data.child('chantierId').val()).child('userId').val() == auth.uid) || (data.exists() && data.child('chantierId').exists() && root.child('chantiers').child(data.child('chantierId').val()).child('client_id').val() == auth.uid) || (!data.exists() && newData.child('chantierId').exists() && root.child('chantiers').child(newData.child('chantierId').val()).child('userId').val() == auth.uid) || (!data.exists() && newData.child('chantierId').exists() && root.child('chantiers').child(newData.child('chantierId').val()).child('client_id').val() == auth.uid))"
       }
     },
 

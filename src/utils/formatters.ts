@@ -18,8 +18,16 @@ export function formatFcfa(value: number | undefined | null): string {
  * Formate une date en format court français (ex: "12 janv. 2024")
  */
 export function formatDateCourte(dateStr: string | number | undefined | null): string {
-  if (!dateStr) return "Non définie";
-  const date = new Date(dateStr);
+  if (dateStr === undefined || dateStr === null || dateStr === "") return "Non définie";
+
+  // 🔒 Sécurité : si c'est un timestamp numérique, le convertir en nombre
+  const timestamp = typeof dateStr === "string"
+    ? (isNaN(Number(dateStr)) ? dateStr : Number(dateStr))
+    : dateStr;
+
+  const date = new Date(timestamp);
+  if (isNaN(date.getTime())) return "Non définie";
+
   return new Intl.DateTimeFormat("fr-FR", {
     day: "numeric",
     month: "short",

@@ -193,6 +193,7 @@ export default function DashboardClientPage() {
       return;
     }
 
+    setIsAuthReady(true);
     const db = getDatabase();
     const chantiersRef = dbRef(db, 'chantiers');
     const q = query(chantiersRef, orderByChild("userId"), equalTo(uid));
