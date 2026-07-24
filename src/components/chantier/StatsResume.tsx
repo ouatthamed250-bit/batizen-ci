@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { FileText, CreditCard, MessageCircle, Image, Calendar } from "lucide-react";
 import { getFirebaseServices } from '../../lib/firebase';
+import { ref, onValue } from 'firebase/database';
 interface StatsResumeProps {
   chantierId: string;
 }
@@ -42,7 +43,7 @@ export default function StatsResume({ chantierId }: StatsResumeProps) {
     const { db: db } = getFirebaseServices();
     
     // Compter les rapports du chantier
-    const rapportsRef = dbRef(db, `rapports`);
+    const rapportsRef = ref(db, `rapports`);
     const unsubRapports = onValue(rapportsRef, (snapshot) => {
       const data = snapshot.val() as any;
       if (data) {
@@ -63,7 +64,7 @@ export default function StatsResume({ chantierId }: StatsResumeProps) {
     });
 
     // Compter les paiements validés
-    const paiementsRef = dbRef(db, `paiements`);
+    const paiementsRef = ref(db, `paiements`);
     const unsubPaiements = onValue(paiementsRef, (snapshot) => {
       const data = snapshot.val() as any;
       if (data) {
@@ -75,7 +76,7 @@ export default function StatsResume({ chantierId }: StatsResumeProps) {
     });
 
     // Compter les messages non lus
-    const messagesRef = dbRef(db, `messages`);
+    const messagesRef = ref(db, `messages`);
     const unsubMessages = onValue(messagesRef, (snapshot) => {
       const data = snapshot.val() as any;
       if (data) {
@@ -87,7 +88,7 @@ export default function StatsResume({ chantierId }: StatsResumeProps) {
     });
 
     // Compter les photos de l'album
-    const mediasRef = dbRef(db, `chantiers/${chantierId}/medias`);
+    const mediasRef = ref(db, `chantiers/${chantierId}/medias`);
     const unsubMedias = onValue(mediasRef, (snapshot) => {
       const data = snapshot.val() as any;
       if (data) {
@@ -97,7 +98,7 @@ export default function StatsResume({ chantierId }: StatsResumeProps) {
     });
 
     // Récupérer le prochain RDV
-    const rdvRef = dbRef(db, `rendezvous`);
+    const rdvRef = ref(db, `rendezvous`);
     const unsubRdv = onValue(rdvRef, (snapshot) => {
       const data = snapshot.val() as any;
       if (data) {

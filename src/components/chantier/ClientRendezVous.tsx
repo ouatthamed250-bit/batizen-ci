@@ -5,6 +5,7 @@ import { Calendar, Plus, Check, X, Clock, MapPin, AlertCircle } from "lucide-rea
 import { useAuthContext } from "@/contexts/AuthContext";
 import { rtdbGetList, rtdbSubscribeListByChild } from "@/lib/rtdb";
 import { getFirebaseServices } from "@/lib/firebase";
+import { ref, onValue, query, orderByChild, equalTo, get, push, update } from 'firebase/database';
 interface RendezVous {
   id: string;
   chantierId: string;

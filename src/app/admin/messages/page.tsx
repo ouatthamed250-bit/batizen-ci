@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Search } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { getFirebaseServices } from '../../../lib/firebase';
+import { ref, onValue, query, orderByChild, limitToLast, push, set, update } from 'firebase/database';
 
 type Message = {
   id: string;

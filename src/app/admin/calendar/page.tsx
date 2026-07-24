@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Calendar, CalendarDays, Calendar as CalendarIcon } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { getFirebaseServices } from "@/lib/firebase";
+import { ref, onValue, push, update } from 'firebase/database';
 
 export default function AdminCalendarPage() {
   const { user } = useAuthContext();
@@ -30,7 +31,7 @@ export default function AdminCalendarPage() {
     if (!user) return;
 
     // Charger tous les RDV
-    const rdvsRef = dbRef(database, 'rendezvous');
+    const rdvsRef = ref(database, 'rendezvous');
     const unsubRdvs = onValue(rdvsRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
@@ -43,7 +44,7 @@ export default function AdminCalendarPage() {
     });
 
     // Charger tous les chantiers (pour le menu déroulant)
-    const chantiersRef = dbRef(database, 'chantiers');
+    const chantiersRef = ref(database, 'chantiers');
     const unsubChantiers = onValue(chantiersRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
@@ -70,7 +71,7 @@ export default function AdminCalendarPage() {
     if (!chantier) return;
 
     try {
-      await push(dbRef(database, 'rendezvous'), {
+      await push(ref(database, 'rendezvous'), {
         ...rdvForm,
         statut: "propose",
         creePar: user?.uid,
@@ -100,7 +101,7 @@ export default function AdminCalendarPage() {
   };
 
   const handleChangerStatut = async (rdvId: string, nouveauStatut: string) => {
-    await update(dbRef(database, `rendezvous/${rdvId}`), {
+    await update(ref(database, `rendezvous/${rdvId}`), {
       statut: nouveauStatut,
       dateModification: Date.now()
     });
@@ -108,7 +109,7 @@ export default function AdminCalendarPage() {
 
   const handleSupprimerRdv = async (rdvId: string) => {
     if (!confirm("Supprimer ce rendez-vous ?")) return;
-    await update(dbRef(database, `rendezvous/${rdvId}`), {
+    await update(ref(database, `rendezvous/${rdvId}`), {
       actif: false,
       dateModification: Date.now()
     });

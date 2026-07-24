@@ -25,6 +25,7 @@ import { subscribeToAdminNotifications, markAsRead, type Notification } from "@/
 import { useAuthContext } from "@/contexts/AuthContext";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { getFirebaseServices } from '../../lib/firebase';
+import { ref, onValue, get, push, set, update } from 'firebase/database';
 
 type Localisation = {
   adresse?: string;
@@ -279,7 +280,7 @@ const getLastInteraction = (client: any): { type: string; date: number; label: s
 async function updateChantier(chantierId: string, updates: Partial<Chantier>) {
   const { db: db } = getFirebaseServices();
   try {
-    await update(dbRef(db, `chantiers/${chantierId}`), updates);
+    await update(ref(db, `chantiers/${chantierId}`), updates);
     console.log(`✅ Chantier ${chantierId} mis à jour:`, updates);
   } catch (error) {
     console.error(`❌ Erreur mise à jour chantier ${chantierId}:`, error);
@@ -350,12 +351,12 @@ useEffect(() => {
       displayName: user?.displayName
     });
 
-    const usersRef = dbRef(db, 'users');
-    const chantiersRef = dbRef(db, 'chantiers');
-    const rapportsRef = dbRef(db, 'rapports');
-    const paiementsRef = dbRef(db, 'paiements');
-    const messagesRef = dbRef(db, 'messages');
-    const rdvRef = dbRef(db, 'rendezvous');
+    const usersRef = ref(db, 'users');
+    const chantiersRef = ref(db, 'chantiers');
+    const rapportsRef = ref(db, 'rapports');
+    const paiementsRef = ref(db, 'paiements');
+    const messagesRef = ref(db, 'messages');
+    const rdvRef = ref(db, 'rendezvous');
     
     const unsubRapports = onValue(rapportsRef, (snapshot) => {
       console.log("✅ [SEC-ADMIN] Requête rapports compatible règles strictes (admin-only)");
@@ -494,7 +495,7 @@ useEffect(() => {
       setLoading(false);
     });
 
-    const partenairesRef = dbRef(db, 'partenaires');
+    const partenairesRef = ref(db, 'partenaires');
     const unsubPartenaires = onValue(partenairesRef, (snapshot) => {
       console.log("✅ [SEC-ADMIN] Requête partenaires compatible règles strictes (admin-only)");
       const data = snapshot.val();
@@ -508,7 +509,7 @@ useEffect(() => {
       }
     });
 
-const promotionsRef = dbRef(db, 'promotions');
+const promotionsRef = ref(db, 'promotions');
     const unsubPromotions = onValue(promotionsRef, (snapshot) => {
       console.log("✅ [SEC-ADMIN] Requête promotions compatible règles strictes (admin-only)");
       const data = snapshot.val();
@@ -522,14 +523,14 @@ const promotionsRef = dbRef(db, 'promotions');
       }
     });
 
-    const ouvriersRef = dbRef(db, 'ouvriers');
+    const ouvriersRef = ref(db, 'ouvriers');
     const unsubOuvriers = onValue(ouvriersRef, (snapshot) => {
       console.log("✅ [SEC-ADMIN] Requête ouvriers compatible règles strictes (admin-only)");
       const data = snapshot.val();
       setOuvriers(data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : []);
     });
 
-    const materiauxRef = dbRef(db, 'materiaux');
+    const materiauxRef = ref(db, 'materiaux');
     const unsubMateriaux = onValue(materiauxRef, (snapshot) => {
       console.log("✅ [SEC-ADMIN] Requête materiaux compatible règles strictes (admin-only)");
       const data = snapshot.val();
@@ -599,7 +600,7 @@ const promotionsRef = dbRef(db, 'promotions');
       photo_url = await handleImageUpload(partenaireForm.photo);
     }
     const { db: db } = getFirebaseServices();
-    const newRef = push(dbRef(db, 'partenaires'));
+    const newRef = push(ref(db, 'partenaires'));
     await set(newRef, {
       nom: partenaireForm.nom,
       description: partenaireForm.description,
@@ -618,7 +619,7 @@ const promotionsRef = dbRef(db, 'promotions');
       image_url = await handleImageUpload(promoForm.image);
     }
     const { db: db } = getFirebaseServices();
-    const newRef = push(dbRef(db, 'promotions'));
+    const newRef = push(ref(db, 'promotions'));
     await set(newRef, {
       titre: promoForm.titre,
       description: promoForm.description,
@@ -634,7 +635,7 @@ const promotionsRef = dbRef(db, 'promotions');
   const handleDeletePromo = async (id: string) => {
     if (!confirm("Supprimer cette promotion ?")) return;
     const { db: db } = getFirebaseServices();
-    await update(dbRef(db, `promotions/${id}`), { active: false, supprime: true });
+    await update(ref(db, `promotions/${id}`), { active: false, supprime: true });
     setMessage({ type: "success", text: "Promotion supprimée !" });
   };
 
@@ -642,7 +643,7 @@ const promotionsRef = dbRef(db, 'promotions');
     const nouveauTitre = prompt("Nouveau titre :", promo.titre);
     if (nouveauTitre && nouveauTitre.trim()) {
       const { db: db } = getFirebaseServices();
-      await update(dbRef(db, `promotions/${promo.id}`), { titre: nouveauTitre.trim() });
+      await update(ref(db, `promotions/${promo.id}`), { titre: nouveauTitre.trim() });
       setMessage({ type: "success", text: "Titre de la promotion modifié !" });
     }
   };
@@ -651,7 +652,7 @@ const promotionsRef = dbRef(db, 'promotions');
     const nouveauNom = prompt("Nouveau nom :", partenaire.nom);
     if (nouveauNom && nouveauNom.trim()) {
       const { db: db } = getFirebaseServices();
-      await update(dbRef(db, `partenaires/${partenaire.id}`), { nom: nouveauNom.trim() });
+      await update(ref(db, `partenaires/${partenaire.id}`), { nom: nouveauNom.trim() });
       setMessage({ type: "success", text: "Nom du partenaire modifié !" });
     }
   };
@@ -659,7 +660,7 @@ const promotionsRef = dbRef(db, 'promotions');
   const handleDeletePartenaire = async (id: string) => {
     if (!confirm("Supprimer ce partenaire ?")) return;
     const { db: db } = getFirebaseServices();
-    await update(dbRef(db, `partenaires/${id}`), { actif: false, dateSuppression: Date.now() });
+    await update(ref(db, `partenaires/${id}`), { actif: false, dateSuppression: Date.now() });
     setMessage({ type: "success", text: "Partenaire supprimé !" });
   };
 
@@ -667,7 +668,7 @@ const promotionsRef = dbRef(db, 'promotions');
     const nouveauNom = prompt("Nouveau nom :", ouvrier.nom);
     if (nouveauNom && nouveauNom.trim()) {
       const { db: db } = getFirebaseServices();
-      await update(dbRef(db, `ouvriers/${ouvrier.id}`), { nom: nouveauNom.trim() });
+      await update(ref(db, `ouvriers/${ouvrier.id}`), { nom: nouveauNom.trim() });
       setMessage({ type: "success", text: "Nom de l'ouvrier modifié !" });
     }
   };
@@ -675,7 +676,7 @@ const promotionsRef = dbRef(db, 'promotions');
   const handleDeleteOuvrier = async (id: string) => {
     if (!confirm("Supprimer cet ouvrier ?")) return;
     const { db: db } = getFirebaseServices();
-    await update(dbRef(db, `ouvriers/${id}`), { actif: false, dateSuppression: Date.now() });
+    await update(ref(db, `ouvriers/${id}`), { actif: false, dateSuppression: Date.now() });
     setMessage({ type: "success", text: "Ouvrier supprimé !" });
   };
 
@@ -683,7 +684,7 @@ const promotionsRef = dbRef(db, 'promotions');
     e.preventDefault();
     if (!ouvrierForm.nom || !ouvrierForm.specialite) return;
     const { db: db } = getFirebaseServices();
-    const newRef = push(dbRef(db, 'ouvriers'));
+    const newRef = push(ref(db, 'ouvriers'));
     await set(newRef, {
       nom: ouvrierForm.nom,
       specialite: ouvrierForm.specialite,
@@ -704,7 +705,7 @@ const promotionsRef = dbRef(db, 'promotions');
     e.preventDefault();
     if (!materiauForm.nom || !materiauForm.categorie) return;
     const { db: db } = getFirebaseServices();
-    const newRef = push(dbRef(db, 'materiaux'));
+    const newRef = push(ref(db, 'materiaux'));
     await set(newRef, {
       nom: materiauForm.nom,
       categorie: materiauForm.categorie,
@@ -940,7 +941,7 @@ const promotionsRef = dbRef(db, 'promotions');
                         <button
                           onClick={async () => {
                             const { db: db } = getFirebaseServices();
-                            await update(dbRef(db, `partenaires/${p.id}`), { actif: !p.actif, dateModification: Date.now() });
+                            await update(ref(db, `partenaires/${p.id}`), { actif: !p.actif, dateModification: Date.now() });
                           }}
                           className={`w-full rounded-full px-3 py-1 text-xs font-bold border transition ${
                             p.actif 
@@ -986,7 +987,7 @@ const promotionsRef = dbRef(db, 'promotions');
                         <button
                           onClick={async () => {
                             const { db: db } = getFirebaseServices();
-                            await update(dbRef(db, `promotions/${p.id}`), { active: !p.active, dateModification: Date.now() });
+                            await update(ref(db, `promotions/${p.id}`), { active: !p.active, dateModification: Date.now() });
                           }}
                           className={`w-full rounded-full px-3 py-1 text-xs font-bold border transition ${
                             p.active 

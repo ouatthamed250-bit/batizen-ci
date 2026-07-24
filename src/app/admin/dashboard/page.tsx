@@ -9,6 +9,7 @@ import { useChantiers } from '@/hooks/useChantiers';
 import type { Chantier } from '@/types/chantier';
 import { formatDateCourte } from '@/utils/formatters';
 import { getFirebaseServices } from '../../../lib/firebase';
+import { ref, get } from 'firebase/database';
 
 type Localisation = {
   adresse?: string;

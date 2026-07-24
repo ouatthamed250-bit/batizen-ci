@@ -52,8 +52,6 @@ import { ref, push, onValue, type Unsubscribe } from "firebase/database";
 import { getFirebaseServices } from "@/lib/firebase";
 import SuperCalculateur from "@/components/btp/SuperCalculateur";
 import ChatBot from "@/components/ChatBot";
-import { getFirebaseServices } from '../../../lib/firebase';
-
 /* ------------------------------------------------------------------ */
 /* Types                                                              */
 /* ------------------------------------------------------------------ */

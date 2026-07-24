@@ -10,6 +10,7 @@ import ChatBot from "@/components/ChatBot";
 import type { Chantier } from "@/types/chantier";
 import { formatDateCourte, formatLocalisation } from "@/utils/formatters";
 import { getFirebaseServices } from '../../../lib/firebase';
+import { ref, onValue, query, orderByChild, equalTo } from 'firebase/database';
 
 export default function ProjectsPage() {
   const { user } = useAuthContext();

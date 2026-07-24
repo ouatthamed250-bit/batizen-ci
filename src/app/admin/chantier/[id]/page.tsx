@@ -30,8 +30,8 @@ import AlbumChantierAdmin from "@/components/admin/AlbumChantierAdmin";
 import PaiementsSection from "./PaiementsSection";
 import DocumentsSection from "./DocumentsSection";
 import { getFirebaseServices } from "@/lib/firebase";
+import { ref, onValue, push, update, Unsubscribe } from 'firebase/database';
 import { getContratTemplate } from "@/lib/documents-templates";
-import { getFirebaseServices } from '../../../../lib/firebase';
 
 type Localisation = {
   adresse?: string;
