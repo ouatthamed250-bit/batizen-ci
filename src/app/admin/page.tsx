@@ -375,7 +375,7 @@ useEffect(() => {
       console.log("🔐 [AUTH] Données user Firebase:", userData);
       
       if (userData?.role !== "admin" && userData?.userRole !== "admin") {
-        console.warn("⚠️ [AUTH] ALERTE: Rôle admin non détecté ! Role trouvé:", userData?.role || userData?.userRole);
+        console.info("ℹ️ [AUTH] Rôle DB:", userData?.role || userData?.userRole, "— fallback sur vérification session/cookie");
       } else {
         console.log("✅ [AUTH] Rôle admin confirmé");
       }
