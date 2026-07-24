@@ -6,13 +6,16 @@ import { adminAuth } from '@/lib/firebase-admin';
  * API Route : POST /api/auth/register
  *
  * Crée un nouvel utilisateur via Firebase Admin SDK.
- * Utile pour l'inscription côté serveur (admin back-office).
+ * Cette route crée UNIQUEMENT des comptes avec le rôle 'client'.
+ *
+ * ⚠️ SÉCURITÉ : Il est IMPOSSIBLE de créer un compte admin via cette route.
+ * Le rôle 'admin' ne peut être attribué QUE via le script serveur :
+ *   node scripts/set-admin-role.js <UID>
  *
  * Body (JSON) : {
  *   email: string,
  *   password: string,
- *   displayName?: string,
- *   role?: 'client' | 'admin'  // Par défaut 'client'
+ *   displayName?: string
  * }
  *
  * Retourne :
@@ -21,7 +24,7 @@ import { adminAuth } from '@/lib/firebase-admin';
  */
 export async function POST(request: NextRequest) {
   try {
-    const { email, password, displayName, role } = await request.json();
+    const { email, password, displayName } = await request.json();
 
     // 1. Validation des champs requis
     if (!email || typeof email !== 'string') {
@@ -46,7 +49,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 3. Création de l'utilisateur
+    // 3. Création de l'utilisateur — toujours avec le rôle 'client'
     let userRecord;
     try {
       userRecord = await adminAuth.createUser({
@@ -70,27 +73,15 @@ export async function POST(request: NextRequest) {
     }
 
     const uid = userRecord.uid;
+    const role = 'client';
 
-    // 4. Si le rôle demandé est 'admin', attribuer le custom claim
-    const requestedRole = role === 'admin' ? 'admin' : 'client';
-
-    if (requestedRole === 'admin') {
-      try {
-        await adminAuth.setCustomUserClaims(uid, { role: 'admin' });
-        console.log(`✅ Custom claim { role: 'admin' } attribué à ${uid}`);
-      } catch (claimsError: any) {
-        // On ne bloque pas la création si les claims échouent, mais on log
-        console.error(`⚠️ Erreur attribution custom claims à ${uid}:`, claimsError.message);
-      }
-    }
-
-    console.log(`✅ Utilisateur créé : ${email} (UID: ${uid}, Rôle: ${requestedRole})`);
+    console.log(`✅ Utilisateur créé : ${email} (UID: ${uid}, Rôle: ${role})`);
 
     return NextResponse.json({
       success: true,
       uid,
       email,
-      role: requestedRole,
+      role,
     });
 
   } catch (error: any) {
