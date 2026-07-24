@@ -803,7 +803,7 @@ const [plan, med, docsFiltered, notesFiltered, rapportsFiltered] = await Promise
   };
 
   return (
-    <main className="pt-20 pb-16 px-4 min-h-screen bg-[#f9fafb]">
+    <main className="pt-20 pb-16 px-4 min-h-screen bg-transparent">
       {/* HEADER DU CHANTIER */}
       <header className="relative overflow-hidden">
         <div className="absolute inset-0">
@@ -839,7 +839,7 @@ const [plan, med, docsFiltered, notesFiltered, rapportsFiltered] = await Promise
       </header>
 
       {/* TABS NAV */}
-      <div className="sticky top-0 z-20 border-b border-[#E7EBF5] bg-[#F7F9FC]/95 backdrop-blur">
+      <div className="sticky top-0 z-20 border-b border-white/20 bg-white/90 backdrop-blur">
         <div className="mx-auto flex w-full max-w-3xl gap-1 overflow-x-auto px-2 py-2">
           {TABS.map((t) => {
             const isVisible = affichableTabs.includes(t.key);
@@ -874,9 +874,9 @@ const [plan, med, docsFiltered, notesFiltered, rapportsFiltered] = await Promise
       <div className="mx-auto w-full max-w-3xl px-4 pt-5 sm:px-6">
         {loading ? (
           <div className="animate-pulse space-y-3">
-            <div className="h-24 rounded-[20px] bg-[#E7EBF5]" />
-            <div className="h-24 rounded-[20px] bg-[#E7EBF5]" />
-            <div className="h-24 rounded-[20px] bg-[#E7EBF5]" />
+            <div className="h-24 rounded-[20px] bg-white/20" />
+            <div className="h-24 rounded-[20px] bg-white/20" />
+            <div className="h-24 rounded-[20px] bg-white/20" />
           </div>
         ) : (
           <AnimatePresence mode="wait">
