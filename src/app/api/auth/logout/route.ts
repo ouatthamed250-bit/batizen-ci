@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { adminAuth } from '@/lib/firebase-admin';
 
+export const runtime = 'nodejs';
+
 /**
  * API Route : POST /api/auth/logout
  *
@@ -16,28 +18,37 @@ import { adminAuth } from '@/lib/firebase-admin';
  * sert à rien tant qu'aucune révocation n'a réellement eu lieu.
  */
 export async function POST(request: NextRequest) {
-  const sessionCookie = request.cookies.get('__session')?.value;
+  try {
+    const sessionCookie = request.cookies.get('__session')?.value;
 
-  if (sessionCookie) {
-    try {
-      // checkRevoked: false ici volontairement — on veut décoder le cookie
-      // même s'il est déjà expiré/révoqué, juste pour récupérer l'uid et
-      // s'assurer que la révocation est bien (re)déclenchée.
-      const decoded = await adminAuth.verifySessionCookie(sessionCookie, false);
-      await adminAuth.revokeRefreshTokens(decoded.uid);
-    } catch {
-      // Cookie déjà invalide/expiré/malformé : rien à révoquer, on continue
-      // simplement pour nettoyer le cookie côté navigateur.
+    if (sessionCookie) {
+      try {
+        // checkRevoked: false ici volontairement — on veut décoder le cookie
+        // même s'il est déjà expiré/révoqué, juste pour récupérer l'uid et
+        // s'assurer que la révocation est bien (re)déclenchée.
+        const decoded = await adminAuth.verifySessionCookie(sessionCookie, false);
+        await adminAuth.revokeRefreshTokens(decoded.uid);
+      } catch {
+        // Cookie déjà invalide/expiré/malformé : rien à révoquer, on continue
+        // simplement pour nettoyer le cookie côté navigateur.
+      }
     }
-  }
 
-  const response = NextResponse.json({ success: true });
-  response.cookies.set('__session', '', {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    path: '/',
-    maxAge: 0,
-  });
-  return response;
+    const response = NextResponse.json({ success: true });
+    response.cookies.set('__session', '', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/',
+      maxAge: 0,
+    });
+    return response;
+
+  } catch (error: any) {
+    console.error('❌ Erreur /api/auth/logout:', error?.message || error);
+    return NextResponse.json(
+      { error: 'Erreur de serveur lors de la déconnexion.' },
+      { status: 500 }
+    );
+  }
 }

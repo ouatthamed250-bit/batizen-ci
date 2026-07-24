@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { adminAuth } from '@/lib/firebase-admin';
 
+export const runtime = 'nodejs';
+
 /**
  * API Route : POST /api/auth/register
  *
@@ -24,7 +26,17 @@ import { adminAuth } from '@/lib/firebase-admin';
  */
 export async function POST(request: NextRequest) {
   try {
-    const { email, password, displayName } = await request.json();
+    let body: { email?: string; password?: string; displayName?: string };
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: 'Requête invalide. Le corps doit être du JSON.' },
+        { status: 400 }
+      );
+    }
+
+    const { email, password, displayName } = body;
 
     // 1. Validation des champs requis
     if (!email || typeof email !== 'string') {
@@ -65,7 +77,7 @@ export async function POST(request: NextRequest) {
           { status: 409 }
         );
       }
-      console.error('❌ Erreur création utilisateur:', createError.message);
+      console.error('❌ Erreur création utilisateur:', createError?.message || createError);
       return NextResponse.json(
         { error: `Erreur lors de la création du compte : ${createError.message}` },
         { status: 500 }
@@ -85,10 +97,20 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('❌ Erreur /api/auth/register:', error.message);
+    console.error('❌ Erreur /api/auth/register:', error?.message || error);
     return NextResponse.json(
       { error: 'Erreur de serveur. Veuillez réessayer.' },
       { status: 500 }
     );
   }
+}
+
+/**
+ * Route GET non supportée
+ */
+export async function GET() {
+  return NextResponse.json(
+    { error: 'Méthode non autorisée. Utilisez POST.' },
+    { status: 405 }
+  );
 }

@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { adminAuth } from '@/lib/firebase-admin';
 
+export const runtime = 'nodejs';
+
 /**
  * API Route : GET /api/auth/me
  *
@@ -59,10 +61,20 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('❌ Erreur /api/auth/me:', error.message);
+    console.error('❌ Erreur /api/auth/me:', error?.message || error);
     return NextResponse.json(
       { error: 'Erreur de serveur.' },
       { status: 500 }
     );
   }
+}
+
+/**
+ * Route POST non supportée
+ */
+export async function POST() {
+  return NextResponse.json(
+    { error: 'Méthode non autorisée. Utilisez GET.' },
+    { status: 405 }
+  );
 }

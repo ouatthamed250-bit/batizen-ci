@@ -3,6 +3,8 @@ import type { NextRequest } from 'next/server';
 import { adminAuth } from '@/lib/firebase-admin';
 import { timingSafeEqualString } from '@/lib/security';
 
+export const runtime = 'nodejs';
+
 // Le mot de passe admin DOIT être défini dans .env.local (ADMIN_SECRET_PASSWORD=xxx)
 // Aucun fallback en dur : si la variable est absente, l'accès est refusé plutôt
 // que de retomber sur un mot de passe par défaut connu.
@@ -35,7 +37,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { idToken, password } = await request.json();
+    let body: { idToken?: string; password?: string };
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: 'Requête invalide. Le corps doit être du JSON.' },
+        { status: 400 }
+      );
+    }
+
+    const { idToken, password } = body;
 
     if (!idToken || !password) {
       return NextResponse.json(
@@ -100,10 +112,20 @@ export async function POST(request: NextRequest) {
     return response;
 
   } catch (error: any) {
-    console.error('Erreur session API:', error);
+    console.error('❌ Erreur /api/auth/session:', error?.message || error);
     return NextResponse.json(
       { error: 'Erreur de serveur. Veuillez réessayer.' },
       { status: 500 }
     );
   }
+}
+
+/**
+ * Route GET non supportée
+ */
+export async function GET() {
+  return NextResponse.json(
+    { error: 'Méthode non autorisée. Utilisez POST.' },
+    { status: 405 }
+  );
 }
