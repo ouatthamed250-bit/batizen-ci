@@ -30,6 +30,7 @@ const SIDEBAR = [
   { key: "materiaux", label: "Matériaux", icon: BrickWall, href: "/admin?section=materiaux" },
   { key: "promotions", label: "Promotions", icon: Megaphone, href: "/admin?section=promotions" },
   { key: "partenaires", label: "Partenaires", icon: Handshake, href: "/admin?section=partenaires" },
+  { key: "annonces", label: "Annonces", icon: Megaphone, href: "/admin/annonces" },
   { key: "messages", label: "Messagerie", icon: MessageCircle, href: "/admin/messages" },
   { key: "statistiques", label: "Statistiques", icon: BarChart3, href: "/admin?section=statistiques" },
   { key: "parametres", label: "Paramètres", icon: Settings, href: "/admin/parametres" },

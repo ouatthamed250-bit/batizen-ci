@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { PremiumHeader } from "./PremiumHeader";
 import { BottomNav } from "./BottomNav";
 import PremiumBackground from "./PremiumBackground";
+import AnnonceTicker from "@/components/ui/AnnonceTicker";
 
 interface LayoutWrapperProps {
   children: React.ReactNode;

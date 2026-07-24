@@ -13,6 +13,7 @@ import { getDatabase, ref as dbRef, onValue, update, query, orderByChild, equalT
 import { logger } from "@/utils/logger";
 import dynamic from "next/dynamic";
 import AdminSecretModal from "@/components/auth/AdminSecretModal";
+import AnnonceTicker from "@/components/ui/AnnonceTicker";
 const ChatBot = dynamic(() => import("@/components/ChatBot"), { ssr: false });
 
 // ✅ NOUVEAUX IMPORTS : Types et Utilitaires centralisés
@@ -306,7 +307,7 @@ export default function DashboardClientPage() {
           })()}
         </div>
 
-        {/* Bande défilante */}
+        {/* Bande défilante promo */}
         <div className="w-full overflow-hidden bg-[#FF7A00]/10 backdrop-blur-md rounded-[24px] border border-[#FF7A00]/30 py-3 shadow-lg">
           <div className="flex animate-marquee whitespace-nowrap gap-12 px-3">
             {[...ANNONCES_DEMO, ...ANNONCES_DEMO].map((annonce, i) => (
@@ -316,6 +317,9 @@ export default function DashboardClientPage() {
             ))}
           </div>
         </div>
+
+        {/* Annonces dynamiques (Realtime Database) */}
+        <AnnonceTicker />
 
         {/* Météo */}
         <div className="w-full rounded-[32px] p-6 md:p-8 bg-gradient-to-br from-[#1e3a8a] to-[#2563eb] text-white shadow-xl mb-2">
