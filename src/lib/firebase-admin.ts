@@ -6,6 +6,10 @@
  * 1. FIREBASE_SERVICE_ACCOUNT_KEY (JSON stringifié du fichier de clé)
  * 2. GOOGLE_APPLICATION_CREDENTIALS (chemin vers le fichier de clé)
  *
+ * ⚠️ Module résilient : si les variables d'environnement sont manquantes,
+ *     une erreur est loggée et les exports restent utilisables (ils throw
+ *     une erreur explicite à l'usage).
+ * 
  * ⚠️ SÉCURITÉ : Ne JAMAIS exposer FIREBASE_SERVICE_ACCOUNT_KEY côté client.
  *    Elle n'est accessible que dans l'environnement serveur (variables d'env).
  */
@@ -21,9 +25,9 @@ import { getDatabase } from 'firebase-admin/database';
  * 1. FIREBASE_SERVICE_ACCOUNT_KEY — JSON stringifié (recommandé pour développement local/Vercel)
  * 2. GOOGLE_APPLICATION_CREDENTIALS — Chemin vers fichier de clé (Google Cloud natif)
  * 
- * Lève une erreur explicite si aucune configuration n'est trouvée.
+ * Retourne null si aucune configuration n'est trouvée (au lieu de throw).
  */
-function initFirebaseAdmin(): App {
+export function initFirebaseAdmin(): App | null {
   // Évite les initialisations multiples
   if (getApps().length > 0) return getApps()[0];
 
@@ -37,23 +41,18 @@ function initFirebaseAdmin(): App {
 
       // Validation minimale : s'assurer que les champs requis sont présents
       if (!serviceAccount.private_key || !serviceAccount.client_email || !serviceAccount.project_id) {
-        throw new Error(
-          'FIREBASE_SERVICE_ACCOUNT_KEY invalide : ' +
-          'le JSON doit contenir private_key, client_email et project_id'
-        );
+        console.error('❌ Firebase Admin: FIREBASE_SERVICE_ACCOUNT_KEY invalide (champs manquants)');
+        return null;
       }
 
       console.log('✅ Firebase Admin SDK initialisé avec FIREBASE_SERVICE_ACCOUNT_KEY');
       return initializeApp({
         credential: cert(serviceAccount),
-        databaseURL,
+        databaseURL: databaseURL || undefined,
       });
     } catch (error) {
       console.error('❌ Erreur initialisation Firebase Admin (clé de service):', error);
-      throw new Error(
-        'Configuration Firebase Admin invalide. ' +
-        'Vérifiez que FIREBASE_SERVICE_ACCOUNT_KEY contient un JSON de clé de service valide.'
-      );
+      return null;
     }
   }
 
@@ -63,40 +62,53 @@ function initFirebaseAdmin(): App {
       console.log('✅ Firebase Admin SDK initialisé avec GOOGLE_APPLICATION_CREDENTIALS');
       return initializeApp({
         credential: applicationDefault(),
-        databaseURL,
+        databaseURL: databaseURL || undefined,
       });
     } catch (error) {
       console.error('❌ Erreur initialisation Firebase Admin (ADC):', error);
-      throw new Error(
-        'Configuration Firebase Admin invalide. ' +
-        'Vérifiez que GOOGLE_APPLICATION_CREDENTIALS pointe vers un fichier de clé valide.'
-      );
+      return null;
     }
   }
 
   // Aucune configuration trouvée
-  throw new Error(
-    '❌ Firebase Admin SDK : configuration manquante.\n\n' +
-    'Configurez l\'une des variables d\'environnement suivantes :\n' +
-    '  1. FIREBASE_SERVICE_ACCOUNT_KEY — JSON stringifié de la clé de service Firebase\n' +
-    '  2. GOOGLE_APPLICATION_CREDENTIALS — Chemin vers le fichier JSON de la clé de service\n\n' +
-    'Pour générer une clé de service :\n' +
-    '  Firebase Console → Paramètres du projet → Comptes de service → Générer une clé privée'
-  );
+  console.warn('⚠️ Firebase Admin SDK : aucune configuration trouvée.');
+  return null;
 }
 
-export const firebaseAdmin = initFirebaseAdmin();
+// Initialisation résiliente : si ça plante, on a quand même des exports
+let firebaseApp: App | null = null;
+try {
+  firebaseApp = initFirebaseAdmin();
+} catch (error) {
+  console.error('❌ Firebase Admin SDK : erreur fatale à l\'initialisation :', error);
+}
 
-// Export des services admin
-export const adminAuth = getAuth(firebaseAdmin);
-export const adminDb = getDatabase(firebaseAdmin);
+export const firebaseAdmin = firebaseApp;
+
+// Export des services admin (avec vérification null)
+export function getFirebaseAdminAuth() {
+  if (!firebaseApp) throw new Error('Firebase Admin non initialisé');
+  return getAuth(firebaseApp);
+}
+
+export function getFirebaseAdminDb() {
+  if (!firebaseApp) throw new Error('Firebase Admin non initialisé');
+  return getDatabase(firebaseApp);
+}
+
+// Exports pour compatibilité avec le code existant
+// Attention : ces exports throw si firebaseAdmin est null
+export const adminAuth = firebaseApp ? getAuth(firebaseApp) : null!;
+export const adminDb = firebaseApp ? getDatabase(firebaseApp) : null!;
 
 // Fonction pour vérifier les cookies de session
 export async function verifySessionCookie(sessionCookie: string | undefined): Promise<boolean> {
   if (!sessionCookie) return false;
+  if (!firebaseApp) return false;
   
   try {
-    const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie, true);
+    const auth = getAuth(firebaseApp);
+    const decodedClaims = await auth.verifySessionCookie(sessionCookie, true);
     return decodedClaims.role === 'admin';
   } catch {
     return false;

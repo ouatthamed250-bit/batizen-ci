@@ -16,28 +16,39 @@ import AdminLayoutClient from './AdminLayoutClient';
  *   1. Custom claim Firebase (via verifySessionCookie) — PRIORITAIRE
  *   2. Fallback Realtime Database (users/{uid}/role) — intégré dans verifySessionCookie
  *      (voir src/lib/firebase-admin.ts → fonction verifySessionCookie)
+ *
+ * ⚠️ Try/catch global : si firebase-admin n'est pas initialisé (variables d'env
+ *     manquantes sur Vercel), on redirige vers /login au lieu de planter en 500.
  */
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const cookieStore = await cookies();
-  const sessionCookie = cookieStore.get('__session')?.value;
+  try {
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get('__session')?.value;
 
-  // Pas de cookie → pas connecté → redirection
-  if (!sessionCookie) {
+    // Pas de cookie → pas connecté → redirection
+    if (!sessionCookie) {
+      redirect('/login?redirect=admin');
+    }
+
+    // Vérification réelle du cookie de session via Firebase Admin
+    const isValidAdmin = await verifySessionCookie(sessionCookie);
+
+    if (!isValidAdmin) {
+      // Session invalide ou utilisateur non admin → redirection
+      redirect('/login?redirect=admin');
+    }
+
+    // Utilisateur admin authentifié → afficher l'interface
+    return <AdminLayoutClient>{children}</AdminLayoutClient>;
+
+  } catch (error) {
+    // 🔒 Si firebase-admin n'est pas disponible ou si une erreur survient,
+    // on redirige vers /login au lieu de retourner une page d'erreur HTML 500.
+    console.error('❌ AdminLayout error:', error);
     redirect('/login?redirect=admin');
   }
-
-  // Vérification réelle du cookie de session via Firebase Admin
-  const isValidAdmin = await verifySessionCookie(sessionCookie);
-
-  if (!isValidAdmin) {
-    // Session invalide ou utilisateur non admin → redirection
-    redirect('/login?redirect=admin');
-  }
-
-  // Utilisateur admin authentifié → afficher l'interface
-  return <AdminLayoutClient>{children}</AdminLayoutClient>;
 }
