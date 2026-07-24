@@ -1586,14 +1586,6 @@ const [plan, med, docsFiltered, notesFiltered, rapportsFiltered] = await Promise
       )}
 
       <ChatBot />
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[#E7EBF5] bg-white/95 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-3xl items-stretch gap-1 p-2">
-          <ActionBtn icon={Phone} label="Appeler" href={chef?.telephone ? `tel:${chef.telephone}` : "#"} color="#0B5FFF" />
-          <ActionBtn icon={MessageCircle} label="Chat" href={chef?.telephone ? waLink(chef.telephone) : "#"} color="#25D366" />
-          <ActionBtn icon={AlertTriangle} label="Problème" href="/support" color="#EF4444" />
-          <ActionBtn icon={CalendarPlus} label="Visite" href="/nouveau-chantier" color="#FF7A00" />
-        </div>
-      </div>
     </main>
   );
 }
