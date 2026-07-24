@@ -18,6 +18,7 @@
     },
 
     "chantiers": {
+      ".read": "auth != null",
       ".indexOn": ["userId", "client_id", "adminId", "statut"],
       "$chantierId": {
         ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || data.child('userId').val() == auth.uid || data.child('client_id').val() == auth.uid)",
@@ -44,6 +45,7 @@
     },
 
     "rendezvous": {
+      ".read": "auth != null",
       ".indexOn": ["clientId", "chantierId"],
       "$rdvId": {
         ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || data.child('clientId').val() == auth.uid)",
@@ -52,6 +54,7 @@
     },
 
     "notifications": {
+      ".read": "auth != null",
       "admin": {
         ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() == 'admin'",
         ".write": "auth != null"
@@ -63,6 +66,7 @@
     },
 
     "rapports": {
+      ".read": "auth != null",
       ".indexOn": ["chantierId"],
       "$rapportId": {
         ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('chantiers').child(data.child('chantierId').val()).child('userId').val() == auth.uid || root.child('chantiers').child(data.child('chantierId').val()).child('client_id').val() == auth.uid)",
@@ -71,6 +75,7 @@
     },
 
     "paiements": {
+      ".read": "auth != null",
       ".indexOn": ["chantierId"],
       "$paiementId": {
         ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('chantiers').child(data.child('chantierId').val()).child('userId').val() == auth.uid || root.child('chantiers').child(data.child('chantierId').val()).child('client_id').val() == auth.uid)",
@@ -79,6 +84,7 @@
     },
 
     "messages": {
+      ".read": "auth != null",
       "$chantierId": {
         ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('chantiers').child($chantierId).child('userId').val() == auth.uid || root.child('chantiers').child($chantierId).child('client_id').val() == auth.uid)",
         ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('chantiers').child($chantierId).child('userId').val() == auth.uid || root.child('chantiers').child($chantierId).child('client_id').val() == auth.uid)"
@@ -86,6 +92,7 @@
     },
 
     "documents": {
+      ".read": "auth != null",
       ".indexOn": ["chantierId", "userId"],
       "$documentId": {
         ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || data.child('userId').val() == auth.uid || root.child('chantiers').child(data.child('chantierId').val()).child('userId').val() == auth.uid || root.child('chantiers').child(data.child('chantierId').val()).child('client_id').val() == auth.uid)",
