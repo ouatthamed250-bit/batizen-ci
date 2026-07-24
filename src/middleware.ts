@@ -10,6 +10,7 @@ import { verifySessionCookie, firebaseAdmin } from '@/lib/firebase-admin';
  * 🔒 Deux niveaux de vérification :
  *   1. Custom claim Firebase (via session cookie) — PRIORITAIRE
  *   2. Fallback Realtime Database (users/{uid}/role) — FALLBACK
+ *      (utile si le custom claim n'a pas encore été propagé)
  *
  * Nécessite `runtime: 'nodejs'` car firebase-admin utilise des API Node.js.
  */
