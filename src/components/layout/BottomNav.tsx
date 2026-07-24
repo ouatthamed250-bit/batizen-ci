@@ -46,7 +46,7 @@ export function BottomNav() {
       className={cn(
         "gpu-accelerated fixed inset-x-0 bottom-4 z-40 mx-auto flex min-h-[70px] items-center justify-around rounded-[32px]",
         "bg-white/80 backdrop-blur-xl border border-white/30 shadow-[0_8px_32px_rgba(0,0,0,0.12)] pb-safe px-2",
-        "dark:bg-[#111827]/80 dark:border-[#1D3557]/50 dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)]",
+        "dark:bg-[#081423]/80 dark:border-[#1D3557]/50 dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)]",
         "max-w-[430px] w-full"
       )}
       aria-label="Navigation principale"

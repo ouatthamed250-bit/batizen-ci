@@ -1,113 +1,87 @@
+/* Police Poppins - DOIT ÊTRE EN PREMIER */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
 /* ============================================================
    BÂTIZEN CI — DESIGN SYSTEM PREMIUM MOBILE (Apple/Tesla)
    Police: Poppins, Coins arrondis: 24-32px, Glassmorphism
    ============================================================ */
-@import "tailwindcss";
 
 :root {
-  /* ─── Palette officielle BÂTIZEN CI ─── */
+  /* ─── Couleurs officielles ─── */
   --primary: #0B5FFF;
-  --primary-dark: #0D2B6B;
-  --navy: #1e3a8a;
+  --dark: #0D2B6B;
+  --orange: #FF7A00;
+  --background: #FFFFFF;
+  
+  /* ─── Couleurs BTP (compatibilité) ─── */
   --btp-orange: #FF7A00;
   --btp-orange-dark: #D97706;
   --btp-orange-light: #FFB347;
-  --btp-jaune: #FFD700;
-
-  /* ─── Neutres ─── */
-  --text: #1F2937;
-  --text-dark: #F5F5F5;
-  --muted: #6B7280;
-  --muted-dark: #9CA3AF;
-
-  /* ─── Fonds ─── */
-  --background: #FFFFFF;
-  --background-dark: #111827;
-  --card: #FFFFFF;
-  --card-dark: #1E1E2E;
-  --surface: #E8EDF5;
-  --surface-dark: #1E293B;
-  --stroke: #C5D0E8;
-  --stroke-dark: #1E3A6E;
-
-  /* ─── Sémantiques ─── */
-  --success: #22C55E;
-  --error: #EF4444;
-  --warning: #F59E0B;
-
-  /* ─── Héritage BTP (points d'entrée pour compatibilité) ─── */
   --btp-gris: #4A4A4A;
   --btp-gris-clair: #6B7280;
+  --btp-jaune: #FFD700;
   --btp-noir: #1A1A1A;
   --btp-blanc-casse: #F5F5F5;
   --btp-blanc: #FFFFFF;
 
-  /* ─── Rayons ─── */
+  /* ─── Variables supplémentaires ─── */
+  --navy: #0D2B6B;
+  --surface: #E8EDF5;
+  --stroke: #C5D0E8;
+  --text: #0A1628;
+  --muted: #5A6478;
+  --success: #22C55E;
+  --error: #EF4444;
+  --warning: #F59E0B;
   --radius-card: 28px;
   --radius-button: 24px;
   --radius-input: 20px;
 
-  /* ─── Fonds par page (héritage) ─── */
+  /* ─── Fonds par page ─── */
   --bg-home:    #FFFFFF;
   --bg-dashboard: #FFFFFF;
   --bg-profil:  #FFFFFF;
 }
 
 .dark {
-  /* ─── Palette officielle BÂTIZEN CI ─── */
   --primary: #4B8FFF;
-  --primary-dark: #111827;
-  --navy: #1A3B8E;
+  --dark: #081423;
+  --orange: #FF8C00;
+  --background: #081423;
+  
   --btp-orange: #FF8C00;
   --btp-orange-dark: #CC6600;
   --btp-orange-light: #FFB347;
-  --btp-jaune: #FFD700;
-
-  /* ─── Neutres ─── */
-  --text: #E8F0FF;
-  --text-dark: #F5F5F5;
-  --muted: #7A8BA8;
-  --muted-dark: #9CA3AF;
-
-  /* ─── Fonds ─── */
-  --background: #111827;
-  --background-dark: #111827;
-  --card: #1E1E2E;
-  --card-dark: #1E1E2E;
-  --surface: #1E293B;
-  --surface-dark: #1E293B;
-  --stroke: #1E3A6E;
-  --stroke-dark: #1E3A6E;
-
-  /* ─── Sémantiques ─── */
-  --success: #34D399;
-  --error: #F87171;
-  --warning: #FBBF24;
-
-  /* ─── Héritage BTP (points d'entrée pour compatibilité) ─── */
   --btp-gris: #6B7280;
   --btp-gris-clair: #9CA3AF;
+  --btp-jaune: #FFD700;
   --btp-noir: #111827;
   --btp-blanc-casse: #1F2937;
   --btp-blanc: #374151;
 
-  /* ─── Fonds par page (héritage) ─── */
-  --bg-home:    #111827;
-  --bg-dashboard: #111827;
-  --bg-profil:  #111827;
+  --navy: #1A3B8E;
+  --surface: #08142E;
+  --stroke: #1E3A6E;
+  --text: #E8F0FF;
+  --muted: #7A8BA8;
+  --success: #34D399;
+  --error: #F87171;
+  --warning: #FBBF24;
+
+  --bg-home:    #081423;
+  --bg-dashboard: #081423;
+  --bg-profil:  #081423;
 }
 
 body {
-  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-feature-settings: "kern" 1, "liga" 1;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  font-family: 'Poppins', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 /* Typography headings */
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-weight: 600;
+  font-family: 'Poppins', 'Inter', sans-serif;
+  font-weight: 700;
   letter-spacing: -0.02em;
 }
 
@@ -164,6 +138,7 @@ h1, h2, h3, h4, h5, h6 {
 *, *::before, *::after {
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
 html {
@@ -171,16 +146,14 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
-/* Transition fluide uniquement sur le thème (pas de transition globale sur *) */
-.theme-transition,
-.theme-transition * {
-  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
-}
-
 body {
   margin: 0;
   background: transparent;
   color: var(--btp-noir);
+  font-family: "Inter", "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-feature-settings: "kern" 1, "liga" 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   overscroll-behavior: none;
   text-rendering: optimizeLegibility;
   transition: background 0.3s ease, color 0.3s ease;
@@ -207,9 +180,15 @@ a { text-decoration: none; color: inherit; }
 /* ============================================================
    TYPOGRAPHIE BTP
    ============================================================ */
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Montserrat", "Inter", sans-serif;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
 .btp-title {
-  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-weight: 600;
+  font-family: "Montserrat", sans-serif;
+  font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -231,6 +210,7 @@ a { text-decoration: none; color: inherit; }
   padding: 14px 28px;
   border: none;
   border-radius: 12px;
+  font-family: "Montserrat", sans-serif;
   font-weight: 700;
   font-size: 14px;
   text-transform: uppercase;
@@ -529,6 +509,7 @@ a { text-decoration: none; color: inherit; }
 }
 
 .btp-loader-text {
+  font-family: "Montserrat", sans-serif;
   font-weight: 700;
   font-size: 12px;
   text-transform: uppercase;
