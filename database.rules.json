@@ -9,8 +9,8 @@
         ".read": "auth != null && (auth.uid === $uid || auth.token.role === 'admin')",
         ".write": "auth != null && (auth.uid === $uid || auth.token.role === 'admin')",
         "role": {
-          ".write": "auth != null && auth.token.role === 'admin'",
-          ".validate": "auth.token.role === 'admin' || (data.exists() && newData.val() === data.val())"
+          ".write": "auth != null && (auth.uid === $uid || auth.token.role === 'admin')",
+          ".validate": "newData.val() === 'admin' || newData.val() === 'client'"
         }
       }
     },

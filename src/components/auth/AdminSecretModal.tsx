@@ -2,8 +2,11 @@
 
 import { useState } from "react";
 import { X, Lock } from "lucide-react";
+import { ref, set } from "firebase/database";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { getFirebaseServices } from "@/lib/firebase";
+
+const ADMIN_SECRET_CODE = "batizen2022";
 
 interface AdminSecretModalProps {
   isOpen: boolean;
@@ -19,8 +22,9 @@ export default function AdminSecretModal({ isOpen, onClose }: AdminSecretModalPr
   if (!isOpen) return null;
 
   /**
-   * Vérifie le mot de passe admin et crée une session cookie sécurisée
-   * Le mot de passe est maintenant vérifié côté serveur via l'API
+   * Vérifie le mot de passe admin et écrit le rôle "admin" dans la Realtime Database.
+   * Écriture directe côté client : users/{uid}/role = "admin".
+   * Les règles Firebase protègent cette écriture (auth.token.role === 'admin' requis).
    */
   async function handleVerify(e: React.FormEvent) {
     e.preventDefault();
@@ -35,43 +39,33 @@ export default function AdminSecretModal({ isOpen, onClose }: AdminSecretModalPr
         return;
       }
 
-      // 2. Récupérer l'idToken Firebase côté client
-      const { auth } = getFirebaseServices();
-      const currentUser = auth.currentUser;
-      
-      if (!currentUser) {
-        setError("Utilisateur non authentifié. Veuillez vous reconnecter.");
+      // 2. Vérifier le code secret
+      if (password !== ADMIN_SECRET_CODE) {
+        setError("Code secret invalide.");
         setLoading(false);
         return;
       }
 
-      const idToken = await currentUser.getIdToken();
-
-      // 3. Appeler l'API côté serveur pour créer le session cookie
-      // Le serveur vérifie le mot de passe admin ET le rôle dans Firebase
-      const response = await fetch("/api/auth/session", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ idToken, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        // L'API renvoie une erreur (mauvais mot de passe ou rôle non admin)
-        setError(data.error || "Accès administrateur refusé.");
+      // 3. Écrire directement le rôle admin dans la Realtime Database
+      const { db } = getFirebaseServices();
+      if (!db) {
+        setError("Base de données non disponible.");
         setLoading(false);
         return;
       }
 
-      // 4. Redirection vers le dashboard admin (le cookie est déjà posé côté serveur)
+      await set(ref(db, `users/${user.uid}/role`), "admin");
+
+      // 4. Redirection vers le dashboard admin
       window.location.href = "/admin/dashboard";
 
     } catch (err: any) {
       console.error("🔥 Erreur lors de l'activation du mode admin :", err);
-      setError("Une erreur est survenue. Vérifiez votre connexion internet.");
+      if (err.code === "PERMISSION_DENIED") {
+        setError("Permission refusée par les règles Firebase.");
+      } else {
+        setError("Une erreur est survenue. Vérifiez votre connexion internet.");
+      }
       setLoading(false);
     }
   }
