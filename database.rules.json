@@ -6,37 +6,37 @@
     "users": {
       ".indexOn": ["role", "email"],
       "$uid": {
-        ".read": "auth != null && (auth.uid === $uid || auth.token.role === 'admin')",
-        ".write": "auth != null && (auth.uid === $uid || auth.token.role === 'admin')",
+        ".read": "auth != null && (auth.uid == $uid || auth.token.role == 'admin')",
+        ".write": "auth != null && (auth.uid == $uid || auth.token.role == 'admin')",
         "role": {
-          ".write": "auth != null && (auth.uid === $uid || auth.token.role === 'admin')",
-          ".validate": "newData.val() === 'admin' || newData.val() === 'client'"
+          ".write": "auth != null && (auth.uid == $uid || auth.token.role == 'admin')",
+          ".validate": "newData.val() == 'admin' || newData.val() == 'client'"
         }
       }
     },
 
     "chantiers": {
-      ".indexOn": ["userId", "client_id", "statut", "adminId"],
+      ".indexOn": ["userId", "client_id", "adminId", "statut"],
       "$chantierId": {
-        ".read": "auth != null && (auth.token.role === 'admin' || data.child('userId').val() === auth.uid || data.child('client_id').val() === auth.uid)",
-        ".write": "auth != null && (auth.token.role === 'admin' || (!data.exists() && newData.child('client_id').val() === auth.uid) || (data.exists() && (data.child('userId').val() === auth.uid || data.child('client_id').val() === auth.uid)))",
+        ".read": "auth != null && (auth.token.role == 'admin' || data.child('userId').val() == auth.uid || data.child('client_id').val() == auth.uid)",
+        ".write": "auth != null && (auth.token.role == 'admin' || (!data.exists() && newData.child('userId').val() == auth.uid) || (data.exists() && (data.child('userId').val() == auth.uid || data.child('client_id').val() == auth.uid)))",
         "statut": {
-          ".write": "auth != null && auth.token.role === 'admin'",
-          ".validate": "auth.token.role === 'admin' || (data.exists() && newData.val() === data.val())"
+          ".write": "auth != null && auth.token.role == 'admin'",
+          ".validate": "newData.val() == 'en_attente' || newData.val() == 'en_cours' || newData.val() == 'termine' || newData.val() == 'annule' || newData.val() == 'en_attente_rdv' || newData.val() == 'supprime_par_client'"
         },
         "userId": {
-          ".write": "auth != null && auth.token.role === 'admin'"
+          ".write": "auth != null && (!data.exists() && newData.val() == auth.uid)"
         },
         "client_id": {
-          ".write": "auth != null && (!data.exists() && newData.val() === auth.uid)"
+          ".write": "auth != null && (!data.exists() && newData.val() == auth.uid)"
         },
         "adminId": {
-          ".write": "auth != null && auth.token.role === 'admin'",
-          ".validate": "auth.token.role === 'admin' && newData.isString()"
+          ".write": "auth != null && auth.token.role == 'admin'",
+          ".validate": "auth.token.role == 'admin' && newData.isString()"
         },
         "assignedAt": {
-          ".write": "auth != null && auth.token.role === 'admin'",
-          ".validate": "auth.token.role === 'admin' && newData.isString()"
+          ".write": "auth != null && auth.token.role == 'admin'",
+          ".validate": "auth.token.role == 'admin' && newData.isString()"
         }
       }
     },
@@ -44,42 +44,50 @@
     "rendezvous": {
       ".indexOn": ["clientId", "chantierId"],
       "$rdvId": {
-        ".read": "auth != null && (auth.token.role === 'admin' || data.child('clientId').val() === auth.uid)",
-        ".write": "auth != null && (auth.token.role === 'admin' || (!data.exists() && newData.child('clientId').val() === auth.uid) || data.child('clientId').val() === auth.uid)"
+        ".read": "auth != null && (auth.token.role == 'admin' || data.child('clientId').val() == auth.uid)",
+        ".write": "auth != null && (auth.token.role == 'admin' || (!data.exists() && newData.child('clientId').val() == auth.uid) || data.child('clientId').val() == auth.uid)"
       }
     },
 
     "notifications": {
       "admin": {
-        ".read": "auth != null && auth.token.role === 'admin'",
-        ".write": "auth != null && auth.token.role === 'admin'"
+        ".read": "auth != null && auth.token.role == 'admin'",
+        ".write": "auth != null && auth.token.role == 'admin'"
       },
       "$uid": {
-        ".read": "auth != null && (auth.uid === $uid || auth.token.role === 'admin')",
-        ".write": "auth != null && (auth.uid === $uid || auth.token.role === 'admin')"
+        ".read": "auth != null && (auth.uid == $uid || auth.token.role == 'admin')",
+        ".write": "auth != null && (auth.uid == $uid || auth.token.role == 'admin')"
       }
     },
 
     "rapports": {
       ".indexOn": ["chantierId"],
       "$rapportId": {
-        ".read": "auth != null && (auth.token.role === 'admin' || root.child('chantiers').child(data.child('chantierId').val()).child('userId').val() === auth.uid || root.child('chantiers').child(data.child('chantierId').val()).child('client_id').val() === auth.uid)",
-        ".write": "auth != null && auth.token.role === 'admin'"
+        ".read": "auth != null && (auth.token.role == 'admin' || root.child('chantiers').child(data.child('chantierId').val()).child('userId').val() == auth.uid || root.child('chantiers').child(data.child('chantierId').val()).child('client_id').val() == auth.uid)",
+        ".write": "auth != null && (auth.token.role == 'admin' || root.child('chantiers').child(newData.child('chantierId').val()).child('userId').val() == auth.uid || root.child('chantiers').child(newData.child('chantierId').val()).child('client_id').val() == auth.uid)"
       }
     },
 
     "paiements": {
       ".indexOn": ["chantierId"],
       "$paiementId": {
-        ".read": "auth != null && (auth.token.role === 'admin' || root.child('chantiers').child(data.child('chantierId').val()).child('userId').val() === auth.uid || root.child('chantiers').child(data.child('chantierId').val()).child('client_id').val() === auth.uid)",
-        ".write": "auth != null && auth.token.role === 'admin'"
+        ".read": "auth != null && (auth.token.role == 'admin' || root.child('chantiers').child(data.child('chantierId').val()).child('userId').val() == auth.uid || root.child('chantiers').child(data.child('chantierId').val()).child('client_id').val() == auth.uid)",
+        ".write": "auth != null && (auth.token.role == 'admin' || root.child('chantiers').child(newData.child('chantierId').val()).child('userId').val() == auth.uid || root.child('chantiers').child(newData.child('chantierId').val()).child('client_id').val() == auth.uid)"
       }
     },
 
     "messages": {
       "$chantierId": {
-        ".read": "auth != null && (auth.token.role === 'admin' || root.child('chantiers').child($chantierId).child('userId').val() === auth.uid || root.child('chantiers').child($chantierId).child('client_id').val() === auth.uid)",
-        ".write": "auth != null && (auth.token.role === 'admin' || root.child('chantiers').child($chantierId).child('userId').val() === auth.uid || root.child('chantiers').child($chantierId).child('client_id').val() === auth.uid)"
+        ".read": "auth != null && (auth.token.role == 'admin' || root.child('chantiers').child($chantierId).child('userId').val() == auth.uid || root.child('chantiers').child($chantierId).child('client_id').val() == auth.uid)",
+        ".write": "auth != null && (auth.token.role == 'admin' || root.child('chantiers').child($chantierId).child('userId').val() == auth.uid || root.child('chantiers').child($chantierId).child('client_id').val() == auth.uid)"
+      }
+    },
+
+    "documents": {
+      ".indexOn": ["chantierId", "userId"],
+      "$documentId": {
+        ".read": "auth != null && (auth.token.role == 'admin' || data.child('userId').val() == auth.uid || root.child('chantiers').child(data.child('chantierId').val()).child('userId').val() == auth.uid || root.child('chantiers').child(data.child('chantierId').val()).child('client_id').val() == auth.uid)",
+        ".write": "auth != null && (auth.token.role == 'admin' || (!data.exists() && newData.child('userId').val() == auth.uid) || data.child('userId').val() == auth.uid)"
       }
     }
   }
