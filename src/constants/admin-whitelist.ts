@@ -8,5 +8,6 @@
  * sur cette whitelist — c'est un filet de sécurité supplémentaire.
  */
 export const ADMIN_UIDS: string[] = [
-  '7rlGCqWy9ARTQR6lYaFpaLJiVbg2', // Hamed — admin principal
+  'p0dGVFkLRAOrWfGmq9hSBoZKXb22', // Hamed — ouatthamed250@gmail.com
+  'aaGhSvV60KTntvVaZxIT6AKfTD43', // admin@batizen.ci
 ];
