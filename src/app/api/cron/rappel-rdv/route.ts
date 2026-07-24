@@ -3,7 +3,7 @@ import { database } from "@/lib/firebase";
 import { ref, get, set } from "firebase/database";
 import { timingSafeEqualString } from "@/lib/security";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 export async function GET(request: Request) {
   const secret = request.headers.get("x-cron-secret");

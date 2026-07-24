@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { database } from "@/lib/firebase";
 import { timingSafeEqualString } from "@/lib/security";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 export async function GET(request: Request) {
   const secret = request.headers.get("x-cron-secret");
