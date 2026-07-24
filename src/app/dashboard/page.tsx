@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -12,6 +12,7 @@ import SuperCalculateur from "@/components/btp/SuperCalculateur";
 import { getDatabase, ref as dbRef, onValue, update, query, orderByChild, equalTo } from "firebase/database";
 import { logger } from "@/utils/logger";
 import dynamic from "next/dynamic";
+import AdminSecretModal from "@/components/auth/AdminSecretModal";
 const ChatBot = dynamic(() => import("@/components/ChatBot"), { ssr: false });
 
 // ✅ NOUVEAUX IMPORTS : Types et Utilitaires centralisés
@@ -163,6 +164,23 @@ export default function DashboardClientPage() {
   const { user } = useAuthContext();
   const [loading, setLoading] = useState(true);
   const [isAuthReady, setIsAuthReady] = useState(false);
+  // ── Mécanisme secret "5 taps" pour ouvrir le modal admin ──
+  const [tapCount, setTapCount] = useState(0);
+  const [tapTimer, setTapTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const [showAdminModal, setShowAdminModal] = useState(false);
+
+  const handleLogoTap = useCallback(() => {
+    const newCount = tapCount + 1;
+    setTapCount(newCount);
+    if (tapTimer) clearTimeout(tapTimer);
+    const t = setTimeout(() => { setTapCount(0); }, 2000);
+    setTapTimer(t);
+    if (newCount >= 5) {
+      setTapCount(0);
+      if (tapTimer) clearTimeout(tapTimer);
+      setShowAdminModal(true);
+    }
+  }, [tapCount, tapTimer]);
   const [chantiers, setChantiers] = useState<Chantier[]>([]); // ✅ Typage fort
   const [notifications] = useState<any[]>([]); // À connecter plus tard
   const [partenaires, setPartenaires] = useState<any[]>([]);
@@ -253,6 +271,19 @@ export default function DashboardClientPage() {
         @keyframes marquee { 0% { transform: translateX(0%); } 100% { transform: translateX(-50%); } }
       `}</style>
       
+      {/* Barre full-width avec logo BÂTIZEN.CI + mécanisme secret "5 taps" admin */}
+      <AdminSecretModal isOpen={showAdminModal} onClose={() => setShowAdminModal(false)} />
+      <div className="-mx-4 sm:-mx-6 md:-mx-8 lg:-mx-12 mb-2 flex items-center justify-center w-screen bg-white/10 backdrop-blur-md border-b border-white/20 py-3 shadow-lg">
+        <Image
+          alt="Logo BÂTIZEN CI"
+          src="/assets/images/logo.png"
+          width={36}
+          height={36}
+          className="rounded-xl cursor-pointer"
+          onClick={handleLogoTap}
+        />
+      </div>
+
       <div className="flex flex-col gap-5 pt-6 pb-4">
         {/* Salutation */}
         <div className="flex items-center gap-3 mb-2">
