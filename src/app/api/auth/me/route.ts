@@ -9,7 +9,7 @@ import { adminAuth } from '@/lib/firebase-admin';
  * de l'utilisateur connecté. Cette route est utilisée côté client pour
  * restaurer la session au démarrage (hydratation).
  *
- * Cookie requis : __session (HttpOnly, posé par POST /api/auth/login)
+ * Cookie requis : __session (HttpOnly, posé par POST /api/auth/session)
  *
  * Retourne :
  *   200 : { user: { uid, email, role } }
