@@ -126,24 +126,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
          };
         logger.debug("✅ Auth: Connexion réussie pour", authUser.email);
 
-        // 🔑 Créer le cookie de session HttpOnly côté serveur (__session)
-        // pour que le middleware et les API routes puissent vérifier l'identité.
-        try {
-          const idToken = await firebaseUser.getIdToken();
-          const sessionRes = await fetch("/api/auth/create-session", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ idToken }),
-          });
-          if (sessionRes.ok) {
-            logger.debug("✅ Auth: Cookie __session créé avec succès");
-          } else {
-            console.warn("⚠️ Auth: Échec création cookie __session");
-          }
-        } catch (sessionErr) {
-          logger.error("❌ Auth: Erreur création cookie __session:", sessionErr);
-        }
-
         setUser(authUser);
         setIsAuthenticated(true);
         localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ user: authUser }));
