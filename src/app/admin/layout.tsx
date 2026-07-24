@@ -19,7 +19,13 @@ import AdminLayoutClient from './AdminLayoutClient';
  *
  * ⚠️ Try/catch global : si firebase-admin n'est pas initialisé (variables d'env
  *     manquantes sur Vercel), on redirige vers /login au lieu de planter en 500.
+ *
+ * ⚠️ force-dynamic : obligatoire car ce layout utilise cookies() (Server Component).
+ *     Sans cette directive, Next.js tente de rendre les pages /admin/* statiquement
+ *     et échoue avec "couldn't be rendered statically because it used cookies".
  */
+export const dynamic = 'force-dynamic';
+
 export default async function AdminLayout({
   children,
 }: {
