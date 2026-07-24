@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-import { adminAuth } from '@/lib/firebase-admin';
+import { initFirebaseAdmin } from '@/lib/firebase-admin';
+import { getAuth } from 'firebase-admin/auth';
 
 export const runtime = 'nodejs';
 
@@ -10,7 +10,7 @@ export const runtime = 'nodejs';
  * Crée un session cookie HttpOnly à partir d'un idToken Firebase.
  * Cette route est appelée APRÈS une connexion réussie (email/password ou Google).
  *
- * Le cookie __session permet au middleware de vérifier l'authentification
+ * Le cookie __session permet au layout admin de vérifier l'authentification
  * côté serveur sans exposer le token au JavaScript client.
  *
  * Body : { idToken: string }
@@ -21,7 +21,7 @@ export const runtime = 'nodejs';
  *   401 : { error: '...' } si idToken invalide
  *   500 : { error: '...' } si erreur serveur
  */
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
     let body: { idToken?: string };
     try {
@@ -42,9 +42,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Initialiser Firebase Admin de manière résiliente
+    const adminApp = initFirebaseAdmin();
+    if (!adminApp) {
+      console.error('❌ create-session: Firebase Admin non initialisé');
+      return NextResponse.json(
+        { error: 'Configuration serveur invalide.' },
+        { status: 500 }
+      );
+    }
+
+    const auth = getAuth(adminApp);
+
     // Vérifier que l'idToken est valide
     try {
-      await adminAuth.verifyIdToken(idToken);
+      await auth.verifyIdToken(idToken);
     } catch {
       return NextResponse.json(
         { error: 'Token invalide ou expiré.' },
@@ -52,9 +64,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Créer un session cookie (valable 24h)
-    const expiresIn = 24 * 60 * 60 * 1000;
-    const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
+    // Créer un session cookie (valable 5 jours)
+    const expiresInMs = 5 * 24 * 60 * 60 * 1000; // 5 jours en ms
+    const expiresInSec = 5 * 24 * 60 * 60; // 5 jours en secondes
+    const sessionCookie = await auth.createSessionCookie(idToken, { expiresIn: expiresInMs });
 
     // Poser le cookie HttpOnly
     const response = NextResponse.json({ success: true });
@@ -63,7 +76,7 @@ export async function POST(request: NextRequest) {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
-      maxAge: expiresIn / 1000,
+      maxAge: expiresInSec,
     });
 
     return response;
