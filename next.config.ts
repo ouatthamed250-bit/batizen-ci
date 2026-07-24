@@ -17,6 +17,10 @@ const nextConfig: NextConfig = {
 		],
 		unoptimized: true,
 	},
+	// Empêche Next.js de bundler ces packages côté serveur (nécessaire pour
+	// firebase-admin qui utilise jwks-rsa/jose en ESM — incompatible avec
+	// le bundling CommonJS de Next.js en production serverless Vercel)
+	serverExternalPackages: ["firebase-admin", "jose", "jwks-rsa"],
 };
 
 export default nextConfig;
