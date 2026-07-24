@@ -12,6 +12,7 @@ import {
 import { getFirebaseServices, hasFirebaseConfig } from "@/lib/firebase";
 import { ref, set, get } from "firebase/database";
 import { logger } from "@/utils/logger";
+import { ADMIN_UIDS } from "@/constants/admin-whitelist";
 
 export type AuthUser = {
   uid: string;
@@ -116,13 +117,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.error("Erreur lecture des custom claims:", err);
         }
 
+        // ── 3. Whitelist d'UID (filet de sécurité supplémentaire) ──
+        const isAdminWhitelist = ADMIN_UIDS.includes(firebaseUser.uid);
+
         const authUser: AuthUser = {
            uid: firebaseUser.uid,
            email: firebaseUser.email,
            displayName: firebaseUser.displayName || userData?.displayName || null,
            photoURL: firebaseUser.photoURL || userData?.photoURL || null,
            phoneNumber: userData?.phoneNumber || firebaseUser.phoneNumber || null,
-           role: isAdminClaim ? "admin" : "client",
+           role: (isAdminClaim || isAdminWhitelist) ? "admin" : "client",
          };
         logger.debug("✅ Auth: Connexion réussie pour", authUser.email);
 

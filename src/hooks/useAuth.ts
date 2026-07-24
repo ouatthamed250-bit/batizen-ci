@@ -22,6 +22,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { ref, get } from 'firebase/database';
 import { getFirebaseServices } from '@/lib/firebase';
 import { logger } from '@/utils/logger';
+import { ADMIN_UIDS } from '@/constants/admin-whitelist';
 
 export type AuthUser = {
   uid: string;
@@ -84,8 +85,11 @@ export function useAuth() {
         logger.error('❌ useAuth: Erreur lecture DB role:', err);
       }
 
-      // ── Admin si l'une des deux sources est vraie ──
-      const finalIsAdmin = isAdminClaim || isAdminDb;
+      // ── 3. Whitelist d'UID (filet de sécurité supplémentaire) ──
+      const isAdminWhitelist = ADMIN_UIDS.includes(firebaseUser.uid);
+
+      // ── Admin si l'une des trois sources est vraie ──
+      const finalIsAdmin = isAdminClaim || isAdminDb || isAdminWhitelist;
 
       const authUser: AuthUser = {
         uid: firebaseUser.uid,
