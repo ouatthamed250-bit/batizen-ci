@@ -36,7 +36,7 @@ export default function PremiumBackground({
       <div className="fixed inset-0 -z-10 overflow-hidden">
         <Image
           src={bgImage}
-          alt="Background premium BÂTIZEN CI"
+          alt=""
           fill
           className={`object-cover transition-all duration-700 ${isDark ? "brightness-75 contrast-110" : ""}`}
           quality={85}
