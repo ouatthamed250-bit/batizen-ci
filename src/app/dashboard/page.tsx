@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { HardHat, BrickWall, ChevronRight, Bell, Wallet, CalendarClock, Megaphone, UserRound } from "lucide-react";
+import { HardHat, BrickWall, ChevronRight, Bell, Wallet, CalendarClock, Megaphone, Menu, X, Home, MessageCircle, Headphones, LogOut, UserRound } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { WeatherWidget } from "@/components/btp/WeatherWidget";
 import { ProgressBar } from "@/components/ui/ProgressBar";
@@ -163,13 +163,14 @@ function ChantierCard({ chantier, onModifier, onSupprimer }: {
 /* ------------------------------------------------------------------ */
 
 export default function DashboardClientPage() {
-  const { user } = useAuthContext();
+  const { user, logout } = useAuthContext();
   const [loading, setLoading] = useState(true);
   const [isAuthReady, setIsAuthReady] = useState(false);
   // ── Mécanisme secret "5 taps" pour ouvrir le modal admin ──
   const [tapCount, setTapCount] = useState(0);
   const [tapTimer, setTapTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [showAdminModal, setShowAdminModal] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const handleLogoTap = useCallback(() => {
     const newCount = tapCount + 1;
@@ -272,12 +273,19 @@ export default function DashboardClientPage() {
         @keyframes wave { 0% { transform: rotate(0deg); } 10% { transform: rotate(14deg); } 20% { transform: rotate(-8deg); } 30% { transform: rotate(14deg); } 40% { transform: rotate(-4deg); } 50% { transform: rotate(10deg); } 60% { transform: rotate(0deg); } 100% { transform: rotate(0deg); } }
         .animate-marquee { animation: marquee 25s linear infinite; }
         @keyframes marquee { 0% { transform: translateX(0%); } 100% { transform: translateX(-50%); } }
+        @keyframes slideIn { from { transform: translateX(-100%); } to { transform: translateX(0); } }
       `}</style>
       
       <AdminSecretModal isOpen={showAdminModal} onClose={() => setShowAdminModal(false)} />
       {/* Barre du haut — fixe, bleu pur, pleine largeur */}
       <div className="fixed top-0 left-0 right-0 z-50 h-16 bg-[#0D2B6B] px-4 flex items-center justify-between shadow-md">
-        <div className="flex items-center gap-2 cursor-pointer" onClick={handleLogoTap}>
+        {/* GAUCHE : Menu hamburger */}
+        <button type="button" onClick={() => setMenuOpen(true)} className="grid size-11 place-items-center rounded-full text-white transition hover:bg-white/15 active:scale-95" aria-label="Menu">
+          <Menu size={24} />
+        </button>
+
+        {/* CENTRE : Logo centré */}
+        <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 cursor-pointer" onClick={handleLogoTap}>
           <Image
             alt="Logo BÂTIZEN CI"
             src="/assets/images/logo.png"
@@ -287,6 +295,8 @@ export default function DashboardClientPage() {
           />
           <span className="text-white font-black text-lg hidden sm:inline">BÂTIZEN CI</span>
         </div>
+
+        {/* DROITE : Icônes */}
         <div className="flex items-center gap-2 text-white">
           <ThemeToggle />
           <Link href="/notifications" className="relative grid size-11 place-items-center rounded-full bg-white/15 text-white transition hover:bg-white/25" aria-label="Notifications">
@@ -298,6 +308,41 @@ export default function DashboardClientPage() {
           </Link>
         </div>
       </div>
+
+      {/* Drawer latéral hamburger */}
+      {menuOpen && (
+        <>
+          <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm" onClick={() => setMenuOpen(false)} />
+          <aside className="fixed top-0 left-0 z-50 h-full w-[280px] bg-[#0D2B6B]/95 backdrop-blur-xl border-r border-white/10 shadow-2xl flex flex-col p-6" style={{ animation: "slideIn 0.3s ease-out" }}>
+            <div className="flex items-center justify-between mb-8">
+              <span className="text-white font-black text-lg">Menu</span>
+              <button type="button" onClick={() => setMenuOpen(false)} className="grid size-10 place-items-center rounded-full text-white/60 hover:text-white hover:bg-white/10 transition" aria-label="Fermer">
+                <X size={20} />
+              </button>
+            </div>
+            <nav className="flex-1 space-y-2">
+              {[
+                { icon: Home, label: "Accueil", href: "/dashboard", active: true },
+                { icon: HardHat, label: "Mes Projets", href: "/projets" },
+                { icon: MessageCircle, label: "Messages", href: "/messages" },
+                { icon: UserRound, label: "Mon Profil", href: "/profil" },
+                { icon: Headphones, label: "Support", href: "/support" },
+              ].map((item) => (
+                <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)}
+                  className={`flex items-center gap-3 rounded-[14px] px-4 py-3 text-sm font-bold transition ${
+                    item.active ? "bg-[#FF7A00] text-white shadow-md" : "text-white/70 hover:bg-white/10 hover:text-white"
+                  }`}
+                >
+                  <item.icon size={20} /> {item.label}
+                </Link>
+              ))}
+            </nav>
+            <button type="button" onClick={async () => { await logout(); window.location.href = "/login"; }} className="flex items-center gap-3 rounded-[14px] px-4 py-3 text-sm font-bold text-red-400 transition hover:bg-red-500/10">
+              <LogOut size={20} /> Déconnexion
+            </button>
+          </aside>
+        </>
+      )}
 
       <div className="flex flex-col gap-5 pt-20 pb-4">
         {/* Salutation */}
@@ -470,5 +515,3 @@ export default function DashboardClientPage() {
 
   return pageContent;
 }
-
-
