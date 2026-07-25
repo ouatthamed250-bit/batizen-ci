@@ -44,10 +44,10 @@ export function BottomNav() {
   return (
     <nav
       className={cn(
-        "gpu-accelerated fixed inset-x-0 bottom-4 z-40 mx-auto flex min-h-[70px] items-center justify-around rounded-[32px]",
-        "bg-white/80 backdrop-blur-xl border border-white/30 shadow-[0_8px_32px_rgba(0,0,0,0.12)] pb-safe px-2",
-        "dark:bg-[#081423]/80 dark:border-[#1D3557]/50 dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)]",
-        "max-w-[430px] w-full"
+        "gpu-accelerated fixed inset-x-0 bottom-0 z-40 flex min-h-[70px] items-center justify-around rounded-t-[20px]",
+        "bg-white/90 backdrop-blur-xl border-t border-white/20 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] pb-safe px-4",
+        "dark:bg-[#081423]/90 dark:border-t-[#1D3557]/30 dark:shadow-[0_-4px_20px_rgba(0,0,0,0.3)]",
+        "w-full"
       )}
       aria-label="Navigation principale"
     >
@@ -63,8 +63,8 @@ export function BottomNav() {
               aria-label="Accueil"
               className={cn(
                 "relative flex min-w-16 flex-col items-center gap-1 text-xs transition-all duration-300 active:scale-90",
-                active ? "text-[#FF7A00] font-semibold" : "text-gray-500 font-medium",
-                "dark:text-gray-300"
+                active ? "text-[#FF7A00] font-semibold" : "text-gray-700 font-medium",
+                "dark:text-white"
               )}
             >
               <span className={cn(
@@ -99,8 +99,8 @@ export function BottomNav() {
             aria-current={active ? "page" : undefined}
             className={cn(
               "relative flex min-w-16 flex-col items-center gap-1 text-xs transition-all duration-300 active:scale-90",
-              active ? "text-[#FF7A00] font-semibold" : "text-gray-500 font-medium",
-              "dark:text-gray-300"
+              active ? "text-[#FF7A00] font-semibold" : "text-gray-700 font-medium",
+              "dark:text-white"
             )}
           >
             <span className={cn(
