@@ -64,18 +64,18 @@ export default function ChatBot() {
 
   return (
     <>
-      {/* Bouton flottant - Mini robot 3D */}
+      {/* Bouton flottant - RHINOZEN */}
       {!isOpen && (
       <div
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-20 right-4 z-50 animate-float cursor-pointer"
-        title="Assistant BÂTIZEN"
+        className="fixed bottom-24 right-5 z-50 animate-float cursor-pointer"
+        title="RHINOZEN - Assistant BÂTIZEN"
         aria-label="Ouvrir l'assistant"
       >
         <img 
-          src="/images/batizen-robot.svg" 
-          alt="Assistant BÂTIZEN" 
-          className="w-12 h-12 object-contain drop-shadow-lg"
+          src="/images/rhinozen.svg" 
+          alt="RHINOZEN - Assistant BÂTIZEN" 
+          className="w-14 h-14 object-contain drop-shadow-lg"
         />
       </div>
       )}
@@ -109,7 +109,7 @@ export default function ChatBot() {
             alignItems: 'center'
           }}>
             <div>
-              <h3 style={{ margin: 0, fontSize: '18px' }}>🤖 Assistant BATIZEN</h3>
+              <h3 style={{ margin: 0, fontSize: '18px' }}>� RHINOZEN - Assistant BATIZEN</h3>
               <p style={{ margin: '5px 0 0 0', fontSize: '12px', opacity: 0.9 }}>En ligne</p>
             </div>
             <button
