@@ -36,10 +36,10 @@ export default function ServicesRenovationPage() {
       {/* Section Services */}
       <section className="pt-20 pb-16 px-4 min-h-screen bg-transparent mx-auto max-w-7xl">
         <div className="mb-14 text-center">
-          <h2 className="text-4xl font-black text-[#1a1a1a]">
+          <h2 className="text-4xl font-black text-white">
             Nos services de rénovation
           </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-[#666]">
+          <p className="mx-auto mt-4 max-w-2xl text-lg text-white/70">
             Des solutions adaptées à tous vos besoins, de la simple retouche à la
             rénovation complète
           </p>
@@ -61,10 +61,10 @@ export default function ServicesRenovationPage() {
         {/* CTA Plans interactifs */}
         <div className="mt-24">
           <div className="mb-8 text-center">
-            <h2 className="text-3xl font-black text-[#1a1a1a]">
+            <h2 className="text-3xl font-black text-white">
               🏗️ Générateur de plans interactifs
             </h2>
-            <p className="mx-auto mt-2 max-w-xl text-sm text-[#6B7280]">
+            <p className="mx-auto mt-2 max-w-xl text-sm text-white/70">
               Créez un plan 2D/3D de votre projet en quelques clics
             </p>
           </div>
@@ -88,10 +88,10 @@ export default function ServicesRenovationPage() {
         {/* CTA Calculateur */}
         <div className="mt-16 text-center">
           <div className="mx-auto max-w-2xl rounded-[24px] bg-gradient-to-br from-[#FFF7ED] to-[#FFE4CC] p-8 shadow-[0_20px_60px_rgba(255,107,0,0.15)]">
-            <h3 className="text-2xl font-black text-[#1a1a1a]">
+            <h3 className="text-2xl font-black text-white">
               📐 Demande de visite technique
             </h3>
-            <p className="mt-3 text-[#6B7280]">
+            <p className="mt-3 text-white/70">
               Estimez le coût de votre visite d'expertise et réservez en ligne.
               Calculateur transparent en temps réel.
             </p>
