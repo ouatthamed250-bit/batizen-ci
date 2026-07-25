@@ -368,16 +368,20 @@ export default function DashboardClientPage() {
           <div className="space-y-4 w-full">
             <SkeletonChantier /><SkeletonChantier />
           </div>
-        ) : chantiers.length === 0 ? (
-          <div className="w-full rounded-[28px] border border-dashed border-white/30 bg-white/20 p-8 text-center backdrop-blur-xl shadow-xl">
-            <HardHat size={56} className="mx-auto mb-4 text-white/60" />
-            <p className="text-base font-bold text-white/80 drop-shadow-md mb-4">Vous n'avez pas encore de chantier. Commencez par une simulation.</p>
-            <Link href="/nouveau-chantier" className="inline-flex items-center gap-2 rounded-[20px] bg-[#0B5FFF] px-8 py-3 text-sm font-black text-white shadow-lg transition active:scale-95">
-              <BrickWall size={20} /> Créer un chantier
-            </Link>
-          </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3">
+          <div className={`grid gap-3 w-full ${chantiers.length === 0 ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'}`}>
+            {/* Carte "Nouveau Chantier" intégrée dans la grille */}
+            <Link
+              href="/nouveau-chantier"
+              className={`flex flex-col items-center justify-center text-center gap-3 w-full overflow-hidden rounded-[28px] border-2 border-dashed border-white/50 bg-white/10 backdrop-blur-xl p-6 shadow-xl transition hover:bg-white/20 active:scale-95 ${chantiers.length === 0 ? 'max-w-sm mx-auto' : ''}`}
+            >
+              <div className="grid size-14 place-items-center rounded-[20px] bg-gradient-to-br from-[#FF7A00] to-[#D97706] text-white shadow-lg">
+                <span className="text-2xl">🏗️</span>
+              </div>
+              <p className="font-black text-white drop-shadow-md">Nouveau Chantier</p>
+              <p className="text-xs text-white/70">Créer un nouveau projet</p>
+            </Link>
+
             {chantiers.map((c) => (
               <ChantierCard key={c.id} chantier={c} onModifier={handleModifierChantier} onSupprimer={handleSupprimerChantier} />
             ))}

@@ -50,26 +50,26 @@ export function PremiumHeader() {
     <>
       <AdminSecretModal isOpen={showAdminModal} onClose={() => setShowAdminModal(false)} />
 
-      <header className="sticky top-4 z-40 mx-2 mb-6 flex h-16 items-center justify-between rounded-[28px] border border-white/50 bg-white/80 px-4 shadow-[0_14px_44px_rgba(16,24,40,0.08)] backdrop-blur-xl dark:border-[#1E3A6E] dark:bg-[#0D1B3E]/80 dark:shadow-[0_14px_44px_rgba(0,0,0,0.3)]">
+      <header className="sticky top-0 z-40 w-full flex h-16 items-center justify-between bg-[#0D2B6B] px-4 shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
         
         {/* LOGO — 5 taps rapides pour ouvrir le modal admin secret */}
         <Link className="flex items-center gap-3" href="/dashboard" aria-label="Accueil BÂTIZEN CI">
           <Image
             alt="Logo BÂTIZEN CI"
             className="rounded-2xl cursor-pointer"
-            height={40}
+            height={48}
             priority
             src={imagePaths.logo}
-            width={40}
+            width={48}
             onClick={handleLogoTap}
           />
-          <span className="hidden text-base font-black tracking-tight text-[#0D2B6B] dark:text-[#F0F4FF] sm:inline">BÂTIZEN CI</span>
+          <span className="hidden text-base font-black tracking-tight text-white sm:inline">BÂTIZEN CI</span>
         </Link>
 
         {/* BOUTONS D'ACTION */}
         <nav className="flex items-center gap-2" aria-label="Actions rapides">
           {user?.displayName && (
-            <span className="hidden text-sm font-bold text-[#0D2B6B] dark:text-[#F0F4FF] md:inline">
+            <span className="hidden text-sm font-bold text-white md:inline">
               {user.displayName.split(" ")[0]} 👋
             </span>
           )}
@@ -77,7 +77,7 @@ export function PremiumHeader() {
           <ThemeToggle />
 
           <Link
-            className="relative grid size-11 place-items-center rounded-full bg-[#F7F9FC] text-[#111827] transition hover:bg-[#E7EBF5] active:scale-95 dark:bg-[#1E3A6E] dark:text-[#F0F4FF] dark:hover:bg-[#3B7FFF]/20"
+            className="relative grid size-11 place-items-center rounded-full bg-white/15 text-white transition hover:bg-[#3B7FFF]/30 active:scale-95"
             href="/notifications"
             aria-label="Notifications"
           >
@@ -86,7 +86,7 @@ export function PremiumHeader() {
           </Link>
 
           <Link
-            className="grid size-11 place-items-center overflow-hidden rounded-full bg-[#0B5FFF] text-white shadow-[0_10px_24px_rgba(11,95,255,0.28)] transition hover:bg-[#0D2B6B] active:scale-95 dark:bg-[#3B7FFF] dark:hover:bg-[#4B8FFF]"
+            className="grid size-11 place-items-center overflow-hidden rounded-full bg-[#3B7FFF] text-white shadow-[0_4px_12px_rgba(0,0,0,0.2)] transition hover:bg-[#4B8FFF] active:scale-95"
             href="/profil"
             aria-label="Mon profil"
           >
@@ -100,7 +100,7 @@ export function PremiumHeader() {
           <button
             onClick={handleLogout}
             aria-label="Se déconnecter"
-            className="grid size-11 place-items-center rounded-full bg-[#F7F9FC] text-[#6B7280] transition hover:bg-red-50 hover:text-red-500 active:scale-95 dark:bg-[#0D2B6B] dark:text-white dark:hover:bg-red-900/30 dark:hover:text-red-400"
+            className="grid size-11 place-items-center rounded-full bg-white/15 text-white/80 transition hover:bg-red-500/30 hover:text-red-300 active:scale-95"
           >
             <LogOut size={21} aria-hidden />
           </button>
