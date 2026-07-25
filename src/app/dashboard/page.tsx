@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { HardHat, BrickWall, ChevronRight, Bell, Wallet, CalendarClock, Megaphone } from "lucide-react";
+import { HardHat, BrickWall, ChevronRight, Bell, Wallet, CalendarClock, Megaphone, UserRound } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { WeatherWidget } from "@/components/btp/WeatherWidget";
 import { ProgressBar } from "@/components/ui/ProgressBar";
@@ -14,6 +14,7 @@ import { logger } from "@/utils/logger";
 import dynamic from "next/dynamic";
 import AdminSecretModal from "@/components/auth/AdminSecretModal";
 import AnnonceTicker from "@/components/ui/AnnonceTicker";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 const ChatBot = dynamic(() => import("@/components/ChatBot"), { ssr: false });
 
 // ✅ NOUVEAUX IMPORTS : Types et Utilitaires centralisés
@@ -273,20 +274,32 @@ export default function DashboardClientPage() {
         @keyframes marquee { 0% { transform: translateX(0%); } 100% { transform: translateX(-50%); } }
       `}</style>
       
-      {/* Barre full-width avec logo BÂTIZEN.CI + mécanisme secret "5 taps" admin */}
       <AdminSecretModal isOpen={showAdminModal} onClose={() => setShowAdminModal(false)} />
-      <div className="-mx-4 sm:-mx-6 md:-mx-8 lg:-mx-12 mb-2 flex items-center justify-center w-screen bg-white/10 backdrop-blur-md border-b border-white/20 py-3 shadow-lg">
-        <Image
-          alt="Logo BÂTIZEN CI"
-          src="/assets/images/logo.png"
-          width={36}
-          height={36}
-          className="rounded-xl cursor-pointer"
-          onClick={handleLogoTap}
-        />
+      {/* Barre du haut — fixe, bleu pur, pleine largeur */}
+      <div className="fixed top-0 left-0 right-0 z-50 h-16 bg-[#0D2B6B] px-4 flex items-center justify-between shadow-md">
+        <div className="flex items-center gap-2 cursor-pointer" onClick={handleLogoTap}>
+          <Image
+            alt="Logo BÂTIZEN CI"
+            src="/assets/images/logo.png"
+            width={48}
+            height={48}
+            className="rounded-xl"
+          />
+          <span className="text-white font-black text-lg hidden sm:inline">BÂTIZEN CI</span>
+        </div>
+        <div className="flex items-center gap-2 text-white">
+          <ThemeToggle />
+          <Link href="/notifications" className="relative grid size-11 place-items-center rounded-full bg-white/15 text-white transition hover:bg-white/25" aria-label="Notifications">
+            <Bell size={21} />
+            <span className="absolute right-2 top-2 size-2 rounded-full bg-[#FF7A00]" />
+          </Link>
+          <Link href="/profil" className="grid size-11 place-items-center rounded-full bg-white/15 text-white transition hover:bg-white/25" aria-label="Mon profil">
+            <UserRound size={21} />
+          </Link>
+        </div>
       </div>
 
-      <div className="flex flex-col gap-5 pt-6 pb-4">
+      <div className="flex flex-col gap-5 pt-20 pb-4">
         {/* Salutation */}
         <div className="flex items-center gap-3 mb-2">
           {(() => {
