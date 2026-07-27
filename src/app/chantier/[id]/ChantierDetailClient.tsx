@@ -777,7 +777,7 @@ const [plan, med, docsFiltered, notesFiltered, rapportsFiltered] = await Promise
     const statut = chantier?.statut;
     if (statut === "en_attente") {
       return (
-        <div className="mb-4 rounded-[18px] border border-[#FFF7ED] bg-[#FFF7ED] p-4">
+        <div className="mb-4 rounded-[28px] border border-white/30 bg-white/20 backdrop-blur-xl p-5 shadow-xl">
           <p className="text-sm font-black text-[#B45309]">⏳ Votre chantier est en attente de validation par nos experts.</p>
           {chantier?.rdv_date && (
             <p className="mt-1 text-xs font-semibold text-[#B45309]">Un expert vous contactera suite à votre rendez-vous du {formatDateFr(chantier.rdv_date)}.</p>
@@ -787,14 +787,14 @@ const [plan, med, docsFiltered, notesFiltered, rapportsFiltered] = await Promise
     }
     if (statut === "en_cours") {
       return (
-        <div className="mb-4 rounded-[18px] border border-[#ECFDF5] bg-[#ECFDF5] p-4">
+        <div className="mb-4 rounded-[28px] border border-white/30 bg-white/20 backdrop-blur-xl p-5 shadow-xl">
           <p className="text-sm font-black text-[#047857]">✅ Votre chantier est en cours ! Suivez l avancement en temps réel.</p>
         </div>
       );
     }
     if (statut === "termine") {
       return (
-        <div className="mb-4 rounded-[18px] border border-[#EFF6FF] bg-[#EFF6FF] p-4">
+        <div className="mb-4 rounded-[28px] border border-white/30 bg-white/20 backdrop-blur-xl p-5 shadow-xl">
           <p className="text-sm font-black text-[#1E40AF]">🎉 Félicitations ! Votre chantier est terminé.</p>
         </div>
       );
@@ -840,7 +840,7 @@ const [plan, med, docsFiltered, notesFiltered, rapportsFiltered] = await Promise
 
       {/* TABS NAV */}
       <div className="sticky top-0 z-20 border-b border-white/20 bg-white/90 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-3xl gap-1 overflow-x-auto px-2 py-2">
+        <div className="flex w-full gap-1 overflow-x-auto px-2 py-2">
           {TABS.map((t) => {
             const isVisible = affichableTabs.includes(t.key);
             const isLocked = !isVisible;
@@ -871,12 +871,12 @@ const [plan, med, docsFiltered, notesFiltered, rapportsFiltered] = await Promise
       {/* BANDEAU STATUT */}
       {chantier && renderStatusBanner()}
 
-      <div className="mx-auto w-full max-w-3xl px-4 pt-5 sm:px-6">
+      <div className="w-full pt-5">
         {loading ? (
           <div className="animate-pulse space-y-3">
-            <div className="h-24 rounded-[20px] bg-white/20" />
-            <div className="h-24 rounded-[20px] bg-white/20" />
-            <div className="h-24 rounded-[20px] bg-white/20" />
+            <div className="h-24 rounded-[28px] bg-white/20" />
+            <div className="h-24 rounded-[28px] bg-white/20" />
+            <div className="h-24 rounded-[28px] bg-white/20" />
           </div>
         ) : (
           <AnimatePresence mode="wait">
@@ -890,7 +890,7 @@ const [plan, med, docsFiltered, notesFiltered, rapportsFiltered] = await Promise
               {/* ONGLET 0 - RÉSUMÉ */}
               {activeTab === "resume" && (
                 <section aria-label="Résumé">
-                  <div className="space-y-4 rounded-[20px] border border-[#E7EBF5] bg-white p-5 shadow-[0_8px_24px_rgba(16,24,40,0.06)]">
+                  <div className="space-y-4 w-full rounded-[28px] border border-white/30 bg-white/20 backdrop-blur-xl p-5 shadow-xl">
                     <h2 className="text-lg font-black text-[#0D2B6B]">Résumé du projet</h2>
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <div>
@@ -982,7 +982,7 @@ const [plan, med, docsFiltered, notesFiltered, rapportsFiltered] = await Promise
                   ) : (
                     <div className="relative space-y-4 pl-2">
                       {etapes.map((e, i) => (
-                        <div key={e.id} className="relative rounded-[20px] border border-[#E7EBF5] bg-white p-4 shadow-[0_8px_24px_rgba(16,24,40,0.06)]">
+                        <div key={e.id} className="relative rounded-[28px] border border-white/30 bg-white/20 backdrop-blur-xl p-5 shadow-xl">
                           <div className="flex items-start gap-3">
                             {etapeIcon(e.statut)}
                             <div className="flex-1">
@@ -1019,7 +1019,7 @@ const [plan, med, docsFiltered, notesFiltered, rapportsFiltered] = await Promise
                   ) : (
                     <div className="relative space-y-4 pl-2">
                       {planning.map((e, i) => (
-                        <div key={e.id} className="relative rounded-[20px] border border-[#E7EBF5] bg-white p-4 shadow-[0_8px_24px_rgba(16,24,40,0.06)]">
+                        <div key={e.id} className="relative rounded-[28px] border border-white/30 bg-white/20 backdrop-blur-xl p-5 shadow-xl">
                           <div className="flex items-start gap-3">
                             {etapeIcon(e.statut)}
                             <div className="flex-1">
@@ -1153,7 +1153,7 @@ const [plan, med, docsFiltered, notesFiltered, rapportsFiltered] = await Promise
                   {isTabLocked("documents") ? (
                     <LockedTab />
                   ) : (
-                    <div className="mt-6 p-5 bg-white rounded-2xl border border-gray-200 shadow-sm">
+                    <div className="w-full rounded-[28px] border border-white/30 bg-white/20 backdrop-blur-xl p-5 shadow-xl">
                       <h3 className="font-black text-[var(--navy)] text-lg mb-4 flex items-center gap-2">
                         📄 Documents du chantier
                       </h3>
@@ -1278,7 +1278,7 @@ const [plan, med, docsFiltered, notesFiltered, rapportsFiltered] = await Promise
                   {isTabLocked("messages") ? (
                     <LockedTab />
                   ) : (
-                    <div className="flex h-[80vh] flex-col rounded-[20px] border border-[#E7EBF5] bg-white shadow-[0_8px_24px_rgba(16,24,40,0.06)]">
+                    <div className="flex h-[80vh] flex-col w-full rounded-[28px] border border-white/30 bg-white/20 backdrop-blur-xl shadow-xl">
                       {/* Zone de messages */}
                       <div className="flex-1 space-y-3 overflow-y-auto p-4" style={{ maxHeight: 500 }}>
                         {messages.length === 0 ? (
@@ -1403,7 +1403,7 @@ const [plan, med, docsFiltered, notesFiltered, rapportsFiltered] = await Promise
                   {isTabLocked("passeport") ? (
                     <LockedTab />
                   ) : (
-                    <div className="space-y-4 rounded-[20px] border border-[#E7EBF5] bg-white p-5 shadow-[0_8px_24px_rgba(16,24,40,0.06)]">
+                    <div className="space-y-4 w-full rounded-[28px] border border-white/30 bg-white/20 backdrop-blur-xl p-5 shadow-xl">
                       <h2 className="text-lg font-black text-[#0D2B6B]">Passeport numérique</h2>
                       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div>
@@ -1469,7 +1469,7 @@ const [plan, med, docsFiltered, notesFiltered, rapportsFiltered] = await Promise
                   ) : (
                     <div className="space-y-4">
                       {rapports.map((r) => (
-                        <div key={r.id} className="rounded-[20px] border border-[#E7EBF5] bg-white p-4 shadow-[0_8px_24px_rgba(16,24,40,0.06)]">
+                        <div key={r.id} className="rounded-[28px] border border-white/30 bg-white/20 backdrop-blur-xl p-5 shadow-xl">
                           {/* En-tête du rapport */}
                           <div className="flex items-center justify-between mb-3">
                             <div>
@@ -1592,7 +1592,7 @@ const [plan, med, docsFiltered, notesFiltered, rapportsFiltered] = await Promise
 
 function EmptyState({ text }: { text: string }) {
   return (
-    <div className="rounded-[22px] border border-dashed border-[#E7EBF5] bg-white p-10 text-center">
+    <div className="rounded-[28px] border border-dashed border-white/30 bg-white/20 backdrop-blur-xl p-10 text-center shadow-xl">
       <p className="text-sm font-bold text-[#6B7280]">{text}</p>
     </div>
   );
@@ -1600,7 +1600,7 @@ function EmptyState({ text }: { text: string }) {
 
 function LockedTab() {
   return (
-    <div className="rounded-[22px] border border-dashed border-[#E7EBF5] bg-[#F9FAFB] p-10 text-center">
+    <div className="rounded-[28px] border border-dashed border-white/30 bg-white/20 backdrop-blur-xl p-10 text-center shadow-xl">
       <p className="text-sm font-bold text-[#6B7280]">🔒 Cet onglet sera disponible une fois le chantier activé par nos experts.</p>
     </div>
   );
@@ -1706,17 +1706,17 @@ function PaiementsSection({ chantierId, chantier }: { chantierId: string; chanti
     <div className="space-y-4">
       {/* Tableau de bord financier */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="p-4 bg-green-50 rounded-xl border border-green-200">
+        <div className="p-5 bg-green-500/20 backdrop-blur-xl rounded-[28px] border border-green-400/30 shadow-xl">
           <p className="text-xs text-green-700 mb-1">Total payé</p>
           <p className="text-2xl font-black text-green-700">{totalPaye.toLocaleString('fr-FR')} F</p>
           <p className="text-xs text-green-600">{pourcentagePaye}% du budget</p>
         </div>
-        <div className="p-4 bg-orange-50 rounded-xl border border-orange-200">
+        <div className="p-5 bg-orange-500/20 backdrop-blur-xl rounded-[28px] border border-orange-400/30 shadow-xl">
           <p className="text-xs text-orange-700 mb-1">Reste à payer</p>
           <p className="text-2xl font-black text-orange-700">{resteAPayer.toLocaleString('fr-FR')} F</p>
           <p className="text-xs text-orange-600">sur {budgetTotal.toLocaleString('fr-FR')} F</p>
         </div>
-        <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+        <div className="p-5 bg-blue-500/20 backdrop-blur-xl rounded-[28px] border border-blue-400/30 shadow-xl">
           <p className="text-xs text-blue-700 mb-1">Paiements</p>
           <p className="text-2xl font-black text-blue-700">{paiements.length}</p>
           <p className="text-xs text-blue-600">{paiements.filter(p => p.statut === "valide").length} validés</p>
