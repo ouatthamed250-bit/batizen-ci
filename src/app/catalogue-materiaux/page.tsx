@@ -27,11 +27,11 @@ export default function CatalogueMateriauxPage() {
 
     // Filtre par recherche
     if (recherche.trim()) {
-      const q = recherche.toLowerCase();
+      const q = (recherche || "").toLowerCase();
       result = result.filter(
         (m) =>
-          m.nom.toLowerCase().includes(q) ||
-          m.description.toLowerCase().includes(q)
+          (m?.nom || "").toLowerCase().includes(q) ||
+          (m?.description || "").toLowerCase().includes(q)
       );
     }
 

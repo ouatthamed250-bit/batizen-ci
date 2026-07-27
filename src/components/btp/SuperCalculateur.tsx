@@ -41,7 +41,7 @@ export default function SuperCalculateur({
   const prixBase = surface * PRIX_REFERENCE.standing[standing];
 
   // Application du coefficient de style
-  const styleKey = style.toLowerCase() as keyof typeof PRIX_REFERENCE.style_coefficient;
+  const styleKey = (style || "").toLowerCase() as keyof typeof PRIX_REFERENCE.style_coefficient;
   const coeffStyle = PRIX_REFERENCE.style_coefficient[styleKey] || 1.0;
   const prixAjusteStyle = prixBase * coeffStyle;
 

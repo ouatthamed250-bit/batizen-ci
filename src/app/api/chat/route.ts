@@ -109,7 +109,7 @@ const FAQ: { keywords: string[]; answer: string }[] = [
 ];
 
 function getFaqAnswer(message: string): string | null {
-  const m = message.toLowerCase();
+  const m = (message || "").toLowerCase();
   for (const item of FAQ) {
     if (item.keywords.some((k) => m.includes(k))) {
       return item.answer;

@@ -233,7 +233,7 @@ export default function GestionEquipeHierarchique({ chantierId }: GestionEquipeH
 
   // Filtrer l'équipe
   const equipeFiltree = equipe.filter(m => {
-    const matchSearch = m.ouvrierNom.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchSearch = (m?.ouvrierNom || "").toLowerCase().includes((searchTerm || "").toLowerCase());
     const matchSpecialite = filterSpecialite === "tous" || m.specialite === filterSpecialite;
     return matchSearch && matchSpecialite;
   });
