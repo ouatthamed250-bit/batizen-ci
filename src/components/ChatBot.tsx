@@ -64,111 +64,65 @@ export default function ChatBot() {
 
   return (
     <>
-      {/* Bouton flottant - RHINOZEN */}
+      {/* Bouton flottant - RHINOZEN (inchangé) */}
       {!isOpen && (
       <div
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-24 right-5 z-50 animate-float cursor-pointer"
+        className="fixed bottom-28 right-5 z-50 animate-float cursor-pointer w-20 h-20 rounded-full bg-gradient-to-br from-[#0D2B6B] to-[#0B5FFF] shadow-xl border border-white/30 flex items-center justify-center p-3"
         title="RHINOZEN - Assistant BÂTIZEN"
         aria-label="Ouvrir l'assistant"
       >
         <img 
           src="/images/rhinozen.svg" 
           alt="RHINOZEN - Assistant BÂTIZEN" 
-          className="w-14 h-14 object-contain drop-shadow-lg"
+          className="w-full h-full object-contain drop-shadow-lg"
         />
       </div>
       )}
 
-      {/* Fenêtre de chat */}
+      {/* Fenêtre de chat — version glassmorphism */}
       {isOpen && (
-        <div style={{
-          position: 'fixed',
-          bottom: '20px',
-          right: '20px',
-          width: '400px',
-          maxWidth: 'calc(100vw - 40px)',
-          height: '600px',
-          maxHeight: 'calc(100vh - 40px)',
-          background: 'white',
-          borderRadius: '20px',
-          boxShadow: '0 10px 50px rgba(0,0,0,0.3)',
-          display: 'flex',
-          flexDirection: 'column',
-          zIndex: 9999,
-          animation: 'slideUp 0.3s ease'
-        }}>
+        <div className="fixed bottom-5 right-5 z-[9999] flex flex-col w-[400px] max-w-[calc(100vw-40px)] h-[600px] max-h-[calc(100vh-40px)] rounded-[28px] border border-white/30 bg-white/20 backdrop-blur-xl shadow-xl animate-slideUp">
           {/* Header */}
-          <div style={{
-            background: 'linear-gradient(135deg, #FF6B00, #FF8C00)',
-            color: 'white',
-            padding: '20px',
-            borderRadius: '20px 20px 0 0',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
+          <div className="rounded-[28px_28px_0_0] bg-gradient-to-br from-[#0D2B6B] to-[#0B5FFF] text-white px-6 py-5 flex items-center justify-between">
             <div>
-              <h3 style={{ margin: 0, fontSize: '18px' }}>� RHINOZEN - Assistant BATIZEN</h3>
-              <p style={{ margin: '5px 0 0 0', fontSize: '12px', opacity: 0.9 }}>En ligne</p>
+              <h3 className="m-0 text-lg font-black">🦏 RHINOZEN — Assistant BATIZEN</h3>
+              <p className="mt-1 text-xs text-white/70">En ligne</p>
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              style={{
-                background: 'rgba(255,255,255,0.2)',
-                border: 'none',
-                color: 'white',
-                width: '30px',
-                height: '30px',
-                borderRadius: '50%',
-                cursor: 'pointer',
-                fontSize: '18px'
-              }}
+              className="grid size-8 place-items-center rounded-full bg-white/20 text-white text-lg border-none cursor-pointer hover:bg-white/30 transition"
+              aria-label="Fermer"
             >
               ✕
             </button>
           </div>
 
           {/* Messages */}
-          <div style={{
-            flex: 1,
-            overflowY: 'auto',
-            padding: '20px',
-            background: '#F5F5F5'
-          }}>
+          <div className="flex-1 overflow-y-auto p-5 bg-white/10 backdrop-blur-sm space-y-4">
             {messages.map((msg, idx) => (
               <div
                 key={idx}
-                style={{
-                  display: 'flex',
-                  justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                  marginBottom: '15px'
-                }}
+                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} mb-4`}
               >
-                <div style={{
-                  maxWidth: '80%',
-                  padding: '12px 16px',
-                  borderRadius: msg.role === 'user' ? '15px 15px 0 15px' : '15px 15px 15px 0',
-                  background: msg.role === 'user' ? '#FF6B00' : 'white',
-                  color: msg.role === 'user' ? 'white' : '#1A1A1A',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                }}>
+                <div
+                  className={`max-w-[80%] px-4 py-3 text-sm font-semibold shadow-lg ${
+                    msg.role === 'user'
+                      ? 'rounded-[18px_18px_0_18px] bg-gradient-to-br from-[#0B5FFF] to-[#0D2B6B] text-white'
+                      : 'rounded-[18px_18px_18px_0] bg-white/90 backdrop-blur-md text-[#1A1A1A] border border-white/50'
+                  }`}
+                >
                   {msg.text}
                 </div>
               </div>
             ))}
 
             {isLoading && (
-              <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '15px' }}>
-                <div style={{
-                  padding: '12px 16px',
-                  borderRadius: '15px 15px 15px 0',
-                  background: 'white',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                }}>
-                  <span style={{ display: 'inline-block', animation: 'typing 1.4s infinite' }}>●</span>
-                  <span style={{ display: 'inline-block', animation: 'typing 1.4s infinite 0.2s' }}>●</span>
-                  <span style={{ display: 'inline-block', animation: 'typing 1.4s infinite 0.4s' }}>●</span>
+              <div className="flex justify-start mb-4">
+                <div className="px-4 py-3 rounded-[18px_18px_18px_0] bg-white/90 backdrop-blur-md shadow-lg border border-white/50">
+                  <span className="inline-block animate-typing">●</span>
+                  <span className="inline-block animate-typing animate-delay-200">●</span>
+                  <span className="inline-block animate-typing animate-delay-400">●</span>
                 </div>
               </div>
             )}
@@ -178,27 +132,12 @@ export default function ChatBot() {
 
           {/* Suggestions */}
           {messages.length === 1 && (
-            <div style={{
-              padding: '10px 20px',
-              background: 'white',
-              borderTop: '1px solid #E0E0E0',
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: '8px'
-            }}>
+            <div className="px-5 py-3 bg-white/10 backdrop-blur-sm border-t border-white/20 flex flex-wrap gap-2">
               {suggestions.map((sug, idx) => (
                 <button
                   key={idx}
                   onClick={() => sendMessage(sug)}
-                  style={{
-                    padding: '8px 12px',
-                    borderRadius: '15px',
-                    border: '1px solid #FF6B00',
-                    background: 'white',
-                    color: '#FF6B00',
-                    fontSize: '12px',
-                    cursor: 'pointer'
-                  }}
+                  className="rounded-[18px] border border-[#FF7A00]/50 bg-white/80 text-[#FF7A00] text-xs font-bold px-3 py-2 cursor-pointer hover:bg-[#FF7A00]/10 transition"
                 >
                   {sug}
                 </button>
@@ -207,42 +146,19 @@ export default function ChatBot() {
           )}
 
           {/* Input */}
-          <div style={{
-            padding: '15px 20px',
-            background: 'white',
-            borderTop: '1px solid #E0E0E0',
-            display: 'flex',
-            gap: '10px'
-          }}>
+          <div className="px-5 py-4 bg-white/10 backdrop-blur-sm border-t border-white/20 rounded-[0_0_28px_28px] flex gap-3">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && sendMessage(input)}
               placeholder="Posez votre question..."
-              style={{
-                flex: 1,
-                padding: '12px',
-                borderRadius: '25px',
-                border: '1px solid #E0E0E0',
-                outline: 'none',
-                fontSize: '14px'
-              }}
+              className="flex-1 px-4 py-3 rounded-[25px] border border-white/30 bg-white/80 text-sm text-[#1A1A1A] outline-none focus:border-[#0B5FFF] focus:ring-2 focus:ring-[#0B5FFF]/20 placeholder:text-gray-400"
             />
             <button
               onClick={() => sendMessage(input)}
               disabled={isLoading || !input.trim()}
-              style={{
-                width: '45px',
-                height: '45px',
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, #FF6B00, #FF8C00)',
-                border: 'none',
-                color: 'white',
-                fontSize: '20px',
-                cursor: 'pointer',
-                opacity: isLoading || !input.trim() ? 0.5 : 1
-              }}
+              className="size-[45px] rounded-full bg-gradient-to-br from-[#0B5FFF] to-[#0D2B6B] border-none text-white text-xl cursor-pointer grid place-items-center shadow-lg disabled:opacity-50 hover:shadow-xl transition"
             >
               ➤
             </button>

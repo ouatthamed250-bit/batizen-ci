@@ -2,10 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { onAuthStateChanged } from "firebase/auth";
-import { ref, set } from "firebase/database";
 import { getFirebaseServices } from "@/lib/firebase";
-
-const ADMIN_SECRET_CODE = "batizen2022";
 
 export default function MakeMeAdminPage() {
   const [uid, setUid] = useState<string | null>(null);
@@ -45,22 +42,42 @@ export default function MakeMeAdminPage() {
       return;
     }
 
-    if (code !== ADMIN_SECRET_CODE) {
-      setStatus({ type: "error", message: "Code secret invalide." });
+    if (code.length < 4) {
+      setStatus({ type: "error", message: "Code trop court." });
       return;
     }
 
     setSubmitting(true);
 
     try {
-      const { db } = getFirebaseServices();
-      if (!db) {
-        setStatus({ type: "error", message: "Base de données non disponible." });
+      const { auth } = getFirebaseServices();
+      if (!auth?.currentUser) {
+        setStatus({ type: "error", message: "Utilisateur non authentifié." });
         setSubmitting(false);
         return;
       }
 
-      await set(ref(db, `users/${uid}/role`), "admin");
+      // Récupération du token Firebase actuel
+      const idToken = await auth.currentUser.getIdToken();
+
+      // Appel à l'API route sécurisée côté serveur
+      const response = await fetch("/api/auth/make-admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken, code }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Gestion des erreurs HTTP (400, 401, 403, 429, 500)
+        setStatus({
+          type: "error",
+          message: data.error || "Erreur inconnue.",
+        });
+        setSubmitting(false);
+        return;
+      }
 
       setStatus({
         type: "success",
@@ -69,17 +86,10 @@ export default function MakeMeAdminPage() {
       setCode("");
     } catch (err: any) {
       console.error("❌ Erreur make-me-admin:", err);
-      if (err.code === "PERMISSION_DENIED") {
-        setStatus({
-          type: "error",
-          message: "Permission refusée. Vérifie les règles Firebase.",
-        });
-      } else {
-        setStatus({
-          type: "error",
-          message: `Erreur : ${err.message || "Inconnue"}`,
-        });
-      }
+      setStatus({
+        type: "error",
+        message: `Erreur réseau : ${err.message || "Inconnue"}`,
+      });
     } finally {
       setSubmitting(false);
     }

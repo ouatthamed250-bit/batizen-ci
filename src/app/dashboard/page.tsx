@@ -8,9 +8,9 @@ import { HardHat, BrickWall, ChevronRight, Bell, Wallet, CalendarClock, Megaphon
 import { useAuthContext } from "@/contexts/AuthContext";
 import { WeatherWidget } from "@/components/btp/WeatherWidget";
 import { ProgressBar } from "@/components/ui/ProgressBar";
-import SuperCalculateur from "@/components/btp/SuperCalculateur";
 import { getDatabase, ref as dbRef, onValue, update, query, orderByChild, equalTo } from "firebase/database";
 import { logger } from "@/utils/logger";
+import { LazySection } from "@/components/LazySection";
 import dynamic from "next/dynamic";
 import AdminSecretModal from "@/components/auth/AdminSecretModal";
 import AnnonceTicker from "@/components/ui/AnnonceTicker";
@@ -397,13 +397,9 @@ export default function DashboardClientPage() {
           ))}
         </div>
 
-        {/* Calculateur */}
+        {/* Calculateur (chargé paresseusement) */}
         <section className="w-full rounded-[28px] overflow-hidden shadow-xl">
-          <SuperCalculateur
-            surface={100} chambres={3} sallesDeBain={2} etages={1}
-            garage={false} piscine={false} jardin={false}
-            standing="moyen" style="moderne" mode="widget"
-          />
+          <LazySection loader={() => import("@/components/btp/SuperCalculateur")} />
         </section>
 
         {/* Cartes Résumé */}
