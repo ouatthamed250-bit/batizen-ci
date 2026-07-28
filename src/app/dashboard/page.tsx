@@ -7,7 +7,6 @@ import { Bell, Wallet, CalendarClock, Megaphone, Menu, X, Home, MessageCircle, H
 import { useAuthContext } from "@/contexts/AuthContext";
 import { WeatherWidget } from "@/components/btp/WeatherWidget";
 import { getDatabase, ref as dbRef, onValue, update } from "firebase/database";
-import { LazySection } from "@/components/LazySection";
 import dynamic from "next/dynamic";
 import AdminSecretModal from "@/components/auth/AdminSecretModal";
 import AnnonceTicker from "@/components/ui/AnnonceTicker";
@@ -139,8 +138,6 @@ export default function DashboardClientPage() {
             </Link>
           ))}
         </div>
-
-        <section className="w-full rounded-[28px] overflow-hidden shadow-xl"><LazySection loader={() => import("@/components/btp/SuperCalculateur")} /></section>
 
         {/* Summary cards */}
         {!loading && (
