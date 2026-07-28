@@ -356,6 +356,9 @@ function NouveauChantierContent() {
                 ) : null}
               </div>
             )}
+          <p className="text-sm text-gray-400 mt-4 text-center">
+            Vous n'avez pas encore de plan ? <a href="/plan-rapide" className="text-[#FF7A00] underline font-bold">Créer un plan rapide</a>
+          </p>
           </div>
         </main>
       </div>
