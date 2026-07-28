@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, ArrowLeft, CheckCircle2, MapPin, Building2, Route, Truck, ChevronRight, HardHat, Home, PaintBucket, Camera, Phone, Mail, Clock, DollarSign, AlertTriangle } from "lucide-react";
+import { ArrowRight, ArrowLeft, CheckCircle2, MapPin, Building2, Truck, Camera, Phone, Mail, Clock, DollarSign, AlertTriangle } from "lucide-react";
 import { PremiumButton } from "@/components/ui/PremiumButton";
 import { PremiumCard } from "@/components/ui/PremiumCard";
 import BtpBackground from "@/components/btp/BtpBackground";
@@ -30,7 +30,6 @@ export default function RenovationPage() {
   const submittedRef = useRef(false);
   const [requestId, setRequestId] = useState<string | null>(null);
 
-  // Champs formulaire répartis sur les 5 étapes
   const [lieu, setLieu] = useState("");
   const [typeBien, setTypeBien] = useState("maison");
   const [typeRenovation, setTypeRenovation] = useState("interieur");
@@ -75,56 +74,44 @@ export default function RenovationPage() {
   };
 
   const handleSoumettre = useCallback(async () => {
-    if (!user || submitting || submittedRef.current) return;
+    if (!user?.uid) {
+      alert("Veuillez vous connecter pour soumettre une demande.");
+      return;
+    }
+    if (submitting || submittedRef.current) return;
     submittedRef.current = true;
     setSubmitting(true);
 
     try {
       const { database } = getFirebaseServices();
+      const demandeData = {
+        userId: user.uid,
+        type: typeRenovation,
+        statut: "en_attente",
+        lieu, typeBien, typeRenovation, ville, quartier,
+        surface, pieces, etages, anneeConstruction,
+        horsAbidjan, distanceKm: horsAbidjan ? distanceKm : 0, transportGere,
+        descriptionProblemes, urgence, accesLieu,
+        materiaux, budgetEstime, delaiSouhaite,
+        photos, nomComplet, telephone, email, preferenceRdv,
+        prixVisite,
+        createdAt: Date.now(),
+      };
+      console.log("[ENVOI RTDB]", JSON.stringify(demandeData, null, 2));
       const demandesRef = ref(database, `demandesRenovation/${user.uid}`);
       const newRef = push(demandesRef);
       const id = newRef.key!;
-      await set(newRef, {
-        id,
-        userId: user.uid,
-        type: typeRenovation,
-        lieu,
-        typeBien,
-        typeRenovation,
-        ville,
-        quartier,
-        surface,
-        pieces,
-        etages,
-        anneeConstruction,
-        horsAbidjan,
-        distanceKm: horsAbidjan ? distanceKm : 0,
-        transportGere,
-        descriptionProblemes,
-        urgence,
-        accesLieu,
-        materiaux,
-        budgetEstime,
-        delaiSouhaite,
-        photos,
-        nomComplet,
-        telephone,
-        email,
-        preferenceRdv,
-        prixVisite,
-        statut: "en_attente",
-        createdAt: Date.now(),
-      });
+      await set(newRef, { id, ...demandeData });
       setRequestId(id);
       setTimeout(() => router.push(`/renovation-en-cours/${id}`), 1500);
     } catch (err) {
       console.error("Erreur soumission:", err);
-      alert("❌ Erreur lors de l'envoi : " + (err instanceof Error ? err.message : "PERMISSION_DENIED - Vérifiez que vous êtes connecté."));
+      alert("❌ Erreur lors de l'envoi : " + (err instanceof Error ? err.message : "PERMISSION_DENIED"));
       submittedRef.current = false;
     } finally {
       setSubmitting(false);
     }
-  }, [user, lieu, typeBien, typeRenovation, ville, quartier, surface, pieces, etages, anneeConstruction, horsAbidjan, distanceKm, transportGere, descriptionProblemes, urgence, accesLieu, materiaux, budgetEstime, delaiSouhaite, photos, nomComplet, telephone, email, preferenceRdv, prixVisite, submitting, router]);
+  }, [user, submitting, typeRenovation, lieu, typeBien, ville, quartier, surface, pieces, etages, anneeConstruction, horsAbidjan, distanceKm, transportGere, descriptionProblemes, urgence, accesLieu, materiaux, budgetEstime, delaiSouhaite, photos, nomComplet, telephone, email, preferenceRdv, prixVisite, router]);
 
   const canNext = (): boolean => {
     switch (etape) {
@@ -349,20 +336,14 @@ export default function RenovationPage() {
     <BtpBackground imageUrl="https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=2070&auto=format&fit=crop" overlay="medium">
       <div className="min-h-screen pt-8 pb-24 px-2">
         <div className="mx-auto max-w-2xl space-y-6">
-
           {!requestId ? (
             <>
               <div className="text-center mb-2">
                 <h1 className="text-2xl font-black text-white">🔨 Demande de rénovation</h1>
                 <p className="text-sm text-blue-100 mt-1">En 5 étapes, décrivez votre projet</p>
               </div>
-
               {renderProgressBar()}
-
-              <PremiumCard>
-                {renderEtape()}
-              </PremiumCard>
-
+              <PremiumCard>{renderEtape()}</PremiumCard>
               <div className="flex gap-3">
                 {etape > 1 && (
                   <button onClick={() => setEtape((etape - 1) as Step)} className="flex-1 h-[56px] rounded-[18px] bg-white/10 border border-white/20 font-bold text-white transition hover:bg-white/20 flex items-center justify-center gap-2">
@@ -370,7 +351,7 @@ export default function RenovationPage() {
                   </button>
                 )}
                 {etape < 5 ? (
-                  <PremiumButton onClick={() => canNext() ? setEtape((etape + 1) as Step) : alert("Veuillez remplir tous les champs obligatoires de cette étape.")} className="flex-1" icon={ArrowRight}>
+                  <PremiumButton onClick={() => canNext() ? setEtape((etape + 1) as Step) : alert("Veuillez remplir tous les champs obligatoires.")} className="flex-1" icon={ArrowRight}>
                     Suivant
                   </PremiumButton>
                 ) : (
@@ -391,7 +372,6 @@ export default function RenovationPage() {
               </div>
             </div>
           )}
-
         </div>
       </div>
     </BtpBackground>
