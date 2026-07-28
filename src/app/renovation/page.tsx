@@ -59,7 +59,11 @@ export default function RenovationPage() {
   const [email, setEmail] = useState("");
   const [preferenceRdv, setPreferenceRdv] = useState("matin");
 
-  const prixVisite = Math.max(10000, (surface || 50) * 200);
+  const safeSurface = Number(surface) || 50;
+  const safeEtages = Number(etages) || 0;
+  const safeDistance = Number(distanceKm) || 0;
+  const prixVisite = (safeSurface * 1000) + (safeEtages * 10000) + (safeDistance * 500);
+  const detailCalculVisite = `${safeSurface}m² × 1 000 F + ${safeEtages} étage(s) × 10 000 F + ${safeDistance}km × 500 F`;
 
   const handleUploadPhoto = async (file: File) => {
     setUploading(true);
@@ -285,7 +289,9 @@ export default function RenovationPage() {
             </select>
           </div>
           <div className="rounded-[16px] bg-[#FF7A00]/10 border border-[#FF7A00]/30 p-4 text-center">
-            <p className="text-sm font-bold text-[#FF7A00]">💳 Frais de visite technique : {formatFcfa(prixVisite)}</p>
+            <p className="text-sm font-bold text-[#FF7A00]">💳 Estimation visite technique</p>
+            <p className="text-xs text-white/60 mt-1">{detailCalculVisite}</p>
+            <p className="text-lg font-bold text-[#FF7A00] mt-2">{formatFcfa(prixVisite)}</p>
             <p className="text-xs text-white/60 mt-1">Payable à la confirmation de la demande</p>
           </div>
         </div>
