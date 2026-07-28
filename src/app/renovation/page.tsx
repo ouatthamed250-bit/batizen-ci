@@ -181,7 +181,22 @@ export default function RenovationPage() {
 
             <PremiumCard>
               <h3 className="mb-4 font-black text-white">🏗️ Aperçu 3D de votre projet</h3>
-              <PlanGenerator />
+              {(() => {
+                const estLargeur = Math.round(Math.sqrt(surface * 0.6));
+                const estLongueur = Math.round(surface / estLargeur);
+                const estChambres = Math.max(1, Math.round(surface / 30));
+                const estSdb = travaux.includes("salle_bain") ? Math.min(2, Math.max(1, Math.round(surface / 60))) : 1;
+                return (
+                  <PlanGenerator
+                    longueur={estLongueur}
+                    largeur={estLargeur}
+                    chambres={estChambres}
+                    sdb={estSdb}
+                    etages={surface > 120 ? 2 : 1}
+                    style="moderne"
+                  />
+                );
+              })()}
             </PremiumCard>
           </>
         )}

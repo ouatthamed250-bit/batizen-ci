@@ -69,7 +69,14 @@ export default function ServicesRenovationPage() {
             </p>
           </div>
           {showPlanGenerator ? (
-            <PlanGenerator />
+            <PlanGenerator
+              longueur={14}
+              largeur={10}
+              chambres={3}
+              sdb={2}
+              etages={1}
+              style="moderne"
+            />
           ) : (
             <div className="text-center">
               <button
