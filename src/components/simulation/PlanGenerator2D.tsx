@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 
 interface Plan2DProps {
   surface: number;
@@ -14,7 +14,6 @@ interface Plan2DProps {
   style: string;
 }
 
-// Couleurs des pièces
 const COLORS = {
   salon: "#F5E6D3",
   cuisine: "#F5F5D3",
@@ -62,7 +61,11 @@ export default function PlanGenerator2D({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Loader réel : temps du calcul synchrone (min 500ms pour la lisibilité)
+  // Calculs exposés pour le JSX (légende et stats)
+  const nbChambres = Math.min(Math.max(1, chambres), 8);
+  const nbSdb = Math.min(Math.max(1, sallesDeBain), 4);
+  const totalRooms = 3 + nbChambres + nbSdb;
+
   useEffect(() => {
     const startTime = Date.now();
     requestAnimationFrame(() => {
@@ -77,7 +80,6 @@ export default function PlanGenerator2D({
     
     const canvas = canvasRef.current;
     if (!canvas) return;
-
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
@@ -101,61 +103,117 @@ export default function PlanGenerator2D({
     ctx.lineWidth = 3;
     ctx.strokeRect(offsetX, offsetY, houseWidth, houseLength);
 
-    // Calcul des surfaces
-    const salonSurface = Math.floor(surface * 0.3);
-    const cuisineSurface = Math.floor(surface * 0.15);
-    const piecesRestantes = surface - salonSurface - cuisineSurface;
-    const chambreSurface = Math.floor(piecesRestantes / chambres);
+    // Surface moyenne par pièce (en m²)
+    const avgRoomAreaM2 = Math.max(8, surface / totalRooms);
+    
+    // Conversion en pixels via le scale
+    const avgRoomPx = avgRoomAreaM2 * scale;
+    
+    const chambreDim = Math.max(40, Math.min(houseWidth * 0.3, avgRoomPx * 0.8));
+    const salonDim = Math.min(houseWidth * 0.45, chambreDim * 1.5);
+    const salonDepth = Math.min(houseLength * 0.5, chambreDim * 1.4);
+    const cuisineDim = Math.min(houseWidth * 0.35, chambreDim * 0.9);
+    const cuisineDepth = Math.min(houseLength * 0.4, chambreDim * 0.8);
+    const sdbDim = Math.max(30, Math.min(houseWidth * 0.15, chambreDim * 0.55));
+    
+    // Surface labels
+    const salonArea = Math.round(salonDim * salonDepth / (scale * scale));
+    const cuisineArea = Math.round(cuisineDim * cuisineDepth / (scale * scale));
+    const chambreArea = Math.round(chambreDim * chambreDim / (scale * scale));
 
-    const salonWidth = houseWidth * 0.4;
-    const salonLength = houseLength * 0.5;
-    const cuisineWidth = houseWidth * 0.35;
-    const cuisineLength = houseLength * 0.45;
-    const chambreWidth = (houseWidth * 0.85) / Math.max(1, chambres);
-    const chambreLength = houseLength * 0.4;
-
-    // Salon
+    // Zone jour (bas) : Salon + Cuisine
+    const zoneJourY = offsetY + houseLength - salonDepth - 10;
+    const espace = 8;
+    
+    // Salon à gauche
     ctx.fillStyle = COLORS.salon;
-    ctx.fillRect(offsetX + 10, offsetY + houseLength - salonLength - 10, salonWidth, salonLength);
+    ctx.fillRect(offsetX + 10, zoneJourY, salonDim, salonDepth);
     ctx.strokeStyle = "var(--navy)";
     ctx.lineWidth = 2;
-    ctx.strokeRect(offsetX + 10, offsetY + houseLength - salonLength - 10, salonWidth, salonLength);
+    ctx.strokeRect(offsetX + 10, zoneJourY, salonDim, salonDepth);
     ctx.fillStyle = "var(--navy)";
-    ctx.font = "12px sans-serif";
+    ctx.font = "11px sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("Salon", offsetX + salonWidth / 2 + 10, offsetY + houseLength - salonLength / 2 - 10);
-    ctx.fillText(`${salonSurface}m²`, offsetX + salonWidth / 2 + 10, offsetY + houseLength - salonLength / 2 + 5);
-
-    // Cuisine
+    ctx.fillText("Salon", offsetX + salonDim / 2 + 10, zoneJourY + salonDepth / 2 - 6);
+    ctx.font = "9px sans-serif";
+    ctx.fillText(`${salonArea}m²`, offsetX + salonDim / 2 + 10, zoneJourY + salonDepth / 2 + 8);
+    
+    // Cuisine à droite
+    const cuisineX = offsetX + houseWidth - cuisineDim - 10;
     ctx.fillStyle = COLORS.cuisine;
-    ctx.fillRect(offsetX + houseWidth - cuisineWidth - 10, offsetY + houseLength - cuisineLength - 10, cuisineWidth, cuisineLength);
-    ctx.strokeRect(offsetX + houseWidth - cuisineWidth - 10, offsetY + houseLength - cuisineLength - 10, cuisineWidth, cuisineLength);
+    ctx.fillRect(cuisineX, zoneJourY + salonDepth - cuisineDepth, cuisineDim, cuisineDepth);
+    ctx.strokeRect(cuisineX, zoneJourY + salonDepth - cuisineDepth, cuisineDim, cuisineDepth);
     ctx.fillStyle = "var(--navy)";
-    ctx.fillText("Cuisine", offsetX + houseWidth - cuisineWidth / 2 - 10, offsetY + houseLength - cuisineLength / 2 - 10);
-    ctx.fillText(`${cuisineSurface}m²`, offsetX + houseWidth - cuisineWidth / 2 - 10, offsetY + houseLength - cuisineLength / 2 + 5);
+    ctx.font = "11px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("Cuisine", cuisineX + cuisineDim / 2, zoneJourY + salonDepth - cuisineDepth / 2 - 6);
+    ctx.font = "9px sans-serif";
+    ctx.fillText(`${cuisineArea}m²`, cuisineX + cuisineDim / 2, zoneJourY + salonDepth - cuisineDepth / 2 + 8);
 
-    // Chambres
-    for (let i = 0; i < chambres; i++) {
-      const chambreX = offsetX + 10 + i * chambreWidth;
+    // Zone nuits (haut) : Chambres + SdB
+    const zoneNuitY = offsetY + 10;
+    const zoneNuitH = houseLength - salonDepth - 20 - espace;
+    
+    const chambreW = Math.min(chambreDim, (houseWidth - 20 - (nbChambres - 1) * espace) / Math.max(1, nbChambres));
+    const chambreH = Math.min(chambreDim, zoneNuitH * 0.65);
+    const sdbH = Math.min(sdbDim, zoneNuitH - chambreH - espace);
+    
+    for (let i = 0; i < nbChambres; i++) {
+      const cx = offsetX + 10 + i * (chambreW + espace);
       ctx.fillStyle = COLORS.chambre;
-      ctx.fillRect(chambreX, offsetY + 10, chambreWidth - 5, chambreLength);
-      ctx.strokeRect(chambreX, offsetY + 10, chambreWidth - 5, chambreLength);
+      ctx.fillRect(cx, zoneNuitY, chambreW, chambreH);
+      ctx.strokeRect(cx, zoneNuitY, chambreW, chambreH);
       ctx.fillStyle = "var(--navy)";
-      ctx.fillText(`Chambre ${i + 1}`, chambreX + chambreWidth / 2 - 2.5, offsetY + chambreLength / 2 + 10);
-      ctx.fillText(`${chambreSurface}m²`, chambreX + chambreWidth / 2 - 2.5, offsetY + chambreLength / 2 + 25);
+      ctx.font = "9px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(`Ch ${i + 1}`, cx + chambreW / 2, zoneNuitY + chambreH / 2 - 4);
+      ctx.font = "8px sans-serif";
+      ctx.fillText(`${chambreArea}m²`, cx + chambreW / 2, zoneNuitY + chambreH / 2 + 8);
+    }
+    
+    const sdbW = Math.min(sdbDim, (houseWidth - 20 - (nbSdb - 1) * espace) / Math.max(1, nbSdb));
+    for (let i = 0; i < nbSdb; i++) {
+      const sx = offsetX + 10 + i * (sdbW + espace);
+      const sy = zoneNuitY + chambreH + espace;
+      ctx.fillStyle = COLORS.salleDeBain;
+      ctx.fillRect(sx, sy, sdbW, sdbH);
+      ctx.strokeRect(sx, sy, sdbW, sdbH);
+      ctx.fillStyle = "var(--navy)";
+      ctx.font = "8px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(`SdB ${i + 1}`, sx + sdbW / 2, sy + sdbH / 2 + 3);
     }
 
-    // Salles de bain
-    const sdbWidth = 8 * scale;
-    const sdbLength = 8 * scale;
-    for (let i = 0; i < sallesDeBain; i++) {
-      const sdbX = offsetX + houseWidth / 2 - sdbWidth / 2;
-      const sdbY = offsetY + houseLength * 0.5;
-      ctx.fillStyle = COLORS.salleDeBain;
-      ctx.fillRect(sdbX + i * (sdbWidth + 15), sdbY, sdbWidth, sdbLength);
-      ctx.strokeRect(sdbX + i * (sdbWidth + 15), sdbY, sdbWidth, sdbLength);
+    // Garage
+    if (garage) {
+      const gW = Math.min(houseWidth * 0.35, chambreDim * 1.3);
+      const gH = Math.min(salonDepth * 0.5, chambreDim);
+      const gX = offsetX + 10;
+      const gY = zoneJourY - gH - espace;
+      ctx.fillStyle = COLORS.garage;
+      ctx.fillRect(gX, gY, gW, gH);
+      ctx.strokeRect(gX, gY, gW, gH);
       ctx.fillStyle = "var(--navy)";
-      ctx.fillText(`SdB ${i + 1}`, sdbX + i * (sdbWidth + 15) + sdbWidth / 2, sdbY + sdbLength / 2 + 5);
+      ctx.font = "9px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("Garage", gX + gW / 2, gY + gH / 2 + 3);
+    }
+    
+    // Piscine
+    if (piscine) {
+      const pW = Math.min(houseWidth * 0.2, chambreDim * 0.8);
+      const pH = Math.min(houseLength * 0.15, chambreDim * 0.4);
+      const pX = offsetX + houseWidth + 15;
+      const pY = zoneJourY + 10;
+      ctx.fillStyle = COLORS.piscine;
+      ctx.beginPath();
+      ctx.roundRect(pX, pY, pW, pH, 5);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = "white";
+      ctx.font = "8px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("Piscine", pX + pW / 2, pY + pH / 2 + 3);
     }
 
     // Fenêtres
@@ -166,55 +224,18 @@ export default function PlanGenerator2D({
       ctx.moveTo(offsetX, offsetY + y);
       ctx.lineTo(offsetX, offsetY + y + 15);
       ctx.stroke();
-    }
-    for (let y = 20; y < houseLength; y += 30) {
       ctx.beginPath();
       ctx.moveTo(offsetX + houseWidth, offsetY + y);
       ctx.lineTo(offsetX + houseWidth, offsetY + y + 15);
       ctx.stroke();
     }
 
-    // Garage
-    if (garage) {
-      const garageWidth = houseWidth * 0.4;
-      const garageHeight = houseLength * 0.25;
-      ctx.fillStyle = COLORS.garage;
-      ctx.fillRect(offsetX - garageWidth - 10, offsetY + houseLength / 2 - garageHeight / 2, garageWidth, garageHeight);
-      ctx.strokeRect(offsetX - garageWidth - 10, offsetY + houseLength / 2 - garageHeight / 2, garageWidth, garageHeight);
-      ctx.fillStyle = "var(--navy)";
-      ctx.fillText("Garage", offsetX - garageWidth / 2 - 10, offsetY + houseLength / 2 + 5);
-    }
-
-    // Piscine
-    if (piscine) {
-      const piscineWidth = 12 * scale;
-      const piscineHeight = 6 * scale;
-      const piscineX = offsetX + houseWidth + 20;
-      const piscineY = offsetY + houseLength - piscineHeight - 20;
-      ctx.fillStyle = COLORS.piscine;
-      ctx.beginPath();
-      ctx.moveTo(piscineX + 5, piscineY);
-      ctx.lineTo(piscineX + piscineWidth - 5, piscineY);
-      ctx.quadraticCurveTo(piscineX + piscineWidth, piscineY, piscineX + piscineWidth, piscineY + 5);
-      ctx.lineTo(piscineX + piscineWidth, piscineY + piscineHeight - 5);
-      ctx.quadraticCurveTo(piscineX + piscineWidth, piscineY + piscineHeight, piscineX + piscineWidth - 5, piscineY + piscineHeight);
-      ctx.lineTo(piscineX + 5, piscineY + piscineHeight);
-      ctx.quadraticCurveTo(piscineX, piscineY + piscineHeight, piscineX, piscineY + piscineHeight - 5);
-      ctx.lineTo(piscineX, piscineY + 5);
-      ctx.quadraticCurveTo(piscineX, piscineY, piscineX + 5, piscineY);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-      ctx.fillStyle = "white";
-      ctx.font = "11px sans-serif";
-      ctx.fillText("Piscine", piscineX + piscineWidth / 2, piscineY + piscineHeight / 2);
-    }
-
     // Échelle
     ctx.fillStyle = "var(--navy)";
     ctx.font = "10px sans-serif";
+    ctx.textAlign = "center";
     ctx.fillText("─── 5m", offsetX + houseWidth / 2, offsetY + houseLength + 25);
-  }, [surface, largeur, longueur, chambres, sallesDeBain, etages, garage, piscine, style, isLoading]);
+  }, [surface, largeur, longueur, nbChambres, nbSdb, totalRooms, etages, garage, piscine, style, isLoading]);
 
   const downloadPNG = () => {
     const canvas = canvasRef.current;
@@ -248,18 +269,18 @@ export default function PlanGenerator2D({
           </div>
 
           <div className="flex flex-wrap gap-3 justify-center text-xs">
-            <div className="flex items-center gap-1"><div className="w-4 h-4 bg-[#F5E6D3] rounded"></div> Salon ({Math.floor(surface * 0.3)}m²)</div>
-            <div className="flex items-center gap-1"><div className="w-4 h-4 bg-[#D3E4F5] rounded"></div> Chambres ({Math.floor((surface - Math.floor(surface*0.3) - Math.floor(surface*0.15))/chambres)}m²)</div>
-            <div className="flex items-center gap-1"><div className="w-4 h-4 bg-[#F5F5D3] rounded"></div> Cuisine ({Math.floor(surface * 0.15)}m²)</div>
+            <div className="flex items-center gap-1"><div className="w-4 h-4 bg-[#F5E6D3] rounded"></div> Salon</div>
+            <div className="flex items-center gap-1"><div className="w-4 h-4 bg-[#D3E4F5] rounded"></div> {nbChambres} Ch.</div>
+            <div className="flex items-center gap-1"><div className="w-4 h-4 bg-[#F5F5D3] rounded"></div> Cuisine</div>
             {sallesDeBain > 0 && (
-              <div className="flex items-center gap-1"><div className="w-4 h-4 bg-[#D3F5E6] rounded"></div> SdB ({sallesDeBain}x)</div>
+              <div className="flex items-center gap-1"><div className="w-4 h-4 bg-[#D3F5E6] rounded"></div> {nbSdb} SdB</div>
             )}
             {garage && <div className="flex items-center gap-1"><div className="w-4 h-4 bg-[#E6E6E6] rounded"></div> Garage</div>}
             {piscine && <div className="flex items-center gap-1"><div className="w-4 h-4 bg-[#4FC3F7] rounded"></div> Piscine</div>}
           </div>
 
           <p className="text-center text-sm text-white/60">
-            Surface totale: {surface}m² | {chambres + sallesDeBain + 2 + (garage ? 1 : 0) + (piscine ? 1 : 0)} pièces
+            Surface: {surface}m² | {totalRooms} pièces
           </p>
         </>
       )}
