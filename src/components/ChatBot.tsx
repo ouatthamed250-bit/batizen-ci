@@ -73,7 +73,7 @@ export default function ChatBot() {
         aria-label="Ouvrir l'assistant"
       >
         <img 
-          src="/images/rhinozen.svg" 
+          src="/images/rhinozen.png" 
           alt="RHINOZEN - Assistant BÂTIZEN" 
           className="w-full h-full object-contain drop-shadow-xl scale-110"
         />
