@@ -8,13 +8,14 @@ import { HardHat, BrickWall, ChevronRight, Bell, Wallet, CalendarClock, Megaphon
 import { useAuthContext } from "@/contexts/AuthContext";
 import { WeatherWidget } from "@/components/btp/WeatherWidget";
 import { ProgressBar } from "@/components/ui/ProgressBar";
-import { getDatabase, ref as dbRef, onValue, update, query, orderByChild, equalTo } from "firebase/database";
+import { getDatabase, ref as dbRef, onValue, update } from "firebase/database";
 import { logger } from "@/utils/logger";
 import { LazySection } from "@/components/LazySection";
 import dynamic from "next/dynamic";
 import AdminSecretModal from "@/components/auth/AdminSecretModal";
 import AnnonceTicker from "@/components/ui/AnnonceTicker";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { useChantiersQuery } from "@/hooks/useChantiersQuery";
 const ChatBot = dynamic(() => import("@/components/ChatBot"), { ssr: false });
 
 // ✅ NOUVEAUX IMPORTS : Types et Utilitaires centralisés
@@ -184,42 +185,29 @@ export default function DashboardClientPage() {
       setShowAdminModal(true);
     }
   }, [tapCount, tapTimer]);
-  const [chantiers, setChantiers] = useState<Chantier[]>([]); // ✅ Typage fort
   const [notifications] = useState<any[]>([]); // À connecter plus tard
   const [partenaires, setPartenaires] = useState<any[]>([]);
 
+  // React Query + Firebase temps réel pour les chantiers
+  const { data: chantiers, isLoading: chantiersLoading } = useChantiersQuery(user?.uid);
+
   useEffect(() => {
-    const uid = user?.uid;
-    if (!uid) {
+    if (!user?.uid) {
       setLoading(false);
       return;
     }
-
     setIsAuthReady(true);
-    const db = getDatabase();
-    const chantiersRef = dbRef(db, 'chantiers');
-    const q = query(chantiersRef, orderByChild("userId"), equalTo(uid));
-    
-    const unsubChantiers = onValue(q, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        const mesChantiers = Object.entries(data)
-          .filter(([_, c]: [string, any]) => c.actif !== false)
-          .map(([id, c]: [string, any]) => ({ id, ...c }));
-        
-        setChantiers(mesChantiers);
-        setLoading(false);
-      } else {
-        setChantiers([]);
-        setLoading(false);
-      }
-    }, (error) => {
-      logger.error("❌ Erreur chargement chantiers:", error);
-      setLoading(false);
-    });
-
-    return () => unsubChantiers();
+    setLoading(false);
   }, [user?.uid]);
+
+  // Met à jour loading local à partir du loading React Query
+  useEffect(() => {
+    if (chantiersLoading) {
+      setLoading(true);
+    } else {
+      setLoading(false);
+    }
+  }, [chantiersLoading]);
 
   useEffect(() => {
     const db = getDatabase();
@@ -239,8 +227,9 @@ export default function DashboardClientPage() {
   }, []);
 
   const userName = user?.displayName || user?.email?.split("@")[0] || "Client";
-  const chantiersActifs = chantiers.filter(c => c.statut === "en_cours").length;
-  const prochainRdv = chantiers
+  const chantiersList = chantiers ?? [];
+  const chantiersActifs = chantiersList.filter(c => c.statut === "en_cours").length;
+  const prochainRdv = chantiersList
     .filter(c => (c.statut === "en_attente" || c.statut === "en_attente_rdv") && c.rdv_date)
     .sort((a, b) => new Date(a.rdv_date!).getTime() - new Date(b.rdv_date!).getTime())[0];
   
@@ -423,11 +412,11 @@ export default function DashboardClientPage() {
             <SkeletonChantier /><SkeletonChantier />
           </div>
         ) : (
-          <div className={`grid gap-3 w-full ${chantiers.length === 0 ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'}`}>
+          <div className={`grid gap-3 w-full ${chantiersList.length === 0 ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'}`}>
             {/* Carte "Nouveau Chantier" intégrée dans la grille */}
             <Link
               href="/nouveau-chantier"
-              className={`flex flex-col items-center justify-center text-center gap-3 w-full overflow-hidden rounded-[28px] border-2 border-dashed border-white/50 bg-white/10 backdrop-blur-xl p-6 shadow-xl transition hover:bg-white/20 active:scale-95 ${chantiers.length === 0 ? 'max-w-sm mx-auto' : ''}`}
+              className={`flex flex-col items-center justify-center text-center gap-3 w-full overflow-hidden rounded-[28px] border-2 border-dashed border-white/50 bg-white/10 backdrop-blur-xl p-6 shadow-xl transition hover:bg-white/20 active:scale-95 ${chantiersList.length === 0 ? 'max-w-sm mx-auto' : ''}`}
             >
               <div className="grid size-14 place-items-center rounded-[20px] bg-gradient-to-br from-[#FF7A00] to-[#D97706] text-white shadow-lg">
                 <span className="text-2xl">🏗️</span>
@@ -436,7 +425,7 @@ export default function DashboardClientPage() {
               <p className="text-xs text-white/70">Créer un nouveau projet</p>
             </Link>
 
-            {chantiers.map((c) => (
+            {chantiersList.map((c) => (
               <ChantierCard key={c.id} chantier={c} onModifier={handleModifierChantier} onSupprimer={handleSupprimerChantier} />
             ))}
           </div>

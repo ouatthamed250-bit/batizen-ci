@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import LayoutWrapper from "@/components/layout/LayoutWrapper";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { QueryProvider } from "@/components/QueryProvider";
 
 export const metadata: Metadata = {
   title: "BÂTIZEN CI — Construire en confiance",
@@ -35,11 +36,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className="overflow-x-hidden antialiased">
         <AuthProvider>
           <ThemeProvider>
-            <LayoutWrapper>
-              <ErrorBoundary>
-                {children}
-              </ErrorBoundary>
-            </LayoutWrapper>
+            <QueryProvider>
+              <LayoutWrapper>
+                <ErrorBoundary>
+                  {children}
+                </ErrorBoundary>
+              </LayoutWrapper>
+            </QueryProvider>
           </ThemeProvider>
         </AuthProvider>
       </body>
