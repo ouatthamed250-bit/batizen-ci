@@ -16,6 +16,7 @@ import AdminSecretModal from "@/components/auth/AdminSecretModal";
 import AnnonceTicker from "@/components/ui/AnnonceTicker";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { useChantiersQuery } from "@/hooks/useChantiersQuery";
+import { useRenovationsQuery } from "@/hooks/useRenovationsQuery";
 const ChatBot = dynamic(() => import("@/components/ChatBot"), { ssr: false });
 
 // ✅ NOUVEAUX IMPORTS : Types et Utilitaires centralisés
@@ -190,6 +191,17 @@ export default function DashboardClientPage() {
 
   // React Query + Firebase temps réel pour les chantiers
   const { data: chantiers, isLoading: chantiersLoading } = useChantiersQuery(user?.uid);
+  const { data: renovations } = useRenovationsQuery(user?.uid);
+  const chantiersList = chantiers ?? [];
+  const renovationsActives = (renovations ?? []).filter(r => r.statut === "en_cours" || r.statut === "active");
+  const chantiersEtRenovations = [...chantiersList, ...renovationsActives.map(r => ({
+    id: r.id,
+    nom: r.lieu,
+    type: "Rénovation",
+    statut: "en_cours",
+    budget: r.montantEstime,
+    localisation: r.lieu || "—",
+  }))];
 
   useEffect(() => {
     if (!user?.uid) {
@@ -227,7 +239,6 @@ export default function DashboardClientPage() {
   }, []);
 
   const userName = user?.displayName || user?.email?.split("@")[0] || "Client";
-  const chantiersList = chantiers ?? [];
   const chantiersActifs = chantiersList.filter(c => c.statut === "en_cours").length;
   const prochainRdv = chantiersList
     .filter(c => (c.statut === "en_attente" || c.statut === "en_attente_rdv") && c.rdv_date)

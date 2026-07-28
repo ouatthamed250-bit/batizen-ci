@@ -1,288 +1,214 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { ArrowRight, Camera, CheckCircle2, MapPin, PaintBucket, Send } from "lucide-react";
+import { useState, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { ArrowRight, CheckCircle2, PaintBucket, MapPin, Building2, Route, Truck, ChevronRight, HardHat } from "lucide-react";
 import { cn } from "@/lib/helpers";
 import { PremiumButton } from "@/components/ui/PremiumButton";
 import { PremiumCard } from "@/components/ui/PremiumCard";
-import { Badge } from "@/components/ui/Badge";
-import PlanGenerator from "@/components/plans/PlanGenerator";
 import BtpBackground from "@/components/btp/BtpBackground";
 import { formatFcfa } from "@/utils/currency";
-import { RenovationEngine, type TravauxRenovation, type EtatMaison } from "@/services/RenovationEngine";
-import { VILLES_CI } from "@/constants/villes";
+import { useAuthContext } from "@/contexts/AuthContext";
+import { ref, set, push } from "firebase/database";
+import { getFirebaseServices } from "@/lib/firebase";
 
-const TRAVAUX_OPTIONS: { id: TravauxRenovation; label: string; emoji: string }[] = [
-  { id: "peinture_int", label: "Peinture intérieure",  emoji: "🎨" },
-  { id: "peinture_ext", label: "Peinture extérieure",  emoji: "🏠" },
-  { id: "carrelage",    label: "Carrelage / Sol",       emoji: "⬜" },
-  { id: "plomberie",    label: "Plomberie",             emoji: "🚿" },
-  { id: "electricite",  label: "Électricité",           emoji: "⚡" },
-  { id: "toiture",      label: "Toiture",               emoji: "🏗️" },
-  { id: "menuiserie",   label: "Menuiserie / Portes",   emoji: "🚪" },
-  { id: "faux_plafond", label: "Faux plafond",          emoji: "🔲" },
-  { id: "cuisine",      label: "Cuisine",               emoji: "🍳" },
-  { id: "salle_bain",   label: "Salle de bain",         emoji: "🛁" },
-  { id: "terrasse",     label: "Terrasse",              emoji: "🌿" },
-  { id: "cloture",      label: "Clôture / Portail",     emoji: "🔒" },
-];
-
-const ETAT_OPTIONS: { id: EtatMaison; label: string; sub: string; color: string }[] = [
-  { id: "bon",     label: "Bon état",       sub: "Rafraîchissement léger",   color: "#22C55E" },
-  { id: "moyen",   label: "État moyen",     sub: "Rénovation partielle",     color: "#FF7A00" },
-  { id: "degrade", label: "Très dégradé",   sub: "Rénovation complète",      color: "#EF4444" },
-];
+type Step = "form" | "devis" | "confirm";
 
 export default function RenovationPage() {
-  const [step, setStep] = useState(1);
-  const [surface, setSurface]   = useState(100);
-  const [location, setLocation] = useState("Abidjan, Cocody");
-  const [etat, setEtat]         = useState<EtatMaison>("moyen");
-  const [travaux, setTravaux]   = useState<TravauxRenovation[]>([]);
+  const router = useRouter();
+  const { user } = useAuthContext();
+  const [step, setStep] = useState<Step>("form");
+  const [lieu, setLieu] = useState("");
+  const [surface, setSurface] = useState(80);
+  const [etages, setEtages] = useState(1);
+  const [horsAbidjan, setHorsAbidjan] = useState(false);
+  const [distanceKm, setDistanceKm] = useState(0);
+  const [transportGere, setTransportGere] = useState(false);
+  const [requestId, setRequestId] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const submittedRef = useRef(false);
 
-  const next = () => setStep(s => s + 1);
-  const back = () => step > 1 && setStep(s => s - 1);
+  // Calcul du montant estimé (côté client, jamais affiché en détail)
+  const calculerMontant = useCallback((): number => {
+    let total = surface * 500; // 500 FCFA/m²
+    if (etages > 1) total += (etages - 1) * 10000; // 10 000 FCFA/étage sup.
+    if (horsAbidjan && !transportGere) total += distanceKm * 500; // 500 FCFA/km si transport non géré
+    return total;
+  }, [surface, etages, horsAbidjan, distanceKm, transportGere]);
 
-  const toggleTravail = (id: TravauxRenovation) =>
-    setTravaux(t => t.includes(id) ? t.filter(x => x !== id) : [...t, id]);
+  const montantEstime = step !== "form" ? calculerMontant() : 0;
 
-  const result = useMemo(() =>
-    travaux.length > 0 ? RenovationEngine.calculate({ surfaceM2: surface, location, etat, travaux }) : null,
-    [surface, location, etat, travaux]
-  );
+  const handleSoumettre = useCallback(async () => {
+    if (!user || submitting || submittedRef.current) return;
+    submittedRef.current = true;
+    setSubmitting(true);
 
-  const pageContent = step === 5 ? (
-    <div className="flex min-h-[80vh] flex-col items-center justify-center text-center px-6">
-      <div className="grid size-24 place-items-center rounded-full bg-[#22C55E] text-white shadow-[0_20px_40px_rgba(34,197,94,0.3)] animate-bounceIn">
-        <CheckCircle2 size={48} />
-      </div>
-      <h1 className="mt-8 text-2xl font-black text-white">Demande envoyée !</h1>
-      <p className="mt-3 max-w-[280px] text-sm text-blue-100">Un expert BÂTIZEN vous contacte sous 2h pour programmer une visite technique.</p>
-      {result && (
-        <div className="mt-6 rounded-[20px] bg-white/10 backdrop-blur-md border border-white/20 px-6 py-4 text-center">
-          <p className="text-xs font-black uppercase text-blue-200">Budget estimé</p>
-          <p className="mt-1 text-3xl font-black text-white">{formatFcfa(result.total)}</p>
-          <p className="mt-1 text-xs text-blue-200">Durée estimée : ~{result.dureeJours} jours</p>
-        </div>
-      )}
-      <PremiumButton className="mt-8 w-full max-w-xs" href="/dashboard">Retour au tableau de bord</PremiumButton>
-    </div>
-  ) : (
-    <>
-      <div className="mb-6 mx-2 flex items-center">
-        <div className="flex-1">
-          <h1 className="text-base font-black text-white">Rénovation</h1>
-          <p className="text-[10px] font-bold text-blue-200">Étape {step} sur 4</p>
-        </div>
-        <div className="flex h-1.5 w-16 gap-0.5">
-          {[1,2,3,4].map(i => <div key={i} className={cn("h-full flex-1 rounded-full transition-all", i <= step ? "bg-[#22C55E]" : "bg-white/20")} />)}
-        </div>
-      </div>
-
-      <div className="space-y-6 mx-2">
-        {/* STEP 1 — Maison */}
-        {step === 1 && (
-          <PremiumCard>
-            <div className="flex items-center gap-3 mb-4">
-              <PaintBucket size={28} className="text-[#22C55E]" />
-              <div>
-                <h2 className="text-xl font-black text-white">Votre maison</h2>
-                <p className="text-sm text-blue-100">Décrivez le bien à rénouver</p>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="mb-2 block text-xs font-black uppercase tracking-[0.18em] text-blue-200">Ville / Quartier</label>
-                <input list="villes-list" value={location} onChange={e => setLocation(e.target.value)}
-                  className="h-[54px] w-full rounded-[18px] bg-white/10 border border-white/20 px-4 text-sm font-bold text-white placeholder-blue-300 outline-none ring-2 ring-transparent focus:ring-[#22C55E]/50"
-                  placeholder="Abidjan, Cocody..." />
-                <datalist id="villes-list">
-                  {VILLES_CI.map(v => <option key={v} value={v} />)}
-                </datalist>
-              </div>
-
-              <div>
-                <div className="flex justify-between text-sm font-bold text-blue-100 mb-2">
-                  <span>Surface à rénouver</span>
-                  <span className="font-black text-white">{surface} m²</span>
-                </div>
-                <input type="range" min="20" max="500" step="5" value={surface} onChange={e => setSurface(parseInt(e.target.value))} className="w-full accent-[#22C55E]" />
-              </div>
-
-              <div>
-                <p className="mb-3 text-xs font-black uppercase tracking-[0.18em] text-blue-200">État général actuel</p>
-                <div className="grid grid-cols-3 gap-2">
-                  {ETAT_OPTIONS.map(e => (
-                    <button key={e.id} onClick={() => setEtat(e.id)}
-                      className={cn("rounded-[16px] p-3 text-center transition-all border-2",
-                        etat === e.id ? "border-current bg-white/20 shadow-md" : "border-transparent bg-white/5")}
-                      style={etat === e.id ? { color: e.color, borderColor: e.color } : {}}>
-                      <p className="text-xs font-black">{e.label}</p>
-                      <p className="mt-1 text-[10px] text-blue-100">{e.sub}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </PremiumCard>
-        )}
-
-        {/* STEP 2 — Travaux */}
-        {step === 2 && (
-          <PremiumCard>
-            <h2 className="text-xl font-black text-white">Travaux souhaités</h2>
-            <p className="mt-1 text-sm text-blue-100">Sélectionnez les zones · {travaux.length} sélectionné(s)</p>
-            <div className="mt-5 grid grid-cols-2 gap-3">
-              {TRAVAUX_OPTIONS.map(t => (
-                <button key={t.id} onClick={() => toggleTravail(t.id)}
-                  className={cn("flex items-center gap-3 rounded-[16px] border-2 p-3 text-left transition-all",
-                    travaux.includes(t.id) ? "border-[#22C55E] bg-[#22C55E]/20" : "border-transparent bg-white/5")}>
-                  <span className="text-xl">{t.emoji}</span>
-                  <span className={cn("text-xs font-bold", travaux.includes(t.id) ? "text-[#22C55E]" : "text-blue-100")}>
-                    {travaux.includes(t.id) && "✓ "}{t.label}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </PremiumCard>
-        )}
-
-        {/* STEP 3 — Photos */}
-        {step === 3 && (
-          <>
-            <PremiumCard>
-              <div className="flex items-center gap-3 mb-4">
-                <Camera size={28} className="text-[#FF7A00]" />
-                <div>
-                  <h2 className="text-xl font-black text-white">Photos & Localisation</h2>
-                  <p className="text-sm text-blue-100">Aidez l'expert à préparer sa visite</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                {[1,2,3].map(i => (
-                  <button key={i} type="button" aria-label={`Photo ${i}`}
-                    className="grid h-28 place-items-center rounded-[18px] border-2 border-dashed border-white/20 bg-white/5 transition hover:border-[#22C55E]/50 active:scale-95">
-                    <div className="text-center">
-                      <Camera size={24} className="mx-auto text-blue-200" />
-                      <p className="mt-1 text-[9px] font-bold text-blue-200">Photo {i}</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-              <div className="mt-4 flex items-center gap-3 rounded-[18px] bg-[#22C55E]/20 p-4 border border-[#22C55E]/30">
-                <MapPin size={20} className="text-[#22C55E]" />
-                <div>
-                  <p className="text-sm font-black text-white">Position : {location}</p>
-                  <p className="text-xs text-blue-100">Pour la visite technique</p>
-                </div>
-              </div>
-            </PremiumCard>
-
-            <PremiumCard>
-              <h3 className="mb-4 font-black text-white">🏗️ Aperçu 3D de votre projet</h3>
-              {(() => {
-                const estLargeur = Math.round(Math.sqrt(surface * 0.6));
-                const estLongueur = Math.round(surface / estLargeur);
-                const estChambres = Math.max(1, Math.round(surface / 30));
-                const estSdb = travaux.includes("salle_bain") ? Math.min(2, Math.max(1, Math.round(surface / 60))) : 1;
-                return (
-                  <PlanGenerator
-                    longueur={estLongueur}
-                    largeur={estLargeur}
-                    chambres={estChambres}
-                    sdb={estSdb}
-                    etages={surface > 120 ? 2 : 1}
-                    style="moderne"
-                  />
-                );
-              })()}
-            </PremiumCard>
-          </>
-        )}
-
-        {/* STEP 4 — Récapitulatif + Budget */}
-        {step === 4 && result && (
-          <>
-            <PremiumCard intensity="high" className="border-t-[6px] border-t-[#22C55E] bg-[#0D2B6B]/60">
-              <p className="text-center text-[10px] font-black uppercase tracking-[0.25em] text-blue-200">Budget rénovation estimé</p>
-              <p className="mt-3 text-center text-5xl font-black tracking-tighter text-white">{formatFcfa(result.total)}</p>
-              <div className="mt-2 flex justify-center gap-3">
-                <Badge tone="green">{surface} m²</Badge>
-                <Badge tone="orange">~{result.dureeJours} jours</Badge>
-                <Badge tone="blue">{location.split(",")[0]}</Badge>
-              </div>
-            </PremiumCard>
-
-            <PremiumCard>
-              <h3 className="font-black text-white">Détail par poste</h3>
-              <div className="mt-4 space-y-3">
-                {result.details.map(d => {
-                  const pct = Math.round((d.cout / result.total) * 100);
-                  return (
-                    <div key={d.label}>
-                      <div className="flex justify-between text-xs font-bold mb-1">
-                        <span className="text-blue-100">{d.label}</span>
-                        <span className="text-white">{formatFcfa(d.cout)} · {pct}%</span>
-                      </div>
-                      <div className="h-1.5 w-full rounded-full bg-white/10">
-                        <div className="h-1.5 rounded-full bg-[#22C55E]" style={{ width: `${pct}%` }} />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </PremiumCard>
-
-            <div className="rounded-[18px] bg-[#FF7A00]/20 border border-[#FF7A00]/30 p-4 backdrop-blur-sm">
-              <p className="text-xs font-bold text-[#FFD6AE]">💡 Un expert BÂTIZEN vous contactera sous 2h pour une visite technique gratuite.</p>
-            </div>
-
-            {/* Section Prendre rendez-vous (Glassmorphism au lieu de blanc opaque) */}
-            <div className="mt-6 p-6 bg-white/10 backdrop-blur-md rounded-2xl shadow-lg border border-white/20">
-              <h3 className="text-xl font-bold text-white mb-4">📅 Prendre rendez-vous</h3>
-              <p className="text-sm text-blue-100 mb-4">
-                Un expert vous contactera sous 2h pour programmer une visite technique gratuite.
-              </p>
-              <button 
-                onClick={() => alert("Rendez-vous demandé !")}
-                className="w-full bg-[#22C55E] hover:bg-[#16a34a] text-white font-bold py-3 rounded-xl transition-colors"
-              >
-                Confirmer le rendez-vous
-              </button>
-            </div>
-          </>
-        )}
-
-        {step === 4 && !result && (
-          <div className="rounded-[20px] bg-white/10 backdrop-blur-md border border-white/20 p-8 text-center">
-            <p className="font-black text-white">Aucun travail sélectionné</p>
-            <p className="mt-2 text-sm text-blue-100">Retournez à l'étape 2 pour choisir vos travaux.</p>
-          </div>
-        )}
-
-        {/* Navigation buttons */}
-        <div className="sticky bottom-24 left-0 right-0 z-30 flex items-center gap-4 mx-2 mb-4">
-          {step > 1 && (
-            <button onClick={back} aria-label="Retour" className="grid size-[56px] place-items-center rounded-[18px] bg-white/10 border border-white/20 text-white transition hover:bg-white/20 active:scale-95 backdrop-blur-md">
-              <ArrowRight size={22} className="rotate-180" />
-            </button>
-          )}
-          <button onClick={next} aria-label={step === 4 ? "Envoyer" : "Continuer"}
-            className="flex h-[56px] flex-1 items-center justify-center gap-2 rounded-[18px] bg-[linear-gradient(135deg,#22C55E,#15803D)] text-white font-black shadow-[0_12px_28px_rgba(34,197,94,0.4)] transition-all active:scale-[0.97]">
-            {step === 4 ? <><Send size={18} /> Envoyer ma demande</> : <><ArrowRight size={18} /> Continuer</>}
-          </button>
-        </div>
-      </div>
-    </>
-  );
+    try {
+      const { database } = getFirebaseServices();
+      const demandesRef = ref(database, `demandesRenovation/${user.uid}`);
+      const newRef = push(demandesRef);
+      const id = newRef.key!;
+      await set(newRef, {
+        id,
+        userId: user.uid,
+        lieu,
+        surface,
+        etages,
+        horsAbidjan,
+        distanceKm: horsAbidjan ? distanceKm : 0,
+        transportGere,
+        montantEstime,
+        statut: "en_attente",
+        createdAt: Date.now(),
+      });
+      setRequestId(id);
+      setStep("confirm");
+    } catch (err) {
+      console.error("Erreur soumission rénovation:", err);
+      submittedRef.current = false;
+    } finally {
+      setSubmitting(false);
+    }
+  }, [user, lieu, surface, etages, horsAbidjan, distanceKm, transportGere, montantEstime, submitting]);
 
   return (
     <BtpBackground
       imageUrl="https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=2070&auto=format&fit=crop"
       overlay="medium"
     >
-      {pageContent}
+      <div className="min-h-screen pt-8 pb-24 px-2">
+        <div className="mx-auto max-w-[430px] space-y-6">
+          
+          {step === "form" && (
+            <>
+              <div className="text-center mb-2">
+                <h1 className="text-2xl font-black text-white">🔨 Demande de rénovation</h1>
+                <p className="text-sm text-blue-100 mt-1">Estimation indicative en quelques clics</p>
+              </div>
+
+              <PremiumCard>
+                <div className="space-y-5">
+                  {/* Lieu */}
+                  <div>
+                    <label className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-blue-200">
+                      <MapPin size={14} /> Lieu de rénovation
+                    </label>
+                    <input type="text" value={lieu} onChange={e => setLieu(e.target.value)}
+                      placeholder="Ex: Cocody, Abidjan"
+                      className="h-[54px] w-full rounded-[18px] bg-white/10 border border-white/20 px-4 text-sm font-bold text-white placeholder-blue-300 outline-none focus:border-[#FF6B00]/50" />
+                  </div>
+
+                  {/* Surface */}
+                  <div>
+                    <div className="flex justify-between text-sm font-bold text-blue-100 mb-2">
+                      <span className="flex items-center gap-2"><Building2 size={14} /> Surface</span>
+                      <span className="font-black text-white">{surface} m²</span>
+                    </div>
+                    <input type="range" min="20" max="1000" step="5" value={surface} onChange={e => setSurface(parseInt(e.target.value))} className="w-full accent-[#FF6B00]" />
+                  </div>
+
+                  {/* Étages */}
+                  <div>
+                    <label className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-blue-200">
+                      <Building2 size={14} /> Nombre d'étages
+                    </label>
+                    <select value={etages} onChange={e => setEtages(parseInt(e.target.value))}
+                      className="h-[54px] w-full rounded-[18px] bg-white/10 border border-white/20 px-4 text-sm font-bold text-white outline-none focus:border-[#FF6B00]/50">
+                      <option value={1}>Rez-de-chaussée (RDC)</option>
+                      <option value={2}>R+1</option>
+                      <option value={3}>R+2</option>
+                      <option value={4}>R+3</option>
+                    </select>
+                  </div>
+
+                  {/* Hors Abidjan ? */}
+                  <div className="flex items-center gap-3">
+                    <input type="checkbox" id="horsAbidjan" checked={horsAbidjan} onChange={e => setHorsAbidjan(e.target.checked)}
+                      className="w-5 h-5 rounded accent-[#FF6B00]" />
+                    <label htmlFor="horsAbidjan" className="text-sm font-bold text-white">Le site est situé hors d'Abidjan</label>
+                  </div>
+
+                  {horsAbidjan && (
+                    <>
+                      <div>
+                        <label className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-blue-200">
+                          <Route size={14} /> Distance depuis Abidjan (km)
+                        </label>
+                        <input type="number" min={1} max={1000} value={distanceKm || ""} onChange={e => setDistanceKm(parseInt(e.target.value) || 0)}
+                          placeholder="Ex: 150"
+                          className="h-[54px] w-full rounded-[18px] bg-white/10 border border-white/20 px-4 text-sm font-bold text-white placeholder-blue-300 outline-none focus:border-[#FF6B00]/50" />
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <input type="checkbox" id="transportGere" checked={transportGere} onChange={e => setTransportGere(e.target.checked)}
+                          className="w-5 h-5 rounded accent-[#FF6B00]" />
+                        <label htmlFor="transportGere" className="text-sm font-bold text-white">
+                          <Truck size={14} className="inline mr-1" />
+                          Je gère moi-même le transport de mon site vers Abidjan
+                        </label>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </PremiumCard>
+
+              <PremiumButton onClick={() => setStep("devis")} className="w-full" icon={ArrowRight}>
+                Voir mon estimation
+              </PremiumButton>
+            </>
+          )}
+
+          {step === "devis" && (
+            <>
+              <div className="text-center mb-2">
+                <h1 className="text-2xl font-black text-white">📋 Votre estimation</h1>
+              </div>
+
+              <PremiumCard intensity="high" className="border-t-[6px] border-t-[#FF6B00] text-center">
+                <p className="text-sm text-blue-200 mb-1">Montant estimé indicatif</p>
+                <p className="text-5xl font-black text-white">{formatFcfa(montantEstime)}</p>
+                <div className="mt-4 rounded-[16px] bg-white/10 p-4 text-left text-sm text-blue-100 leading-relaxed">
+                  Sur la base des informations fournies, voici une estimation indicative de votre projet de rénovation.
+                  Ce montant sera affiné après notre visite technique.
+                </div>
+              </PremiumCard>
+
+              <div className="flex gap-3">
+                <button onClick={() => setStep("form")}
+                  className="flex-1 h-[56px] rounded-[18px] bg-white/10 border border-white/20 font-bold text-white transition hover:bg-white/20">
+                  Modifier
+                </button>
+                <PremiumButton onClick={handleSoumettre} disabled={submitting} className="flex-[2]" icon={CheckCircle2}>
+                  {submitting ? "Envoi..." : "Confirmer la demande"}
+                </PremiumButton>
+              </div>
+            </>
+          )}
+
+          {step === "confirm" && (
+            <div className="flex flex-col items-center justify-center text-center py-12">
+              <div className="grid size-24 place-items-center rounded-full bg-[#22C55E] text-white shadow-[0_20px_40px_rgba(34,197,94,0.3)] mb-6">
+                <CheckCircle2 size={48} />
+              </div>
+              <h1 className="text-2xl font-black text-white">Demande envoyée !</h1>
+              <p className="mt-3 max-w-[280px] text-sm text-blue-100">
+                Après étude, vous serez contacté pour confirmation au bureau et activation du suivi de votre rénovation.
+              </p>
+              <div className="mt-8 w-full space-y-3">
+                <PremiumButton onClick={() => router.push("/dashboard")} className="w-full">
+                  🏠 Retour au tableau de bord
+                </PremiumButton>
+                {requestId && (
+                  <PremiumButton onClick={() => router.push(`/renovation-en-cours/${requestId}`)} variant="secondary" className="w-full">
+                    👁️ Voir ma demande
+                  </PremiumButton>
+                )}
+              </div>
+            </div>
+          )}
+
+        </div>
+      </div>
     </BtpBackground>
   );
 }
