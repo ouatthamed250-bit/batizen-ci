@@ -7,7 +7,7 @@ import { useState, useCallback } from "react";
 import { Bell, UserRound, LogOut } from "lucide-react";
 import { imagePaths } from "@/lib/helpers";
 import { useAuthContext } from "@/contexts/AuthContext";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import AdminSecretModal from "@/components/auth/AdminSecretModal";
 
 export function PremiumHeader() {
