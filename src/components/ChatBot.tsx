@@ -68,14 +68,14 @@ export default function ChatBot() {
       {!isOpen && (
       <div
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-28 right-5 z-50 animate-float cursor-pointer w-20 h-20 rounded-full bg-gradient-to-br from-[#0D2B6B] to-[#0B5FFF] shadow-xl border border-white/30 flex items-center justify-center p-3"
+        className="fixed bottom-28 right-5 z-50 animate-float cursor-pointer w-28 h-28 rounded-full bg-[#0D2B6B]/20 backdrop-blur-xl shadow-xl border border-white/20 flex items-center justify-center p-3 hover:bg-[#0D2B6B]/30 transition-all"
         title="RHINOZEN - Assistant BÂTIZEN"
         aria-label="Ouvrir l'assistant"
       >
         <img 
           src="/images/rhinozen.svg" 
           alt="RHINOZEN - Assistant BÂTIZEN" 
-          className="w-full h-full object-contain drop-shadow-lg"
+          className="w-full h-full object-contain drop-shadow-xl scale-110"
         />
       </div>
       )}
