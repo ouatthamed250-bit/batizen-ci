@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Bell, Wallet, CalendarClock, Megaphone, Menu, X, Home, MessageCircle, Headphones, LogOut, UserRound, HardHat } from "lucide-react";
+import { Bell, Wallet, CalendarClock, Megaphone, Menu, X, Home, MessageCircle, Headphones, LogOut, UserRound, HardHat, FileText, ShieldCheck, Truck, Building2, ClipboardList } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { WeatherWidget } from "@/components/btp/WeatherWidget";
 import { getDatabase, ref as dbRef, onValue, update } from "firebase/database";
@@ -19,6 +19,20 @@ import { DashboardChantiersList } from "./sections/DashboardChantiersList";
 const ChatBot = dynamic(() => import("@/components/ChatBot"), { ssr: false });
 
 const ANNONCES_DEMO = ["🎉 Promo: -10% sur votre premier chantier ce mois-ci !","📢 Nouveau: Suivi de chantier par drone disponible.","🔥 Offre spéciale: Audit gratuit pour les rénovations.","⚠️ Rappel: Pensez à valider vos devis en attente."];
+
+const PLACEHOLDERS_PARTENAIRES = [
+  { nom: "Cimentier partenaire", role: "Fournisseur ciment & béton", icon: HardHat },
+  { nom: "Fournisseur fer & acier", role: "Matériaux de construction", icon: Building2 },
+  { nom: "Transporteur agréé", role: "Logistique & livraison chantier", icon: Truck },
+  { nom: "Bureau de contrôle", role: "Conformité & sécurité", icon: ClipboardList },
+];
+
+const ENGAGEMENTS_BTP = [
+  { icon: FileText, title: "Devis détaillé obligatoire", text: "Nous vous fournissons un devis chiffré ligne par ligne (matériaux, main d'œuvre, délais). Méfiez-vous des entreprises qui donnent un prix global sans détail." },
+  { icon: Wallet, title: "Paiement échelonné", text: "Jamais de demande de 100% d'avance. Nos chantiers se payent en 3 à 4 tranches selon l'avancement des travaux, avec un acompte de démarrage de 30%." },
+  { icon: ShieldCheck, title: "Assurance & garantie décennale", text: "Tous nos ouvriers sont assurés et nos constructions bénéficient d'une garantie décennale. Exigez toujours un contrat écrit avant de payer." },
+  { icon: Truck, title: "Matériaux traçables", text: "Nous utilisons des matériaux de qualité certifiée (CIMTOGO, fer à béton conforme normes ISO). Vous avez le droit de vérifier la livraison sur chantier." },
+];
 
 export default function DashboardClientPage() {
   const { user, logout } = useAuthContext();
@@ -75,12 +89,12 @@ export default function DashboardClientPage() {
     { icon: Headphones, label: "Support", href: "/support" },
   ];
 
+  const afficherPartenaires = partenaires.length > 0 ? partenaires : PLACEHOLDERS_PARTENAIRES;
+
   return (
     <>
-      <style>{`.wave-hand{display:inline-block;transform-origin:70% 70%;animation:wave 2.5s infinite}@keyframes wave{0%{transform:rotate(0deg)}10%{transform:rotate(14deg)}20%{transform:rotate(-8deg)}30%{transform:rotate(14deg)}40%{transform:rotate(-4deg)}50%{transform:rotate(10deg)}60%{transform:rotate(0deg)}100%{transform:rotate(0deg)}}.animate-marquee{animation:marquee 25s linear infinite}@keyframes marquee{0%{transform:translateX(0%)}100%{transform:translateX(-50%)}}@keyframes slideIn{from{transform:translateX(-100%)}to{transform:translateX(0)}}`}</style>
       <AdminSecretModal isOpen={showAdminModal} onClose={() => setShowAdminModal(false)} />
       
-      {/* Top bar */}
       <div className="fixed top-0 left-0 right-0 z-50 h-16 bg-[#0D2B6B] px-4 flex items-center justify-between shadow-md">
         <button type="button" onClick={() => setMenuOpen(true)} className="grid size-11 place-items-center rounded-full text-white transition hover:bg-white/15" aria-label="Menu"><Menu size={24} /></button>
         <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 cursor-pointer" onClick={handleLogoTap}>
@@ -94,7 +108,6 @@ export default function DashboardClientPage() {
         </div>
       </div>
 
-      {/* Drawer */}
       {menuOpen && (
         <>
           <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm" onClick={() => setMenuOpen(false)} />
@@ -119,7 +132,6 @@ export default function DashboardClientPage() {
       <div className="flex flex-col gap-5 pt-20 pb-4">
         <DashboardHeader userName={userName} />
 
-        {/* Marquee */}
         <div className="w-full overflow-hidden bg-[#FF7A00]/10 backdrop-blur-md rounded-[24px] border border-[#FF7A00]/30 py-3 shadow-lg">
           <div className="flex animate-marquee whitespace-nowrap gap-12 px-3">
             {[...ANNONCES_DEMO, ...ANNONCES_DEMO].map((a, i) => (<span key={i} className="text-sm font-bold text-[#FF7A00] drop-shadow-md flex items-center gap-2"><Megaphone size={14} />{a}</span>))}
@@ -129,7 +141,6 @@ export default function DashboardClientPage() {
         <AnnonceTicker />
         <div className="w-full rounded-[32px] p-6 md:p-8 bg-gradient-to-br from-[#1e3a8a] to-[#2563eb] text-white shadow-xl mb-2"><WeatherWidget title="Météo du jour" /></div>
 
-        {/* Quick actions */}
         <div className="grid grid-cols-3 gap-3 w-full">
           {[{ label: "Simulation", icon: "🧮", href: "/simulation", color: "bg-[#FF7A00]" }, { label: "Nouveau Chantier", icon: "🏗️", href: "/nouveau-chantier", color: "bg-[#1e3a8a]" }, { label: "Rénovation", icon: "🔨", href: "/renovation", color: "bg-green-600" }].map((btn, i) => (
             <Link key={i} href={btn.href} className={`flex flex-col items-center justify-center p-3 ${btn.color} text-white rounded-[22px] shadow-lg transition active:scale-95`}>
@@ -139,7 +150,6 @@ export default function DashboardClientPage() {
           ))}
         </div>
 
-        {/* Summary cards */}
         {!loading && (
           <section className="grid grid-cols-2 gap-3 w-full">
             <div className="w-full rounded-[28px] border border-white/30 bg-white/20 backdrop-blur-xl p-5 flex flex-col items-center text-center gap-3 shadow-xl">
@@ -165,10 +175,8 @@ export default function DashboardClientPage() {
           </section>
         )}
 
-        {/* Chantiers list */}
         <DashboardChantiersList chantiers={chantiersList} isAuthReady={isAuthReady} loading={loading} onModifier={handleModifierChantier} onSupprimer={handleSupprimerChantier} />
 
-        {/* Rénovations actives */}
         {renovationsActives.length > 0 && (
           <div className="w-full">
             <h3 className="font-black text-lg text-white mb-3">🔨 Rénovations en cours</h3>
@@ -183,18 +191,20 @@ export default function DashboardClientPage() {
           </div>
         )}
 
-        {/* Static sections */}
-        <div className="mt-6 p-5 w-full bg-white/20 rounded-[28px] border border-white/30 backdrop-blur-xl shadow-xl">
-          <h3 className="text-lg font-bold text-white mb-3">🏗️ À PROPOS DE BÂTIZEN.CI</h3>
-          <p className="text-sm text-white/90">BÂTIZEN.CI est votre partenaire BTP de confiance en Côte d'Ivoire.</p>
-        </div>
-
-        <div className="mt-5 p-5 w-full bg-green-500/20 rounded-[28px] border border-green-400/30 backdrop-blur-xl shadow-xl">
-          <h3 className="text-lg font-bold text-green-300 mb-3">🤝 NOS ENGAGEMENTS</h3>
-          <ul className="text-sm text-white/80 space-y-2">
-            <li>✅ Transparence totale des prix et des délais</li>
-            <li>✅ Experts qualifiés et certifiés</li>
-          </ul>
+        {/* Engagements BTP CI */}
+        <div className="w-full">
+          <h3 className="font-black text-xl text-white mb-4">🤝 Nos Engagements BTP CI</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {ENGAGEMENTS_BTP.map((e, i) => (
+              <div key={i} className="rounded-[24px] bg-white/20 border border-white/30 backdrop-blur-xl p-5 shadow-xl flex flex-col gap-3">
+                <div className="grid size-10 place-items-center rounded-[14px] bg-gradient-to-br from-[#FF7A00] to-[#FF8C00] shadow-lg">
+                  <e.icon size={20} className="text-white" />
+                </div>
+                <h4 className="font-bold text-white text-sm">{e.title}</h4>
+                <p className="text-sm text-white/80 leading-relaxed">{e.text}</p>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="mt-6"><ChatBot /></div>
@@ -202,13 +212,24 @@ export default function DashboardClientPage() {
         {/* Partenaires */}
         <div className="mt-8 w-full">
           <h3 className="font-black text-xl text-white mb-4">🤝 Nos Partenaires de Confiance</h3>
-          <div className="flex gap-3 overflow-x-auto pb-4 snap-x scrollbar-hide w-full">
-            {partenaires.map((p: any) => (
-              <div key={p.id} className="min-w-[280px] bg-white/20 rounded-[24px] border border-white/30 backdrop-blur-xl shadow-lg p-4 flex flex-col items-center text-center snap-center">
-                <h4 className="font-bold text-white text-lg mb-1">{p.nom}</h4>
-                <p className="text-sm text-white/80 line-clamp-3">{p.description || "Partenaire certifié"}</p>
-              </div>
-            ))}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {afficherPartenaires.map((p: any, i) => {
+              const IconPartenaire = p.icon || Building2;
+              return (
+                <div key={p.id || i} className="rounded-[20px] bg-white/20 border border-white/30 backdrop-blur-xl p-4 flex flex-col items-center text-center gap-3 shadow-xl">
+                  {p.photo_url ? (
+                    <img src={p.photo_url} alt={p.nom} className="w-14 h-14 rounded-full object-cover"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                  ) : (
+                    <div className="grid size-14 place-items-center rounded-full bg-gradient-to-br from-[#0B5FFF] to-[#0D2B6B] shadow-lg">
+                      <IconPartenaire size={24} className="text-white" />
+                    </div>
+                  )}
+                  <h4 className="font-bold text-white text-sm">{p.nom}</h4>
+                  <p className="text-xs text-white/70">{p.description || p.role || "Partenaire certifié"}</p>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
