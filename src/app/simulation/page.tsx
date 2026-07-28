@@ -468,6 +468,9 @@ export default function SimulationPage() {
             </motion.div>
           )}
         </AnimatePresence>
+        <p className="text-sm text-gray-400 mt-4 text-center">
+          Besoin d'un plan architectural rapide ? <a href="/plan-rapide" className="text-[#FF7A00] underline font-bold">Générer un plan en 30 secondes</a>
+        </p>
       </div>
   );
 }
