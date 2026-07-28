@@ -54,7 +54,7 @@
     },
 
     "rendezvous": {
-      ".read": "auth != null",
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('admins').child(auth.uid).exists() || (query.orderByChild == 'clientId' && query.equalTo == auth.uid))",
       ".indexOn": ["clientId", "chantierId"],
       "$rdvId": {
         ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('admins').child(auth.uid).exists() || data.child('clientId').val() == auth.uid)",
@@ -75,7 +75,7 @@
     },
 
     "rapports": {
-      ".read": "auth != null",
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('admins').child(auth.uid).exists() || (query.orderByChild == 'chantierId' && root.child('chantiers').child(query.equalTo).child('userId').val() == auth.uid) || (query.orderByChild == 'chantierId' && root.child('chantiers').child(query.equalTo).child('client_id').val() == auth.uid))",
       ".indexOn": ["chantierId"],
       "$rapportId": {
         ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('admins').child(auth.uid).exists() || root.child('chantiers').child(data.child('chantierId').val()).child('userId').val() == auth.uid || root.child('chantiers').child(data.child('chantierId').val()).child('client_id').val() == auth.uid)",
@@ -84,7 +84,7 @@
     },
 
     "paiements": {
-      ".read": "auth != null",
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('admins').child(auth.uid).exists() || (query.orderByChild == 'chantierId' && root.child('chantiers').child(query.equalTo).child('userId').val() == auth.uid) || (query.orderByChild == 'chantierId' && root.child('chantiers').child(query.equalTo).child('client_id').val() == auth.uid))",
       ".indexOn": ["chantierId"],
       "$paiementId": {
         ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('admins').child(auth.uid).exists() || root.child('chantiers').child(data.child('chantierId').val()).child('userId').val() == auth.uid || root.child('chantiers').child(data.child('chantierId').val()).child('client_id').val() == auth.uid)",
@@ -93,7 +93,7 @@
     },
 
     "messages": {
-      ".read": "auth != null",
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('admins').child(auth.uid).exists() || (query.orderByChild == 'chantierId' && root.child('chantiers').child(query.equalTo).child('userId').val() == auth.uid) || (query.orderByChild == 'chantierId' && root.child('chantiers').child(query.equalTo).child('client_id').val() == auth.uid))",
       "$messageId": {
         ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('admins').child(auth.uid).exists() || (data.exists() && data.child('chantierId').exists() && root.child('chantiers').child(data.child('chantierId').val()).child('userId').val() == auth.uid) || (data.exists() && data.child('chantierId').exists() && root.child('chantiers').child(data.child('chantierId').val()).child('client_id').val() == auth.uid))",
         ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('admins').child(auth.uid).exists() || (data.exists() && data.child('chantierId').exists() && root.child('chantiers').child(data.child('chantierId').val()).child('userId').val() == auth.uid) || (data.exists() && data.child('chantierId').exists() && root.child('chantiers').child(data.child('chantierId').val()).child('client_id').val() == auth.uid) || (!data.exists() && newData.child('chantierId').exists() && root.child('chantiers').child(newData.child('chantierId').val()).child('userId').val() == auth.uid) || (!data.exists() && newData.child('chantierId').exists() && root.child('chantiers').child(newData.child('chantierId').val()).child('client_id').val() == auth.uid))"
@@ -101,7 +101,7 @@
     },
 
     "documents": {
-      ".read": "auth != null",
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('admins').child(auth.uid).exists() || (query.orderByChild == 'userId' && query.equalTo == auth.uid) || (query.orderByChild == 'chantierId' && root.child('chantiers').child(query.equalTo).child('userId').val() == auth.uid) || (query.orderByChild == 'chantierId' && root.child('chantiers').child(query.equalTo).child('client_id').val() == auth.uid))",
       ".indexOn": ["chantierId", "userId"],
       "$documentId": {
         ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('admins').child(auth.uid).exists() || data.child('userId').val() == auth.uid || root.child('chantiers').child(data.child('chantierId').val()).child('userId').val() == auth.uid || root.child('chantiers').child(data.child('chantierId').val()).child('client_id').val() == auth.uid)",
@@ -130,7 +130,7 @@
       ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('admins').child(auth.uid).exists())"
     },
     "notes": {
-      ".read": "auth != null",
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('admins').child(auth.uid).exists() || (query.orderByChild == 'chantierId' && root.child('chantiers').child(query.equalTo).child('userId').val() == auth.uid) || (query.orderByChild == 'chantierId' && root.child('chantiers').child(query.equalTo).child('client_id').val() == auth.uid))",
       ".indexOn": ["chantierId"],
       "$noteId": {
         ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('admins').child(auth.uid).exists() || (data.exists() && data.child('chantierId').exists() && (root.child('chantiers').child(data.child('chantierId').val()).child('userId').val() == auth.uid || root.child('chantiers').child(data.child('chantierId').val()).child('client_id').val() == auth.uid)))",
@@ -143,7 +143,7 @@
     },
 
     "demandesRenovation": {
-      ".read": "auth != null",
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('admins').child(auth.uid).exists() || (query.orderByChild == 'userId' && query.equalTo == auth.uid))",
       ".indexOn": ["userId", "statut"],
       "$uid": {
         ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('admins').child(auth.uid).exists() || $uid == auth.uid)",
