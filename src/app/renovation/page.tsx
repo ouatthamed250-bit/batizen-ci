@@ -87,6 +87,7 @@ export default function RenovationPage() {
       await set(newRef, {
         id,
         userId: user.uid,
+        type: typeRenovation,
         lieu,
         typeBien,
         typeRenovation,
@@ -115,13 +116,15 @@ export default function RenovationPage() {
         createdAt: Date.now(),
       });
       setRequestId(id);
+      setTimeout(() => router.push(`/renovation-en-cours/${id}`), 1500);
     } catch (err) {
       console.error("Erreur soumission:", err);
+      alert("❌ Erreur lors de l'envoi : " + (err instanceof Error ? err.message : "PERMISSION_DENIED - Vérifiez que vous êtes connecté."));
       submittedRef.current = false;
     } finally {
       setSubmitting(false);
     }
-  }, [user, lieu, typeBien, typeRenovation, ville, quartier, surface, pieces, etages, anneeConstruction, horsAbidjan, distanceKm, transportGere, descriptionProblemes, urgence, accesLieu, materiaux, budgetEstime, delaiSouhaite, photos, nomComplet, telephone, email, preferenceRdv, prixVisite, submitting]);
+  }, [user, lieu, typeBien, typeRenovation, ville, quartier, surface, pieces, etages, anneeConstruction, horsAbidjan, distanceKm, transportGere, descriptionProblemes, urgence, accesLieu, materiaux, budgetEstime, delaiSouhaite, photos, nomComplet, telephone, email, preferenceRdv, prixVisite, submitting, router]);
 
   const canNext = (): boolean => {
     switch (etape) {
