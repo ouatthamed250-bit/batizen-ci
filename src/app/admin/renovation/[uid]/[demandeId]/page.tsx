@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Save, Trash2 } from "lucide-react";
 import { getFirebaseServices } from "@/lib/firebase";
-import { ref, onValue, update } from "firebase/database";
+import { ref, onValue, update, remove } from "firebase/database";
 import { formatFcfa } from "@/utils/currency";
 import { ETAPES_RENOVATION, getEtapeIndex } from "@/utils/renovation-helpers";
 
@@ -18,12 +18,20 @@ export default function AdminRenovationDetailPage() {
   const [demande, setDemande] = useState<any>(null);
   const [prix, setPrix] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editPrix, setEditPrix] = useState(0);
+  const [editStatut, setEditStatut] = useState("");
+  const [editNotes, setEditNotes] = useState("");
+
 
   useEffect(() => {
     const unsub = onValue(ref(database, `demandesRenovation/${uid}/${demandeId}`), (snapshot) => {
       const data = snapshot.val();
       setDemande(data);
       setPrix(data?.prixAdmin || 0);
+      setEditPrix(data?.prixAdmin || 0);
+      setEditStatut(data?.statut || "en_attente");
+      setEditNotes(data?.notes || "");
     });
     return () => unsub();
   }, [uid, demandeId, database]);
@@ -38,6 +46,25 @@ export default function AdminRenovationDetailPage() {
   const handleChangeStatut = async (nouveauStatut: string) => {
     if (!confirm(`Changer le statut en "${nouveauStatut}" ?`)) return;
     await update(ref(database, `demandesRenovation/${uid}/${demandeId}`), { statut: nouveauStatut });
+    setEditStatut(nouveauStatut);
+  };
+
+  const handleSaveEdit = async () => {
+    setSaving(true);
+    await update(ref(database, `demandesRenovation/${uid}/${demandeId}`), {
+      prixAdmin: editPrix,
+      statut: editStatut,
+      notes: editNotes,
+    });
+    setSaving(false);
+    setEditing(false);
+    alert("✅ Modifications enregistrées");
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm("Supprimer définitivement cette demande de rénovation ?")) return;
+    await remove(ref(database, `demandesRenovation/${uid}/${demandeId}`));
+    router.push("/admin/renovations");
   };
 
   if (!demande) return <div className="min-h-screen bg-[#111827] p-4 text-white"><p>Chargement...</p></div>;
@@ -93,18 +120,53 @@ export default function AdminRenovationDetailPage() {
           {demande.prixAdmin && <p className="mt-2 text-sm text-[#FF7A00]">Prix actuel : {formatFcfa(demande.prixAdmin)}</p>}
         </div>
 
-        {/* Changer le statut */}
+        {/* Modifier / Supprimer */}
         <div className="rounded-[16px] border border-white/10 bg-white/5 p-6">
-          <h3 className="font-bold mb-3">🔄 Changer le statut</h3>
-          <div className="flex flex-wrap gap-2">
-            {ETAPES_RENOVATION.map(e => (
-              <button key={e.id} onClick={() => handleChangeStatut(e.id)} disabled={demande.statut === e.id}
-                className={`px-4 py-2 rounded-lg text-sm font-bold transition ${demande.statut === e.id ? "bg-[#FF7A00] text-white" : "bg-white/10 text-white/70 hover:bg-white/20"}`}>
-                {e.icon} {e.label}
-              </button>
-            ))}
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-bold">✏️ Actions</h3>
+            <button onClick={() => setEditing(!editing)} className="px-4 py-2 bg-[#0B5FFF] text-white rounded-lg text-sm font-bold">
+              {editing ? "❌ Annuler" : "✏️ Modifier"}
+            </button>
           </div>
+          {editing ? (
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-white/70 mb-1 block">Prix visite (FCFA)</label>
+                <input type="number" value={editPrix} onChange={e => setEditPrix(Number(e.target.value))} className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm" />
+              </div>
+              <div>
+                <label className="text-xs text-white/70 mb-1 block">Statut</label>
+                <select value={editStatut} onChange={e => setEditStatut(e.target.value)} className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm">
+                  <option value="en_attente">⏳ En attente</option>
+                  <option value="en_cours">✅ En cours</option>
+                  <option value="termine">🎉 Terminé</option>
+                  <option value="annule">❌ Annulé</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-white/70 mb-1 block">Notes internes</label>
+                <textarea value={editNotes} onChange={e => setEditNotes(e.target.value)} rows={3} className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm" />
+              </div>
+              <button onClick={handleSaveEdit} disabled={saving} className="w-full py-3 bg-green-500 text-white rounded-lg font-bold disabled:opacity-50">
+                <Save size={16} className="inline mr-1" /> {saving ? "..." : "Enregistrer"}
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {ETAPES_RENOVATION.map(e => (
+                <button key={e.id} onClick={() => handleChangeStatut(e.id)} disabled={demande.statut === e.id}
+                  className={`px-4 py-2 rounded-lg text-sm font-bold transition ${demande.statut === e.id ? "bg-[#FF7A00] text-white" : "bg-white/10 text-white/70 hover:bg-white/20"}`}>
+                  {e.icon} {e.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
+
+        {/* Supprimer */}
+        <button onClick={handleDelete} className="w-full rounded-[12px] bg-red-600 px-4 py-3 text-sm font-black text-white shadow-lg hover:bg-red-700 transition">
+          🗑️ Supprimer définitivement cette demande
+        </button>
 
         {/* Contrat */}
         {demande.prixAdmin && demande.prixAdmin > 0 && (
