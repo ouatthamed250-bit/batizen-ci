@@ -29,6 +29,7 @@ import { ChantierLightbox } from "./sections/ChantierLightbox";
 import { ChantierPaiementsSection } from "./sections/ChantierPaiementsSection";
 import { ChantierMessagerie } from "./sections/ChantierMessagerie";
 import EquipeHierarchiqueClient from "@/components/chantier/EquipeHierarchiqueClient";
+import { EstimateurChantier } from "@/components/chantier/EstimateurChantier";
 
 const TABS = [
   { key: "resume", label: "Résumé", icon: Info }, { key: "avancement", label: "Avancement", icon: ListChecks },
@@ -142,6 +143,9 @@ export default function ChantierDetailClient() {
           <AnimatePresence mode="wait">
             <motion.div key={activeTab} variants={tabContentVariants} initial="hidden" animate="show" exit="exit">
               {activeTab === "resume" && <ChantierResume chantier={chantier} nom={nom} pct={pct} totalPaye={totalPaye} />}
+              {activeTab === "resume" && chantier && (
+                <EstimateurChantier surface={chantier.surface || chantier.surface_terrain || chantier.surface_construite} type={chantier.type} />
+              )}
               {activeTab === "avancement" && <ChantierAvancement etapes={etapes} />}
               {activeTab === "planning" && <ChantierPlanning planning={planning} isTabLocked={isTabLocked("planning")} />}
               {activeTab === "rendezvous" && <ChantierRendezVous id={id!} isTabLocked={isTabLocked("rendezvous")} />}
