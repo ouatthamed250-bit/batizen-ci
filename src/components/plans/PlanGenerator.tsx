@@ -425,17 +425,33 @@ function Maison3DScene({ config, walls }: { config: PlanConfig; walls: PlanWall[
 
 type ToolMode = "wall" | "door" | "window" | "room";
 
-export default function PlanGenerator() {
-  const [config, setConfig] = useState<PlanConfig>({
-    longueur: 12,
-    largeur: 8,
-    chambres: 2,
-    sdb: 1,
+interface PlanGeneratorProps {
+  longueur?: number;
+  largeur?: number;
+  chambres?: number;
+  sdb?: number;
+  etages?: number;
+  style?: string;
+}
+
+export default function PlanGenerator({
+  longueur: propLongueur,
+  largeur: propLargeur,
+  chambres: propChambres,
+  sdb: propSdb,
+  etages: propEtages,
+  style: propStyle,
+}: PlanGeneratorProps = {}) {
+  const [config, setConfig] = useState<PlanConfig>(() => ({
+    longueur: propLongueur ?? 12,
+    largeur: propLargeur ?? 8,
+    chambres: propChambres ?? 2,
+    sdb: propSdb ?? 1,
     cuisineOuverte: true,
-    etages: 1,
+    etages: propEtages ?? 1,
     orientation: "N",
-    style: "moderne",
-  });
+    style: (propStyle as PlanConfig["style"]) ?? "moderne",
+  }));
 
   const [vue, setVue] = useState<"form" | "2d" | "3d">("form");
   const [planGenere, setPlanGenere] = useState(false);

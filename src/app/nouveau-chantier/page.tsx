@@ -533,31 +533,45 @@ function Step8({ formData, selectedPlan, onPlanSelect, showRdvForm, rdvData, set
              </div>
              
              <div className="bg-white/10 rounded-xl p-4 border border-white/20">
-               {viewMode === "2d" ? (
-                 <PlanGenerator2D
-                   surface={formData.surfaceConstruite || prefilledData?.terrain?.surface || 150}
-                   largeur={prefilledData?.terrain?.largeur || 15}
-                   longueur={prefilledData?.terrain?.longueur || 20}
-                   chambres={formData.chambres || prefilledData?.preferences?.chambres || 3}
-                   sallesDeBain={formData.sallesDeBain || prefilledData?.preferences?.sallesDeBain || 2}
-                   etages={formData.niveaux || prefilledData?.preferences?.etages || 1}
-                   garage={prefilledData?.preferences?.garage || false}
-                   piscine={prefilledData?.preferences?.piscine || false}
-                   style={prefilledData?.preferences?.style || "Moderne"}
-                 />
-               ) : (
-                 <PlanGenerator3D
-                   surface={formData.surfaceConstruite || prefilledData?.terrain?.surface || 150}
-                   largeur={prefilledData?.terrain?.largeur || 15}
-                   longueur={prefilledData?.terrain?.longueur || 20}
-                   chambres={formData.chambres || prefilledData?.preferences?.chambres || 3}
-                   sallesDeBain={formData.sallesDeBain || prefilledData?.preferences?.sallesDeBain || 2}
-                   etages={formData.niveaux || prefilledData?.preferences?.etages || 1}
-                   garage={prefilledData?.preferences?.garage || false}
-                   piscine={prefilledData?.preferences?.piscine || false}
-                   style={prefilledData?.preferences?.style || "Moderne"}
-                 />
-               )}
+                {(() => {
+                  const pref = prefilledData as any;
+                  const surface = formData.surfaceConstruite || pref?.terrain?.surface || 150;
+                  const estLargeur = Math.round(Math.sqrt(surface * 0.6));
+                  const estLongueur = Math.round(surface / estLargeur);
+                  const largeurVal = pref?.terrain?.largeur || estLargeur;
+                  const longueurVal = pref?.terrain?.longueur || estLongueur;
+                  const chambresVal = formData.chambres || pref?.preferences?.chambres || 3;
+                  const sdbVal = formData.sallesDeBain || pref?.preferences?.sallesDeBain || 2;
+                  const etagesVal = formData.niveaux || pref?.preferences?.etages || 1;
+                  const garageVal = pref?.preferences?.garage || false;
+                  const piscineVal = pref?.preferences?.piscine || false;
+                  const styleVal = pref?.preferences?.style || "Moderne";
+                  return viewMode === "2d" ? (
+                    <PlanGenerator2D
+                      surface={surface}
+                      largeur={largeurVal}
+                      longueur={longueurVal}
+                      chambres={chambresVal}
+                      sallesDeBain={sdbVal}
+                      etages={etagesVal}
+                      garage={garageVal}
+                      piscine={piscineVal}
+                      style={styleVal}
+                    />
+                  ) : (
+                    <PlanGenerator3D
+                      surface={surface}
+                      largeur={largeurVal}
+                      longueur={longueurVal}
+                      chambres={chambresVal}
+                      sallesDeBain={sdbVal}
+                      etages={etagesVal}
+                      garage={garageVal}
+                      piscine={piscineVal}
+                      style={styleVal}
+                    />
+                  );
+                })()}
              </div>
            </div>
 
