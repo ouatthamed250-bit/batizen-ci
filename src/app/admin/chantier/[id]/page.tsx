@@ -30,7 +30,7 @@ import AlbumChantierAdmin from "@/components/admin/AlbumChantierAdmin";
 import PaiementsSection from "./PaiementsSection";
 import DocumentsSection from "./DocumentsSection";
 import { getFirebaseServices } from "@/lib/firebase";
-import { ref, onValue, push, update, Unsubscribe } from 'firebase/database';
+import { ref, onValue, push, update, remove, Unsubscribe } from 'firebase/database';
 import { getContratTemplate } from "@/lib/documents-templates";
 
 type Localisation = {
@@ -313,6 +313,29 @@ export default function ChantierDetailPage() {
        alert("Erreur lors de la création");
      }
    };
+
+  const handleDelete = async () => {
+    if (!window.confirm("Êtes-vous sûr de vouloir supprimer ce chantier ? Cette action est irréversible.")) return;
+    setActionLoading(true);
+    try {
+      const { getDatabase, ref: dbRef, remove } = await import("firebase/database");
+      const { getFirebaseServices } = await import("@/lib/firebase");
+      const { database } = getFirebaseServices();
+      await remove(dbRef(database, `rapports/${chantierId}`));
+      await remove(dbRef(database, `messages/${chantierId}`));
+      await remove(dbRef(database, `documents/${chantierId}`));
+      await remove(dbRef(database, `notes/${chantierId}`));
+      await remove(dbRef(database, `paiements/${chantierId}`));
+      await remove(dbRef(database, `rendezvous/${chantierId}`));
+      await remove(dbRef(database, `chantiers/${chantierId}`));
+      router.push("/admin/chantiers");
+    } catch (err) {
+      console.error("Erreur suppression:", err);
+      alert("Erreur lors de la suppression");
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   // Sauvegarde de l'édition rapide
   const handleSaveEdit = async () => {
@@ -940,6 +963,13 @@ export default function ChantierDetailPage() {
 
         {/* SECTION 14: Documents du chantier */}
         <DocumentsSection chantierId={chantierId} />
+
+        {/* BOUTON SUPPRIMER */}
+        {chantier.statut !== "en_cours" && chantier.statut !== "termine" && (
+          <button onClick={handleDelete} disabled={actionLoading} className="w-full rounded-[12px] bg-red-600 px-4 py-3 text-sm font-black text-white shadow-lg hover:bg-red-700 transition disabled:opacity-50">
+            🗑️ Supprimer définitivement ce chantier
+          </button>
+        )}
 
         {/* BOUTON GÉNÉRER CONTRAT */}
         <div className="mt-4 flex justify-end">
