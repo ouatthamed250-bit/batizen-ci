@@ -38,6 +38,9 @@
   ],
   "exclude": [
     "node_modules",
-    "functions"
+    "functions",
+    "src/components/_deprecated",
+    "src/data/_deprecated",
+    "src/db"
   ]
 }
