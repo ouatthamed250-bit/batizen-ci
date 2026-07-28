@@ -26,36 +26,21 @@ const COLORS = {
   window: "#87CEEB",
 };
 
-// Loader professionnel
 function Loader2D() {
   return (
     <div className="w-full h-[400px] flex flex-col items-center justify-center bg-gradient-to-br from-white/90 to-white/70 backdrop-blur-lg rounded-2xl border border-white/30 shadow-lg">
-      {/* Spinner animé */}
       <div className="relative mb-6">
         <div className="w-20 h-20 border-4 border-[#FF6B00]/20 border-t-[#FF6B00] rounded-full animate-spin"></div>
         <div className="absolute inset-0 flex items-center justify-center">
           <span className="text-3xl">📐</span>
         </div>
       </div>
-      
-      {/* Message principal */}
       <h3 className="text-lg font-bold text-[var(--navy)] mb-2 text-center px-4">
         Votre plan gratuit est en préparation
       </h3>
-      
-      {/* Message secondaire */}
       <p className="text-sm text-gray-600 text-center px-6 mb-4">
-        Merci de patienter pendant que nos experts génèrent votre plan personnalisé...
+        Génération du plan...
       </p>
-      
-      {/* Message de confiance */}
-      <div className="bg-[#FF6B00]/10 border border-[#FF6B00]/30 rounded-xl px-4 py-2">
-        <p className="text-xs text-[#FF6B00] font-semibold text-center">
-          🏗️ Faites confiance à BATIZEN.CI - Votre partenaire BTP
-        </p>
-      </div>
-      
-      {/* Barre de progression simulée */}
       <div className="w-48 h-2 bg-gray-200 rounded-full mt-6 overflow-hidden">
         <div className="h-full bg-gradient-to-r from-[#FF6B00] to-[#FF8C00] rounded-full animate-pulse" style={{width: '60%'}}></div>
       </div>
@@ -75,16 +60,16 @@ export default function PlanGenerator2D({
   style = "Moderne",
 }: Plan2DProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [viewMode, setViewMode] = useState<"2d" | "3d">("2d");
   const [isLoading, setIsLoading] = useState(true);
 
-  // Loader de 10 secondes minimum
+  // Loader réel : temps du calcul synchrone (min 500ms pour la lisibilité)
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 10000);
-    
-    return () => clearTimeout(timer);
+    const startTime = Date.now();
+    requestAnimationFrame(() => {
+      const elapsed = Date.now() - startTime;
+      const delay = Math.max(500 - elapsed, 0);
+      setTimeout(() => setIsLoading(false), delay);
+    });
   }, []);
 
   useEffect(() => {
@@ -96,10 +81,8 @@ export default function PlanGenerator2D({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Effacer le canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Dimensions
     const padding = 40;
     const scale = Math.min(
       (canvas.width - padding * 2) / largeur,
@@ -112,7 +95,6 @@ export default function PlanGenerator2D({
     const offsetX = (canvas.width - houseWidth) / 2;
     const offsetY = (canvas.height - houseLength) / 2;
 
-    // Dessiner le contour principal
     ctx.fillStyle = "white";
     ctx.fillRect(offsetX, offsetY, houseWidth, houseLength);
     ctx.strokeStyle = "var(--navy)";
@@ -125,7 +107,6 @@ export default function PlanGenerator2D({
     const piecesRestantes = surface - salonSurface - cuisineSurface;
     const chambreSurface = Math.floor(piecesRestantes / chambres);
 
-    // Dimensions des pièces
     const salonWidth = houseWidth * 0.4;
     const salonLength = houseLength * 0.5;
     const cuisineWidth = houseWidth * 0.35;
@@ -133,8 +114,7 @@ export default function PlanGenerator2D({
     const chambreWidth = (houseWidth * 0.85) / Math.max(1, chambres);
     const chambreLength = houseLength * 0.4;
 
-    // Positionnement des pièces
-    // Salon - en bas à gauche
+    // Salon
     ctx.fillStyle = COLORS.salon;
     ctx.fillRect(offsetX + 10, offsetY + houseLength - salonLength - 10, salonWidth, salonLength);
     ctx.strokeStyle = "var(--navy)";
@@ -146,7 +126,7 @@ export default function PlanGenerator2D({
     ctx.fillText("Salon", offsetX + salonWidth / 2 + 10, offsetY + houseLength - salonLength / 2 - 10);
     ctx.fillText(`${salonSurface}m²`, offsetX + salonWidth / 2 + 10, offsetY + houseLength - salonLength / 2 + 5);
 
-    // Cuisine - en bas à droite
+    // Cuisine
     ctx.fillStyle = COLORS.cuisine;
     ctx.fillRect(offsetX + houseWidth - cuisineWidth - 10, offsetY + houseLength - cuisineLength - 10, cuisineWidth, cuisineLength);
     ctx.strokeRect(offsetX + houseWidth - cuisineWidth - 10, offsetY + houseLength - cuisineLength - 10, cuisineWidth, cuisineLength);
@@ -154,7 +134,7 @@ export default function PlanGenerator2D({
     ctx.fillText("Cuisine", offsetX + houseWidth - cuisineWidth / 2 - 10, offsetY + houseLength - cuisineLength / 2 - 10);
     ctx.fillText(`${cuisineSurface}m²`, offsetX + houseWidth - cuisineWidth / 2 - 10, offsetY + houseLength - cuisineLength / 2 + 5);
 
-    // Chambres - en haut
+    // Chambres
     for (let i = 0; i < chambres; i++) {
       const chambreX = offsetX + 10 + i * chambreWidth;
       ctx.fillStyle = COLORS.chambre;
@@ -178,7 +158,7 @@ export default function PlanGenerator2D({
       ctx.fillText(`SdB ${i + 1}`, sdbX + i * (sdbWidth + 15) + sdbWidth / 2, sdbY + sdbLength / 2 + 5);
     }
 
-    // Fenêtres (lignes doubles sur les murs extérieurs)
+    // Fenêtres
     ctx.strokeStyle = COLORS.window;
     ctx.lineWidth = 1;
     for (let y = 20; y < houseLength; y += 30) {
@@ -194,30 +174,6 @@ export default function PlanGenerator2D({
       ctx.stroke();
     }
 
-    // Portes (arcs de cercle)
-    ctx.strokeStyle = "var(--navy)";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(offsetX + salonWidth + 20, offsetY + houseLength - salonLength / 2, 10, Math.PI, 0, false);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(offsetX + salonWidth + 10, offsetY + houseLength - salonLength / 2);
-    ctx.lineTo(offsetX + salonWidth + 10, offsetY + houseLength - salonLength / 2 - 20);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(offsetX + salonWidth + 30, offsetY + houseLength - salonLength / 2);
-    ctx.lineTo(offsetX + salonWidth + 30, offsetY + houseLength - salonLength / 2 - 20);
-    ctx.stroke();
-
-    // Étiquettes étages si plusieurs étages
-    if (etages > 1) {
-      ctx.fillStyle = "var(--btp-gris-clair)";
-      ctx.font = "10px sans-serif";
-      for (let e = 1; e < etages; e++) {
-        ctx.fillText(`Étage ${e + 1}`, offsetX + 10, offsetY + 10 + e * 80);
-      }
-    }
-
     // Garage
     if (garage) {
       const garageWidth = houseWidth * 0.4;
@@ -229,7 +185,7 @@ export default function PlanGenerator2D({
       ctx.fillText("Garage", offsetX - garageWidth / 2 - 10, offsetY + houseLength / 2 + 5);
     }
 
-    // Piscine (rectangle avec coins arrondis)
+    // Piscine
     if (piscine) {
       const piscineWidth = 12 * scale;
       const piscineHeight = 6 * scale;
@@ -283,26 +239,6 @@ export default function PlanGenerator2D({
           />
 
           <div className="flex gap-2 justify-center">
-            <button
-              className={`px-4 py-2 rounded-xl font-semibold text-sm transition ${
-                viewMode === "2d"
-                  ? "bg-gradient-to-b from-[#FF8C00] to-[#CC5500] text-white"
-                  : "bg-white/20 text-white"
-              }`}
-              onClick={() => setViewMode("2d")}
-            >
-              📐 Vue 2D
-            </button>
-            <button
-              className={`px-4 py-2 rounded-xl font-semibold text-sm transition ${
-                viewMode === "3d"
-                  ? "bg-gradient-to-b from-[#FF8C00] to-[#CC5500] text-white"
-                  : "bg-white/20 text-white"
-              }`}
-              onClick={() => setViewMode("3d")}
-            >
-              🏠 Vue 3D
-            </button>
             <button
               onClick={downloadPNG}
               className="flex items-center gap-2 px-4 py-2 rounded-xl border border-white/20 bg-white/10 font-semibold text-white transition hover:bg-white/20"

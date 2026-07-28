@@ -478,6 +478,13 @@ export default function PlanGenerator() {
   }, [historyIndex]);
 
   const genererPlan = useCallback(() => {
+    // Validation : surface minimale cohérente
+    const surfaceEstimee = config.longueur * config.largeur;
+    const surfaceMinParPiece = config.chambres * 9 + config.sdb * 5 + 25; // 9m²/chambre, 5m²/sdb, 25m² salon/cuisine
+    if (surfaceEstimee < surfaceMinParPiece) {
+      alert(`⚠️ Surface insuffisante : ${surfaceEstimee}m² pour ${config.chambres} chambre(s) et ${config.sdb} salle(s) de bain. Minimum recommandé : ${Math.ceil(surfaceMinParPiece)}m². Augmentez les dimensions du terrain.`);
+      return;
+    }
     const pieces = genererPieces(config);
     const newWalls = convertPiecesToWalls(pieces);
     setWalls(newWalls);
@@ -758,18 +765,6 @@ export default function PlanGenerator() {
     ) : null
   );
 
-  // Sauvegarde du plan dans Firestore
-  const handleSauvegarder = useCallback(async () => {
-    // Pour l'instant, on simule - à brancher avec useAuth
-    const housePlan: HousePlan = {
-      planId: `plan-${Date.now()}`,
-      unit: "cm",
-      walls,
-      openings,
-      rooms,
-    };
-    alert(`Plan sauvegardé : ${housePlan.planId}`);
-  }, [walls, openings, rooms]);
 
   return (
     <motion.div
@@ -829,14 +824,6 @@ export default function PlanGenerator() {
             className="rounded-[12px] bg-[#F7F9FC] px-4 py-2 text-sm font-bold text-[#6B7280] transition-all hover:bg-[#FF6B00] hover:text-white disabled:opacity-50"
           >
             ↶ Annuler
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={sauvegarderPlan}
-            className="rounded-[12px] bg-[#FFF7ED] px-4 py-2 text-sm font-bold text-[#FF6B00] transition-all hover:bg-[#FF6B00] hover:text-white"
-          >
-            💾 Sauvegarder
           </motion.button>
           <motion.button
             whileHover={{ scale: 1.05 }}
