@@ -304,6 +304,7 @@ function AdminContent() {
   const [searchTerm, setSearchTerm] = useState("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [renovationsEnAttente, setRenovationsEnAttente] = useState(0);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const normalizeText = (text: string) => {
@@ -357,11 +358,25 @@ useEffect(() => {
     const paiementsRef = ref(db, 'paiements');
     const messagesRef = ref(db, 'messages');
     const rdvRef = ref(db, 'rendezvous');
+    const renovationRef = ref(db, 'demandesRenovation');
     
     const unsubRapports = onValue(rapportsRef, (snapshot) => {
       console.log("✅ [SEC-ADMIN] Requête rapports compatible règles strictes (admin-only)");
       const data = snapshot.val();
       setAllRapports(data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : []);
+    });
+
+    const unsubRenovations = onValue(renovationRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        let count = 0;
+        Object.entries(data).forEach(([uid, demandes]: [string, any]) => {
+          Object.entries(demandes).forEach(([id, d]: [string, any]) => {
+            if (d.statut === "en_attente") count++;
+          });
+        });
+        setRenovationsEnAttente(count);
+      } else setRenovationsEnAttente(0);
     });
 
     const unsubPaiements = onValue(paiementsRef, (snapshot) => {

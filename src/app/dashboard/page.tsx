@@ -177,19 +177,44 @@ export default function DashboardClientPage() {
 
         <DashboardChantiersList chantiers={chantiersList} isAuthReady={isAuthReady} loading={loading} onModifier={handleModifierChantier} onSupprimer={handleSupprimerChantier} />
 
-        {renovationsActives.length > 0 && (
-          <div className="w-full">
-            <h3 className="font-black text-lg text-white mb-3">🔨 Rénovations en cours</h3>
+        {/* Mes rénovations */}
+        <div className="w-full">
+          <h2 className="text-xl font-bold text-white mt-2 mb-4">Mes rénovations</h2>
+          {renovations && renovations.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {renovationsActives.map(r => (
-                <Link key={r.id} href={`/renovation-en-cours/${r.id}`} className="rounded-[28px] border border-white/30 bg-white/20 backdrop-blur-xl p-5 shadow-xl">
-                  <p className="font-black text-white text-lg">{r.lieu}</p>
-                  <p className="text-sm text-white/80">{r.surface}m² · {formatFcfa(r.montantEstime)}</p>
-                </Link>
-              ))}
+              {renovations.map(r => {
+                const badgeColor = r.statut === "termine" || r.statut === "terminé" ? "bg-green-500/30 text-green-200" :
+                  r.statut === "en_cours" || r.statut === "active" ? "bg-blue-500/30 text-blue-200" :
+                  r.statut === "devis_envoye" ? "bg-purple-500/30 text-purple-200" :
+                  r.statut === "visite_payante" ? "bg-amber-500/30 text-amber-200" :
+                  "bg-gray-500/30 text-gray-200";
+                return (
+                  <Link key={r.id} href={`/renovation-en-cours/${r.id}`} className="rounded-[28px] border border-white/30 bg-white/20 backdrop-blur-xl p-5 shadow-xl hover:bg-white/30 transition flex flex-col gap-2">
+                    <p className="font-black text-white text-lg">{r.typeRenovation || r.lieu || "Rénovation"}</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-bold text-white">{formatFcfa(r.prixVisite || r.montantEstime || 0)}</span>
+                      <span className={`px-3 py-0.5 rounded-full text-[10px] font-bold ${badgeColor}`}>
+                        {r.statut === "en_attente" ? "En attente" :
+                         r.statut === "visite_payante" ? "Visite programmée" :
+                         r.statut === "devis_envoye" ? "Devis envoyé" :
+                         r.statut === "en_cours" || r.statut === "active" ? "En cours" :
+                         r.statut === "termine" || r.statut === "terminé" ? "Terminé" : r.statut}
+                      </span>
+                    </div>
+                    {r.createdAt && (
+                      <p className="text-[11px] text-white/60">Créé le {formatDateCourte(new Date(r.createdAt).toISOString())}</p>
+                    )}
+                  </Link>
+                );
+              })}
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="text-center py-8 text-gray-400 bg-white/10 backdrop-blur-xl rounded-[28px] border border-white/20">
+              <p className="text-gray-300 font-bold">Aucune rénovation en cours</p>
+              <Link href="/renovation" className="text-blue-400 underline text-sm mt-2 inline-block">Demander une rénovation</Link>
+            </div>
+          )}
+        </div>
 
         {/* Engagements BTP CI */}
         <div className="w-full">

@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Search, HardHat, Clock, CheckCircle2 } from 'lucide-react';
+import { Search, HardHat, Clock, CheckCircle2, Hammer } from 'lucide-react';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useChantiers } from '@/hooks/useChantiers';
 import type { Chantier } from '@/types/chantier';
@@ -58,6 +58,7 @@ export default function AdminDashboardPage() {
   const [chantiersEnAttente, setChantiersEnAttente] = useState<Chantier[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [assigningId, setAssigningId] = useState<string | null>(null);
+  const [renovationsEnAttente, setRenovationsEnAttente] = useState(0);
 
   const loadDashboard = useCallback(async () => {
     if (authLoading) return;
@@ -73,14 +74,24 @@ export default function AdminDashboardPage() {
     const paiementsRef = ref(db, 'paiements');
 
     try {
-      const [usersSnap, chantiersSnap, rapportsSnap, paiementsSnap] = await Promise.all([
+    const [usersSnap, chantiersSnap, rapportsSnap, paiementsSnap, renovationsSnap] = await Promise.all([
         get(usersRef),
         get(chantiersRef),
         get(rapportsRef),
         get(paiementsRef),
+        get(ref(db, 'demandesRenovation')),
       ]);
 
       const usersData = usersSnap.val() || {};
+      const allRenovations = renovationsSnap.val() || {};
+      let enAttenteCount = 0;
+      Object.values(allRenovations).forEach((userRenovations: any) => {
+        if (!userRenovations) return;
+        Object.values(userRenovations).forEach((d: any) => {
+          if (d?.statut === 'en_attente') enAttenteCount++;
+        });
+      });
+      setRenovationsEnAttente(enAttenteCount);
       const allChantiers = chantiersSnap.val() || {};
       const allRapports = Object.entries(rapportsSnap.val() || {}).map(([id, r]: [string, any]) => ({ id, ...r }));
       const allPaiements = Object.entries(paiementsSnap.val() || {}).map(([id, p]: [string, any]) => ({ id, ...p }));
@@ -179,6 +190,45 @@ export default function AdminDashboardPage() {
         <p className="text-gray-600">
           Bienvenue, {user?.displayName || user?.email}. Voici vos chantiers assignés.
         </p>
+      </div>
+
+      {/* Cartes statistiques */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div
+          onClick={() => router.push('/admin/renovations')}
+          className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 flex flex-col items-center text-center gap-2 hover:shadow-md hover:border-[#FF7A00]/30 cursor-pointer transition"
+        >
+          <div className="grid size-12 place-items-center rounded-xl bg-purple-100 text-purple-700">
+            <Hammer size={24} />
+          </div>
+          <p className="text-xs font-bold text-gray-500 uppercase">Rénovations en attente</p>
+          <p className="text-2xl font-black text-[var(--navy)]">{renovationsEnAttente}</p>
+          <p className="text-[10px] text-gray-400">Voir les demandes</p>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 flex flex-col items-center text-center gap-2">
+          <div className="grid size-12 place-items-center rounded-xl bg-blue-100 text-blue-700">
+            <HardHat size={24} />
+          </div>
+          <p className="text-xs font-bold text-gray-500 uppercase">Chantiers en cours</p>
+          <p className="text-2xl font-black text-[var(--navy)]">{clients.reduce((acc, c) => acc + (c.chantiers?.length || 0), 0)}</p>
+          <p className="text-[10px] text-gray-400">Assignés</p>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 flex flex-col items-center text-center gap-2">
+          <div className="grid size-12 place-items-center rounded-xl bg-green-100 text-green-700">
+            <CheckCircle2 size={24} />
+          </div>
+          <p className="text-xs font-bold text-gray-500 uppercase">Clients</p>
+          <p className="text-2xl font-black text-[var(--navy)]">{clients.length}</p>
+          <p className="text-[10px] text-gray-400">Actifs</p>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 flex flex-col items-center text-center gap-2">
+          <div className="grid size-12 place-items-center rounded-xl bg-amber-100 text-amber-700">
+            <Clock size={24} />
+          </div>
+          <p className="text-xs font-bold text-gray-500 uppercase">En attente</p>
+          <p className="text-2xl font-black text-[var(--navy)]">{chantiersEnAttente.length}</p>
+          <p className="text-[10px] text-gray-400">Chantiers</p>
+        </div>
       </div>
 
       {/* SECTION : Chantiers en attente d'assignation */}
