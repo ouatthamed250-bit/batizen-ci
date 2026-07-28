@@ -55,6 +55,47 @@ type ContratData = {
   agentNom: string;
 };
 
+export interface ContratRenovationParams {
+  lieu: string;
+  surface: number;
+  etages: number;
+  montant: number;
+  clientNom: string;
+  type: string;
+  delai: string;
+  conditions: string;
+}
+
+export function getContratRenovationTemplate(params: ContratRenovationParams): string {
+  return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><style>
+  body { font-family: Arial, sans-serif; margin: 40px; color: #1a202c; }
+  .header { color: #0D2B6B; border-bottom: 3px solid #FF7A00; padding-bottom: 10px; margin-bottom: 20px; }
+  .header h1 { margin: 0; font-size: 22px; }
+  .header p { margin: 5px 0 0; color: #718096; font-size: 12px; }
+  .section-title { background: #0D2B6B; color: white; padding: 8px 12px; border-radius: 6px; font-size: 14px; margin: 16px 0 10px; }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+  th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
+  th { background: #f7fafc; font-weight: bold; }
+  .total { font-size: 18px; font-weight: bold; color: #FF7A00; text-align: right; margin-top: 15px; }
+  .footer { margin-top: 30px; padding-top: 15px; border-top: 1px solid #e2e8f0; font-size: 11px; color: #718096; text-align: center; }
+  .conditions { background: #fffbeb; border: 1px solid #fbd38d; border-radius: 8px; padding: 12px; margin: 15px 0; font-size: 12px; }
+</style></head><body>
+  <div class="header"><h1>BÂTIZEN CI — Contrat de Rénovation</h1><p>N° BZ-RENOV-${Date.now().toString(36).toUpperCase()} · Date : ${new Date().toLocaleDateString('fr-FR')}</p></div>
+  <div class="section-title">📋 Informations du projet</div>
+  <table><tr><th>Client</th><td>${params.clientNom}</td></tr><tr><th>Lieu</th><td>${params.lieu}</td></tr>
+  <tr><th>Surface</th><td>${params.surface} m²</td></tr><tr><th>Étages</th><td>${params.etages > 1 ? `R+${params.etages - 1}` : "RDC"}</td></tr>
+  <tr><th>Type</th><td>${params.type}</td></tr><tr><th>Délai estimé</th><td>${params.delai}</td></tr></table>
+  <div class="section-title">💰 Montant</div>
+  <p class="total">${new Intl.NumberFormat("fr-FR").format(params.montant)} FCFA</p>
+  <div class="conditions"><strong>📌 Conditions :</strong> ${params.conditions}<br><br><strong>🔒 Protection :</strong> Tous les paiements sont traçables et validés par BATIZEN CI. Votre argent est protégé jusqu'à validation complète des travaux.</div>
+  <div class="section-title">✅ Acceptation</div>
+  <p style="font-size:13px;">Je soussigné, <strong>${params.clientNom}</strong>, accepte le devis de rénovation ci-dessus et autorise le début des travaux.</p>
+  <div style="margin-top:20px;display:flex;justify-content:space-between;font-size:12px;"><div>Fait à Abidjan, le ${new Date().toLocaleDateString('fr-FR')}</div><div>Signature du client : _________________________</div></div>
+  <div class="footer">BÂTIZEN CI — Votre partenaire BTP de confiance en Côte d'Ivoire · +225 0749883981 · contact@batizen.ci</div>
+</body></html>`;
+}
+
 /**
  * Template de reçu de paiement BÂTIZEN.CI
  */

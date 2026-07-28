@@ -7,6 +7,7 @@ import { ref, onValue } from "firebase/database";
 import { getFirebaseServices } from "@/lib/firebase";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { formatFcfa } from "@/utils/currency";
+import { ETAPES_RENOVATION, getEtapeIndex } from "@/utils/renovation-helpers";
 import BtpBackground from "@/components/btp/BtpBackground";
 
 interface RenovationDemande {
@@ -20,6 +21,8 @@ interface RenovationDemande {
   montantEstime: number;
   statut: string;
   createdAt: number;
+  prixAdmin?: number;
+  prixVisite?: number;
 }
 
 export default function RenovationEnCoursPage() {
@@ -43,88 +46,109 @@ export default function RenovationEnCoursPage() {
     return () => unsub();
   }, [user, params.id]);
 
+  const etapeIdx = getEtapeIndex(demande?.statut || "en_attente");
   const estActive = demande?.statut === "en_cours" || demande?.statut === "active";
   const statutLabel = demande?.statut === "en_attente" ? "En attente"
     : demande?.statut === "en_cours" || demande?.statut === "active" ? "En cours"
     : demande?.statut === "termine" ? "Terminé" : "Annulé";
 
+  const handleGenererContrat = () => {
+    const { getContratRenovationTemplate } = require("@/lib/documents-templates");
+    const template = getContratRenovationTemplate({
+      lieu: demande?.lieu || "",
+      surface: demande?.surface || 0,
+      etages: demande?.etages || 1,
+      montant: demande?.prixAdmin || demande?.montantEstime || 0,
+      clientNom: "Client",
+      type: "Rénovation",
+      delai: demande?.statut === "termine" ? "Terminé" : "En cours",
+      conditions: "Paiement à la livraison"
+    });
+    const w = window.open('', '_blank');
+    if (w) { w.document.write(template); w.document.close(); setTimeout(() => w.print(), 500); }
+  };
+
   const pageContent = (
     <div className="min-h-screen pt-8 pb-24 px-2">
       <div className="mx-auto max-w-[430px] space-y-6">
-        
+
         {/* Bouton retour */}
         <button onClick={() => router.push("/dashboard")} className="flex items-center gap-2 text-sm font-bold text-blue-200">
           <ArrowLeft size={16} /> Retour au tableau de bord
         </button>
 
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#FF6B00]" />
+          <div className="animate-pulse space-y-3">
+            <div className="h-24 rounded-[24px] bg-white/10" />
+            <div className="h-12 rounded-[24px] bg-white/10" />
+            <div className="h-64 rounded-[24px] bg-white/10" />
           </div>
         ) : !demande ? (
-          <div className="text-center py-12">
-            <p className="text-white font-bold">Demande introuvable.</p>
+          <div className="rounded-[28px] border border-white/30 bg-white/20 p-6 backdrop-blur-xl text-center">
+            <p className="text-white/50">Demande non trouvée.</p>
           </div>
         ) : (
           <>
-            {/* En-tête */}
-            <div className="rounded-[25px] border border-white/20 bg-white/10 p-6 shadow-lg backdrop-blur-xl border-t-[6px] border-t-[#FF6B00]">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-xs font-black uppercase tracking-[0.18em] text-[#FF6B00]">RÉNOVATION</p>
-                  <h1 className="mt-1 text-2xl font-black text-white">{demande.lieu || "Sans lieu"}</h1>
-                  <p className="text-sm text-blue-100">{demande.surface} m² · {demande.etages > 1 ? `R+${demande.etages - 1}` : "RDC"}</p>
-                </div>
-                <span className={`shrink-0 rounded-full px-3 py-1 text-[10px] font-bold ${
-                  estActive ? "bg-green-500/20 text-green-400" : "bg-[#FF6B00]/20 text-[#FF6B00]"
-                }`}>
-                  {statutLabel}
-                </span>
+            {/* Timeline des 5 étapes */}
+            <div className="rounded-[28px] border border-white/30 bg-white/20 backdrop-blur-xl p-5 shadow-xl">
+              <h3 className="font-black text-white mb-4 text-sm">📋 Avancement</h3>
+              <div className="flex items-center gap-2 overflow-x-auto pb-2">
+                {ETAPES_RENOVATION.map((etape, i) => {
+                  const isActive = i <= Math.max(0, etapeIdx);
+                  const isCurrent = i === Math.max(0, etapeIdx);
+                  return (
+                    <div key={etape.id} className={`flex flex-col items-center gap-1 min-w-[72px]`}>
+                      <div className={`size-8 rounded-full flex items-center justify-center text-sm ${
+                        isCurrent ? "bg-[#FF7A00] text-white shadow-lg" :
+                        isActive ? "bg-[#FF7A00]/30 text-white" :
+                        "bg-white/10 text-white/40"
+                      }`}>
+                        <span>{etape.icon}</span>
+                      </div>
+                      <span className={`text-[9px] font-bold text-center leading-tight ${
+                        isActive ? "text-white" : "text-white/40"
+                      }`}>{etape.label}</span>
+                      {i < ETAPES_RENOVATION.length - 1 && (
+                        <div className={`h-0.5 w-4 ${isActive ? "bg-[#FF7A00]/50" : "bg-white/10"}`} />
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-
-              {estActive ? (
-                <>
-                  {/* Barre progression */}
-                  <div className="mt-5">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-bold text-blue-200">Avancement</span>
-                      <span className="text-xs font-black text-[#FF6B00]">0%</span>
-                    </div>
-                    <div className="h-3 w-full overflow-hidden rounded-full bg-white/20">
-                      <div className="h-full rounded-full bg-gradient-to-r from-[#FF6B00] to-[#FF8C00]" style={{ width: "0%" }} />
-                    </div>
-                  </div>
-
-                  <div className="mt-4 grid grid-cols-2 gap-3 border-t border-white/20 pt-4">
-                    <div className="text-center">
-                      <p className="text-[10px] font-black uppercase text-blue-200">Montant estimé</p>
-                      <p className="mt-1 font-black text-white">{formatFcfa(demande.montantEstime)}</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-[10px] font-black uppercase text-blue-200">Transport</p>
-                      <p className="mt-1 font-black text-white">{demande.transportGere ? "Géré par client" : "À prévoir"}</p>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <div className="mt-5 rounded-[16px] bg-white/10 border border-white/20 p-4 text-center">
-                  <Clock size={24} className="mx-auto text-[#FF6B00] mb-2" />
-                  <p className="text-sm font-bold text-white">Votre demande est en cours d'étude par notre équipe.</p>
-                  <p className="text-xs text-blue-100 mt-1">Vous serez notifié dès qu'un expert sera assigné.</p>
-                </div>
-              )}
             </div>
 
-            {/* Infos supplémentaires si active */}
-            {estActive && (
-              <div className="rounded-[25px] border border-white/20 bg-white/10 p-6 shadow-lg backdrop-blur-xl">
-                <h3 className="font-black text-white mb-3 flex items-center gap-2">
-                  <HardHat size={16} /> Suivi rénovation
-                </h3>
-                <p className="text-sm text-blue-100">
-                  Le suivi détaillé des travaux sera disponible ici une fois que l'équipe aura démarré le chantier.
-                </p>
+            {/* Infos demande */}
+            <div className="rounded-[28px] border border-white/30 bg-white/20 backdrop-blur-xl p-6 shadow-xl space-y-3">
+              <h2 className="font-black text-xl text-white">{demande.lieu}</h2>
+              <div className="grid grid-cols-2 gap-3 text-sm text-white/80">
+                <span>📐 Surface : {demande.surface} m²</span>
+                <span>🏗️ {demande.etages > 1 ? `R+${demande.etages - 1}` : "RDC"}</span>
+                <span>📏 Distance : {demande.distanceKm} km</span>
+                <span>🚚 Transport : {demande.transportGere ? "Inclus" : "Non inclus"}</span>
               </div>
+              <p className="text-sm text-white/60">Statut : <span className="font-bold text-[#FF7A00]">{statutLabel}</span></p>
+              {demande.montantEstime > 0 && <p className="text-lg font-black text-[#FF7A00]">💰 {formatFcfa(demande.montantEstime)}</p>}
+            </div>
+
+            {/* Prix visite technique */}
+            {demande.prixVisite && demande.prixVisite > 0 && (
+              <div className="rounded-[28px] border border-[#FF7A00]/30 bg-[#FF7A00]/10 backdrop-blur-xl p-5 shadow-xl">
+                <p className="text-sm text-white/80">💳 Visite technique : <span className="font-bold text-white">{formatFcfa(demande.prixVisite)}</span></p>
+              </div>
+            )}
+
+            {/* Prix admin (devis) */}
+            {demande.prixAdmin && demande.prixAdmin > 0 && (
+              <div className="rounded-[28px] border border-green-500/30 bg-green-500/10 backdrop-blur-xl p-5 shadow-xl">
+                <p className="text-sm text-white/80">📄 Devis estimé : <span className="font-bold text-white">{formatFcfa(demande.prixAdmin)}</span></p>
+              </div>
+            )}
+
+            {/* Bouton contrat */}
+            {demande.prixAdmin && demande.prixAdmin > 0 && (
+              <button onClick={handleGenererContrat} className="w-full h-[56px] rounded-[18px] bg-gradient-to-r from-[#FF7A00] to-[#FF8C00] font-black text-white shadow-lg">
+                📄 Télécharger le contrat
+              </button>
             )}
           </>
         )}
@@ -133,10 +157,7 @@ export default function RenovationEnCoursPage() {
   );
 
   return (
-    <BtpBackground
-      imageUrl="https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=2070&auto=format&fit=crop"
-      overlay="medium"
-    >
+    <BtpBackground imageUrl="https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3" overlay="medium">
       {pageContent}
     </BtpBackground>
   );
