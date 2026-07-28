@@ -26,8 +26,9 @@
     },
 
     "chantiers": {
-      ".read": "auth != null",
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('admins').child(auth.uid).exists() || (query.orderByChild == 'userId' && query.equalTo == auth.uid) || (query.orderByChild == 'client_id' && query.equalTo == auth.uid))",
       ".indexOn": ["userId", "client_id", "adminId", "statut"],
+      ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('admins').child(auth.uid).exists())",
       "$chantierId": {
         ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('admins').child(auth.uid).exists() || data.child('userId').val() == auth.uid || data.child('client_id').val() == auth.uid)",
         ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('admins').child(auth.uid).exists() || (!data.exists() && newData.child('userId').val() == auth.uid) || (data.exists() && (data.child('userId').val() == auth.uid || data.child('client_id').val() == auth.uid)))",
