@@ -155,7 +155,7 @@
           },
           "statut": {
             ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('admins').child(auth.uid).exists())",
-            ".validate": "newData.val() == 'en_attente' || newData.val() == 'en_cours' || newData.val() == 'termine' || newData.val() == 'annule'"
+            ".validate": "(root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('admins').child(auth.uid).exists()) || (data.exists() && newData.val() == data.val())"
           }
         }
       }
