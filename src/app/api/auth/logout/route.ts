@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { adminAuth } from '@/lib/firebase-admin';
+import { getFirebaseAdminAuth } from '@/lib/firebase-admin';
 
 export const runtime = 'nodejs';
 
@@ -26,8 +26,8 @@ export async function POST(request: NextRequest) {
         // checkRevoked: false ici volontairement — on veut décoder le cookie
         // même s'il est déjà expiré/révoqué, juste pour récupérer l'uid et
         // s'assurer que la révocation est bien (re)déclenchée.
-        const decoded = await adminAuth.verifySessionCookie(sessionCookie, false);
-        await adminAuth.revokeRefreshTokens(decoded.uid);
+        const decoded = await getFirebaseAdminAuth().verifySessionCookie(sessionCookie, false);
+        await getFirebaseAdminAuth().revokeRefreshTokens(decoded.uid);
       } catch {
         // Cookie déjà invalide/expiré/malformé : rien à révoquer, on continue
         // simplement pour nettoyer le cookie côté navigateur.

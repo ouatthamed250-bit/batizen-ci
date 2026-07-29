@@ -14,6 +14,7 @@ import {
   type Unsubscribe,
 } from "firebase/database";
 import { getFirebaseServices, hasFirebaseConfig } from "./firebase";
+import { logger } from "@/utils/logger";
 
 /**
  * Helpers pour la lecture depuis Firebase Realtime Database.
@@ -26,7 +27,8 @@ function dbRef(path: string): DatabaseReference | null {
   try {
     const { database } = getFirebaseServices();
     return ref(database, path);
-  } catch {
+  } catch (err) {
+    logger.error("❌ RTDB dbRef:", err);
     return null;
   }
 }
@@ -38,7 +40,8 @@ export async function rtdbGet<T = unknown>(path: string): Promise<T | null> {
   try {
     const snap = await get(r);
     return snap.exists() ? (snap.val() as T) : null;
-  } catch {
+  } catch (err) {
+    logger.error("❌ RTDB rtdbGet:", err);
     return null;
   }
 }
@@ -77,7 +80,8 @@ export async function rtdbGetListByChild<T = Record<string, unknown>>(
       ...(value as object),
       id,
     })) as T[];
-  } catch {
+  } catch (err) {
+    logger.error("❌ RTDB rtdbGetListByChild:", err);
     return [];
   }
 }
@@ -94,8 +98,8 @@ export async function rtdbSet<T = unknown>(path: string, value: T): Promise<void
   if (!r) return;
   try {
     await set(r, value);
-  } catch {
-    // silencieux
+  } catch (err) {
+    logger.error("❌ RTDB rtdbSet:", err);
   }
 }
 
@@ -113,8 +117,8 @@ export async function rtdbUpdate(
   if (!r) return;
   try {
     await update(r, values);
-  } catch {
-    // silencieux
+  } catch (err) {
+    logger.error("❌ RTDB rtdbUpdate:", err);
   }
 }
 
@@ -135,7 +139,8 @@ export function rtdbSubscribe<T = unknown>(
       callback(data);
     });
     return unsubscribe;
-  } catch {
+  } catch (err) {
+    logger.error("❌ RTDB rtdbSubscribe:", err);
     return () => {};
   }
 }
@@ -190,7 +195,8 @@ export function rtdbSubscribeListByChild<T = Record<string, unknown>>(
       callback(normalized);
     });
     return unsubscribe;
-  } catch {
+  } catch (err) {
+    logger.error("❌ RTDB rtdbSubscribeListByChild:", err);
     return () => {};
   }
 }

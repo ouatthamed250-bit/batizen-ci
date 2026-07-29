@@ -20,9 +20,9 @@ function SkeletonChantier() {
 }
 
 function ChantierCard({ chantier, onModifier, onSupprimer }: { chantier: Chantier; onModifier?: (id: string) => void; onSupprimer?: (id: string, statut: string) => void }) {
-  const photo = chantier.photo || chantier.image_url;
+  const photo = (chantier as any).photo || (chantier as any).image_url;
   const nom = chantier.nom_projet || chantier.nom || "Chantier";
-  const pct = Number(chantier.progression ?? chantier.progress ?? 0);
+  const pct = Number((chantier as any).progression ?? (chantier as any).progress ?? 0);
   return (
     <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="w-full overflow-hidden rounded-[28px] border border-white/30 bg-white/20 backdrop-blur-xl shadow-xl">
       <div className="relative h-32 w-full bg-white/10">

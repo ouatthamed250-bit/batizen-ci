@@ -1,25 +1,18 @@
 import { NextResponse } from "next/server";
-import { database } from "@/lib/firebase";
-import { timingSafeEqualString } from "@/lib/security";
+import { getFirebaseAdminDb } from "@/lib/firebase-admin";
+import { verifyCronSecret } from "@/lib/cron-auth";
 
 export const runtime = "nodejs";
 
 export async function GET(request: Request) {
-  const secret = request.headers.get("x-cron-secret");
-  const expectedSecret = process.env.CRON_SECRET;
-  // 🔒 Comparaison à temps constant pour éviter une timing attack permettant
-  // de deviner CRON_SECRET caractère par caractère via le temps de réponse.
-  if (!secret || !expectedSecret || !timingSafeEqualString(secret, expectedSecret)) {
+  if (!verifyCronSecret(request)) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
   try {
-    if (!database) {
-      return NextResponse.json({ error: "Base de données indisponible" }, { status: 500 });
-    }
+    const adminDb = getFirebaseAdminDb();
 
-    const { ref: dbRef, get, remove } = await import("firebase/database");
-    const snapshot = await get(dbRef(database, "chantiers"));
+    const snapshot = await adminDb.ref("chantiers").get();
     if (!snapshot.exists()) {
       return NextResponse.json({ ok: true, deleted: [] });
     }
@@ -34,7 +27,7 @@ export async function GET(request: Request) {
       for (const [key] of filtered) {
         try {
           // Suppression DB uniquement (Cloudinary gère son propre nettoyage/purge)
-          await remove(dbRef(database, `chantiers/${chantierId}/medias/${key}`));
+          await adminDb.ref(`chantiers/${chantierId}/medias/${key}`).remove();
           deleted.push(`${chantierId}/${key}`);
         } catch {
           // ignore

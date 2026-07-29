@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { adminAuth } from '@/lib/firebase-admin';
+import { getFirebaseAdminAuth } from '@/lib/firebase-admin';
+import { registerSchema } from '@/lib/validation';
 
 export const runtime = 'nodejs';
 
@@ -26,45 +27,20 @@ export const runtime = 'nodejs';
  */
 export async function POST(request: NextRequest) {
   try {
-    let body: { email?: string; password?: string; displayName?: string };
-    try {
-      body = await request.json();
-    } catch {
+    const body = await request.json();
+    const parseResult = registerSchema.safeParse(body);
+    if (!parseResult.success) {
       return NextResponse.json(
-        { error: 'Requête invalide. Le corps doit être du JSON.' },
+        { error: "Données invalides", details: parseResult.error.flatten().fieldErrors },
         { status: 400 }
       );
     }
+    const { email, password, displayName } = parseResult.data;
 
-    const { email, password, displayName } = body;
-
-    // 1. Validation des champs requis
-    if (!email || typeof email !== 'string') {
-      return NextResponse.json(
-        { error: 'Le champ "email" est requis et doit être une chaîne de caractères.' },
-        { status: 400 }
-      );
-    }
-
-    if (!password || typeof password !== 'string') {
-      return NextResponse.json(
-        { error: 'Le champ "password" est requis et doit être une chaîne de caractères.' },
-        { status: 400 }
-      );
-    }
-
-    // 2. Validation de la longueur du mot de passe (Firebase require 6+ caractères)
-    if (password.length < 6) {
-      return NextResponse.json(
-        { error: 'Le mot de passe doit contenir au moins 6 caractères.' },
-        { status: 400 }
-      );
-    }
-
-    // 3. Création de l'utilisateur — toujours avec le rôle 'client'
+    // 1. Création de l'utilisateur — toujours avec le rôle 'client'
     let userRecord;
     try {
-      userRecord = await adminAuth.createUser({
+      userRecord = await getFirebaseAdminAuth().createUser({
         email,
         password,
         displayName: displayName || email.split('@')[0],

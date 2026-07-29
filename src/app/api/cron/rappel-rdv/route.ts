@@ -1,26 +1,19 @@
 import { NextResponse } from "next/server";
-import { database } from "@/lib/firebase";
-import { ref, get, set } from "firebase/database";
-import { timingSafeEqualString } from "@/lib/security";
+import { getFirebaseAdminDb } from "@/lib/firebase-admin";
+import { verifyCronSecret } from "@/lib/cron-auth";
 
 export const runtime = "nodejs";
 
 export async function GET(request: Request) {
-  const secret = request.headers.get("x-cron-secret");
-  const expectedSecret = process.env.CRON_SECRET;
-  // 🔒 Comparaison à temps constant pour éviter une timing attack permettant
-  // de deviner CRON_SECRET caractère par caractère via le temps de réponse.
-  if (!secret || !expectedSecret || !timingSafeEqualString(secret, expectedSecret)) {
+  if (!verifyCronSecret(request)) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
   try {
-    if (!database) {
-      return NextResponse.json({ error: "Base de données indisponible" }, { status: 500 });
-    }
+    const adminDb = getFirebaseAdminDb();
 
     // Récupérer tous les RDV confirmés
-    const rdvsSnapshot = await get(ref(database, "rendezvous"));
+    const rdvsSnapshot = await adminDb.ref("rendezvous").get();
     if (!rdvsSnapshot.exists()) {
       return NextResponse.json({ ok: true, notificationsSent: 0, message: "Aucun RDV trouvé" });
     }
@@ -47,7 +40,7 @@ export async function GET(request: Request) {
         
         if (userId) {
           // Notifier le client
-          await set(ref(database, `notifications/${userId}/notif_rdv_${rdvId}`), {
+          await adminDb.ref(`notifications/${userId}/notif_rdv_${rdvId}`).set({
             type: "rappel_rdv",
             chantierId: rdvData.chantierId,
             message: `🔔 Rappel : Vous avez un rendez-vous de prévu demain à ${rdvData.heure || ''}. Lieu : ${rdvData.lieu || 'À confirmer'}`,
@@ -58,7 +51,7 @@ export async function GET(request: Request) {
         }
 
         // Notifier l'admin
-        await set(ref(database, `notifications/admin/notif_rdv_${rdvId}`), {
+        await adminDb.ref(`notifications/admin/notif_rdv_${rdvId}`).set({
           type: "rappel_rdv",
           chantierId: rdvData.chantierId,
           userId: rdvData.clientId,

@@ -22,7 +22,6 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { ref, get } from 'firebase/database';
 import { getFirebaseServices } from '@/lib/firebase';
 import { logger } from '@/utils/logger';
-import { ADMIN_UIDS } from '@/constants/admin-whitelist';
 
 export type AuthUser = {
   uid: string;
@@ -62,34 +61,41 @@ export function useAuth() {
 
       logger.debug('👤 useAuth: Utilisateur connecté —', firebaseUser.email);
 
-      // ── 1. Vérification du custom claim (source serveur infalsifiable) ──
-      let isAdminClaim = false;
-      try {
-        const tokenResult = await firebaseUser.getIdTokenResult();
-        isAdminClaim = tokenResult.claims?.role === 'admin';
-      } catch (err) {
-        logger.error('❌ useAuth: Erreur lecture custom claims:', err);
-      }
+      // ── Vérifications admin en parallèle ──
+      const [tokenResult, dbSnapshot, idToken] = await Promise.allSettled([
+        firebaseUser.getIdTokenResult(),
+        get(ref(db, `users/${firebaseUser.uid}/role`)),
+        firebaseUser.getIdToken(),
+      ]);
 
-      // ── 2. Vérification fallback Realtime Database ──
-      // Utile pour les admins créés via /make-me-admin qui n'ont pas
-      // encore de custom claim mais ont le rôle "admin" dans la DB.
-      let isAdminDb = false;
-      try {
-        const userRef = ref(db, `users/${firebaseUser.uid}/role`);
-        const snapshot = await get(userRef);
-        if (snapshot.exists() && snapshot.val() === 'admin') {
-          isAdminDb = true;
+      const isAdminClaim = tokenResult.status === 'fulfilled' 
+        ? tokenResult.value.claims?.role === 'admin' 
+        : false;
+
+      const isAdminDb = dbSnapshot.status === 'fulfilled' 
+        ? dbSnapshot.value.exists() && dbSnapshot.value.val() === 'admin' 
+        : false;
+
+      // ── Vérification serveur (whitelist) ──
+      let isAdminServer = false;
+      if (idToken.status === 'fulfilled') {
+        try {
+          const res = await fetch('/api/auth/check-admin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idToken: idToken.value }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            isAdminServer = data.isAdmin;
+          }
+        } catch (err) {
+          logger.error('❌ useAuth: Erreur vérification serveur admin:', err);
         }
-      } catch (err) {
-        logger.error('❌ useAuth: Erreur lecture DB role:', err);
       }
-
-      // ── 3. Whitelist d'UID (filet de sécurité supplémentaire) ──
-      const isAdminWhitelist = ADMIN_UIDS.includes(firebaseUser.uid);
 
       // ── Admin si l'une des trois sources est vraie ──
-      const finalIsAdmin = isAdminClaim || isAdminDb || isAdminWhitelist;
+      const finalIsAdmin = isAdminClaim || isAdminDb || isAdminServer;
 
       const authUser: AuthUser = {
         uid: firebaseUser.uid,
@@ -101,7 +107,7 @@ export function useAuth() {
 
       logger.debug(
         `✅ useAuth: ${authUser.email} — rôle: ${authUser.role}` +
-        ` (custom claim: ${isAdminClaim}, DB: ${isAdminDb})`
+        ` (custom claim: ${isAdminClaim}, DB: ${isAdminDb}, serveur: ${isAdminServer})`
       );
 
       setUser(authUser);

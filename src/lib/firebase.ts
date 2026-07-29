@@ -55,12 +55,20 @@ try {
   firebaseGoogleProvider.setCustomParameters({ prompt: "select_account" });
 } catch (error) {
   console.warn("⚠️ Erreur d'initialisation Firebase:", error);
-  // Create minimal stubs to prevent crashes
+  // Services null — les composants doivent vérifier avec hasFirebaseConfig()
   firebaseApp = null as unknown as FirebaseApp;
   firebaseAuth = null as unknown as Auth;
   firebaseDatabase = null as unknown as Database;
   firebaseStorage = null as unknown as FirebaseStorage;
   firebaseGoogleProvider = null as unknown as GoogleAuthProvider;
+}
+
+/**
+ * Vérifie si Firebase est correctement initialisé.
+ * À utiliser avant tout appel aux services Firebase.
+ */
+export function isFirebaseReady(): boolean {
+  return firebaseApp !== null && firebaseAuth !== null && firebaseDatabase !== null;
 }
 
 export const app = firebaseApp;

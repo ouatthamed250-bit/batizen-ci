@@ -8,8 +8,9 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { adminAuth } from "@/lib/firebase-admin";
+import { getFirebaseAdminAuth } from "@/lib/firebase-admin";
 import { timingSafeEqualString } from "@/lib/security";
+import { makeAdminSchema } from "@/lib/validation";
 
 // ---- Anti-brute-force : Map<IP, { count, firstAttempt }> ----
 const ipAttempts = new Map<string, { count: number; firstAttempt: number }>();
@@ -61,9 +62,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 3. Parsing du body
+    // 3. Parsing du body avec validation Zod
     const body = await request.json();
-    const { idToken, code } = body;
+    const parseResult = makeAdminSchema.safeParse(body);
+    if (!parseResult.success) {
+      return NextResponse.json(
+        { error: "Données invalides", details: parseResult.error.flatten().fieldErrors },
+        { status: 400 }
+      );
+    }
+    const { idToken, secret: code } = parseResult.data;
 
     if (!idToken || !code) {
       return NextResponse.json(
@@ -92,7 +100,7 @@ export async function POST(request: NextRequest) {
     // 5. Vérification de l'idToken Firebase
     let decodedToken;
     try {
-      decodedToken = await adminAuth.verifyIdToken(idToken);
+      decodedToken = await getFirebaseAdminAuth().verifyIdToken(idToken);
     } catch {
       return NextResponse.json(
         { error: "Token invalide ou expiré." },
@@ -104,7 +112,7 @@ export async function POST(request: NextRequest) {
 
     // 6. Définition du custom claim { role: 'admin' }
     try {
-      await adminAuth.setCustomUserClaims(uid, { role: "admin" });
+      await getFirebaseAdminAuth().setCustomUserClaims(uid, { role: "admin" });
     } catch (err) {
       console.error("❌ Erreur setCustomUserClaims:", err);
       return NextResponse.json(

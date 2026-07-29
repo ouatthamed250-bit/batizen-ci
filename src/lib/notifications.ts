@@ -1,5 +1,6 @@
 import { ref, set, update, get, onValue, type Unsubscribe } from "firebase/database";
 import { getFirebaseServices } from "./firebase";
+import { logger } from "@/utils/logger";
 
 export type NotificationType = 
   | "nouveau_chantier"
@@ -43,7 +44,7 @@ export async function sendNotification(userId: string, notification: {
     });
     return notifId;
   } catch (error) {
-    console.error("Erreur envoi notification:", error);
+    logger.error("❌ Notification sendNotification:", error);
     return null;
   }
 }
@@ -67,7 +68,7 @@ export async function sendAdminNotification(notification: {
     });
     return notifId;
   } catch (error) {
-    console.error("Erreur envoi notification admin:", error);
+    logger.error("❌ Notification sendAdminNotification:", error);
     return null;
   }
 }
@@ -80,7 +81,7 @@ export async function markAsRead(userId: string, notifId: string) {
       lu: true,
     });
   } catch (error) {
-    console.error("Erreur marquage notification:", error);
+    logger.error("❌ Notification markAsRead:", error);
   }
 }
 
@@ -100,7 +101,7 @@ export async function markAllAsRead(userId: string) {
     
     await update(ref(database), updates);
   } catch (error) {
-    console.error("Erreur marquage toutes notifications:", error);
+    logger.error("❌ Notification markAllAsRead:", error);
   }
 }
 
@@ -118,7 +119,7 @@ export async function getUserNotifications(userId: string): Promise<Notification
       }))
       .sort((a, b) => b.dateCreation - a.dateCreation);
   } catch (error) {
-    console.error("Erreur récupération notifications:", error);
+    logger.error("❌ Notification getUserNotifications:", error);
     return [];
   }
 }
@@ -138,7 +139,7 @@ export async function getUnreadNotifications(userId: string): Promise<Notificati
       }))
       .sort((a, b) => b.dateCreation - a.dateCreation);
   } catch (error) {
-    console.error("Erreur récupération notifications non lues:", error);
+    logger.error("❌ Notification getUnreadNotifications:", error);
     return [];
   }
 }

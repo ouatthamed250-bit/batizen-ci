@@ -7,8 +7,14 @@ export type Localisation = {
   ville?: string;
 };
 
-// ✅ Ajout de "en_attente_rdv", "terminé" et "string" pour éviter les blocages futurs avec Firebase
-export type StatutChantier = "en_attente" | "en_attente_rdv" | "en_cours" | "termine" | "terminé" | "suspendu" | string;
+export type StatutChantier = "en_attente" | "en_attente_rdv" | "en_cours" | "termine" | "terminé" | "suspendu";
+
+/**
+ * Type pour les propriétés supplémentaires issues de Firebase
+ * qui ne sont pas explicitement définies dans le type Chantier.
+ * À utiliser via la propriété `extra`.
+ */
+export type ChantierExtra = Record<string, unknown>;
 
 export type Chantier = {
   id: string;
@@ -33,5 +39,6 @@ export type Chantier = {
   createdAt?: number;
   dateCreation?: number;
   dateMiseAJour?: number;
-  [key: string]: any; // Permet d'accepter d'autres champs dynamiques de Firebase sans faire planter le build
+  /** Propriétés supplémentaires issues de Firebase */
+  extra?: ChantierExtra;
 };

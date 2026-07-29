@@ -12,7 +12,6 @@ import {
 import { getFirebaseServices, hasFirebaseConfig } from "@/lib/firebase";
 import { ref, set, get } from "firebase/database";
 import { logger } from "@/utils/logger";
-import { ADMIN_UIDS } from "@/constants/admin-whitelist";
 
 export type AuthUser = {
   uid: string;
@@ -117,8 +116,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.error("Erreur lecture des custom claims:", err);
         }
 
-        // ── 3. Whitelist d'UID (filet de sécurité supplémentaire) ──
-        const isAdminWhitelist = ADMIN_UIDS.includes(firebaseUser.uid);
+        // ── 3. Vérification serveur (whitelist côté serveur uniquement) ──
+        let isAdminServer = false;
+        try {
+          const idToken = await firebaseUser.getIdToken();
+          const res = await fetch('/api/auth/check-admin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idToken }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            isAdminServer = data.isAdmin;
+          }
+        } catch (err) {
+          logger.error('❌ AuthContext: Erreur vérification serveur admin:', err);
+        }
 
         const authUser: AuthUser = {
            uid: firebaseUser.uid,
@@ -126,7 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
            displayName: firebaseUser.displayName || userData?.displayName || null,
            photoURL: firebaseUser.photoURL || userData?.photoURL || null,
            phoneNumber: userData?.phoneNumber || firebaseUser.phoneNumber || null,
-           role: (isAdminClaim || isAdminWhitelist) ? "admin" : "client",
+           role: (isAdminClaim || isAdminServer) ? "admin" : "client",
          };
         logger.debug("✅ Auth: Connexion réussie pour", authUser.email);
 

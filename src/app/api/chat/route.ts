@@ -1,11 +1,25 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { NextResponse } from 'next/server';
 import { type NextRequest } from 'next/server';
+import { chatSchema } from '@/lib/validation';
 
 // 🔒 Rate limiting : 5 messages/jour par IP
+// ⚠️ Rate limiting en mémoire (Map) — les compteurs sont perdus au redémarrage du serveur.
+// Pour la production à grande échelle, migrer vers Redis ou une DB persistante.
+// Acceptable pour un MVP car le rate limit est conservateur (5 msg/jour/IP).
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 const MAX_REQUESTS = 5;
 const WINDOW_MS = 24 * 60 * 60 * 1000;
+
+// Nettoyage périodique des entrées expirées (évite la fuite mémoire)
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, data] of rateLimitMap.entries()) {
+    if (now > data.resetTime) {
+      rateLimitMap.delete(ip);
+    }
+  }
+}, 60 * 60 * 1000); // Toutes les heures
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
@@ -36,7 +50,14 @@ export async function POST(request: NextRequest) {
   let history: any[] = [];
   try {
     const body = await request.json();
-    message = body.message || '';
+    const parseResult = chatSchema.safeParse(body);
+    if (!parseResult.success) {
+      return NextResponse.json(
+        { error: "Message invalide", details: parseResult.error.flatten().fieldErrors },
+        { status: 400 }
+      );
+    }
+    message = parseResult.data.message;
     history = body.history || [];
 
     const model = genAI.getGenerativeModel({
