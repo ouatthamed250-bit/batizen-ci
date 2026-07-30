@@ -105,9 +105,8 @@ export default function Sidebar() {
 
       {/* ========== SIDEBAR ========== */}
       <aside
-        className="fixed left-0 top-0 z-[999] flex h-screen w-[320px] flex-col overflow-y-auto shadow-[10px_0_50px_rgba(0,0,0,0.5)] backdrop-blur-[10px] transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
+        className="fixed left-0 top-0 z-[999] flex h-screen w-[320px] flex-col overflow-y-auto bg-[#0D2B6B] shadow-[10px_0_50px_rgba(0,0,0,0.5)] backdrop-blur-[10px] transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
         style={{
-          background: "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)",
           transform: isOpen ? "translateX(0)" : "translateX(-100%)",
         }}
       >
@@ -167,7 +166,7 @@ export default function Sidebar() {
                   >
                     {item.icon}
                   </span>
-                  <span className="text-base font-bold dark:text-[#F5F5F5] text-gray-900 group-hover:text-white">{item.label}</span>
+                  <span className="text-base font-bold text-white group-hover:text-white">{item.label}</span>
                   <span className="ml-auto text-sm text-white/0 transition-all duration-300 group-hover:text-white/80">→</span>
                 </button>
               );
@@ -198,7 +197,7 @@ export default function Sidebar() {
                 >
                   {item.icon}
                 </span>
-                <span className="text-base font-bold dark:text-[#F5F5F5] text-gray-900 group-hover:text-white">{item.label}</span>
+                <span className="text-base font-bold text-white group-hover:text-white">{item.label}</span>
                 <span className="ml-auto text-sm text-white/0 transition-all duration-300 group-hover:text-white/80">→</span>
               </Link>
             );
