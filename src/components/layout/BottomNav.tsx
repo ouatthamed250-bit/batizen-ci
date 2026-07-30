@@ -5,7 +5,6 @@ import { Home as HomeIcon, Plus, FolderKanban, Calculator, MessageCircle, UserRo
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/helpers";
 import { useAuthContext } from "@/contexts/AuthContext";
-import { useTheme } from "@/contexts/ThemeContext";
 
 const NAV_HEIGHT = 70;
 
@@ -13,7 +12,6 @@ export function BottomNav() {
   const pathname = usePathname();
   const router = useRouter();
   const { isAuthenticated } = useAuthContext();
-  const { theme } = useTheme();
 
   // Pages où la BottomNav doit être masquée
   const hideNavPaths = ["/", "/login", "/register", "/forgot-password"];
@@ -30,8 +28,6 @@ export function BottomNav() {
 
   const handleHomeClick = (e: React.MouseEvent) => {
     if (pathname === "/" || pathname === "/dashboard") return;
-    
-    // Redirection intelligente
     if (isAuthenticated) {
       router.push("/dashboard");
     } else {
@@ -39,14 +35,11 @@ export function BottomNav() {
     }
   };
 
-  const isDark = theme === "dark";
-
   return (
     <nav
       className={cn(
         "gpu-accelerated fixed inset-x-0 bottom-0 z-40 flex min-h-[70px] items-center justify-around rounded-t-[20px]",
-        "bg-white/90 backdrop-blur-xl border-t border-white/20 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] pb-safe px-4",
-        "dark:bg-[#081423]/90 dark:border-t-[#1D3557]/30 dark:shadow-[0_-4px_20px_rgba(0,0,0,0.3)]",
+        "bg-[#0D2B6B] border-t border-white/10 shadow-[0_-4px_20px_rgba(0,0,0,0.3)] pb-safe px-4",
         "w-full"
       )}
       aria-label="Navigation principale"
@@ -63,22 +56,15 @@ export function BottomNav() {
               aria-label="Accueil"
               className={cn(
                 "relative flex min-w-16 flex-col items-center gap-1 text-xs transition-all duration-300 active:scale-90",
-                active ? "text-[#FF7A00] font-semibold" : "text-gray-700 font-medium",
-                "dark:text-white"
+                active ? "text-white font-semibold" : "text-white/70 font-medium"
               )}
             >
               <span className={cn(
                 "grid size-12 place-items-center rounded-full transition-all duration-300",
-                active 
-                  ? "text-white shadow-lg" 
-                  : "text-[#FF7A00]"
-              )}
-                style={{
-                  background: active 
-                    ? "linear-gradient(135deg, #FF7A00, #D97706)" 
-                    : isDark ? "rgba(255, 122, 0, 0.2)" : "rgba(255, 122, 0, 0.1)"
-                }}
-              >
+                active
+                  ? "text-white shadow-lg bg-gradient-to-br from-[#FF7A00] to-[#D97706]"
+                  : "text-white/60 bg-white/10"
+              )}>
                 <Icon size={22} aria-hidden />
               </span>
               <span className="leading-none">{item.label}</span>
@@ -99,21 +85,15 @@ export function BottomNav() {
             aria-current={active ? "page" : undefined}
             className={cn(
               "relative flex min-w-16 flex-col items-center gap-1 text-xs transition-all duration-300 active:scale-90",
-              active ? "text-[#FF7A00] font-semibold" : "text-gray-700 font-medium",
-              "dark:text-white"
+              active ? "text-white font-semibold" : "text-white/70 font-medium"
             )}
           >
             <span className={cn(
               "grid size-12 place-items-center rounded-full transition-all duration-300",
-              active && "shadow-lg"
-            )}
-              style={{
-                background: active 
-                  ? "linear-gradient(135deg, #FF7A00, #D97706)" 
-                  : isDark ? "rgba(255, 122, 0, 0.2)" : "rgba(255, 122, 0, 0.1)",
-                color: active ? "white" : "#FF7A00"
-              }}
-            >
+              active
+                ? "text-white shadow-lg bg-gradient-to-br from-[#FF7A00] to-[#D97706]"
+                : "text-white/60 bg-white/10"
+            )}>
               <Icon size={22} aria-hidden />
             </span>
             <span className="leading-none">{item.label}</span>
