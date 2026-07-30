@@ -6,9 +6,13 @@
  * - loading : boolean — true tant que l'état n'est pas résolu
  * - isAdmin : boolean — true si l'utilisateur a le rôle admin
  *
- * Vérification du rôle admin (double sécurité) :
- * 1. Custom claim Firebase via getIdTokenResult()
- * 2. Realtime Database via users/{uid}/role
+ * Vérification du rôle admin (sécurité renforcée) :
+ * 1. Custom claim Firebase via getIdTokenResult() (serveur, infalsifiable)
+ * 2. API serveur /api/auth/check-admin (whitelist serveur)
+ *
+ * ⚠️ SÉCURITÉ : La vérification via Realtime Database côté client a été
+ *    supprimée car elle permettait à un utilisateur de s'auto-attribuer
+ *    le rôle admin en écrivant users/{uid}/role = "admin" depuis la console.
  *
  * Si l'une des deux sources confirme "admin", isAdmin = true.
  *
@@ -19,7 +23,6 @@
 
 import { useState, useEffect } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
-import { ref, get } from 'firebase/database';
 import { getFirebaseServices } from '@/lib/firebase';
 import { logger } from '@/utils/logger';
 
@@ -62,9 +65,12 @@ export function useAuth() {
       logger.debug('👤 useAuth: Utilisateur connecté —', firebaseUser.email);
 
       // ── Vérifications admin en parallèle ──
-      const [tokenResult, dbSnapshot, idToken] = await Promise.allSettled([
+      // 🔒 SÉCURITÉ : La vérification DB côté client a été supprimée.
+      // L'admin est désormais vérifié UNIQUEMENT via :
+      // 1. Custom Claims Firebase (serveur, infalsifiable)
+      // 2. API serveur /api/auth/check-admin (whitelist serveur)
+      const [tokenResult, idToken] = await Promise.allSettled([
         firebaseUser.getIdTokenResult(),
-        get(ref(db, `users/${firebaseUser.uid}/role`)),
         firebaseUser.getIdToken(),
       ]);
 
@@ -72,9 +78,7 @@ export function useAuth() {
         ? tokenResult.value.claims?.role === 'admin' 
         : false;
 
-      const isAdminDb = dbSnapshot.status === 'fulfilled' 
-        ? dbSnapshot.value.exists() && dbSnapshot.value.val() === 'admin' 
-        : false;
+      // La vérification DB côté client a été supprimée pour des raisons de sécurité
 
       // ── Vérification serveur (whitelist) ──
       let isAdminServer = false;
@@ -94,8 +98,8 @@ export function useAuth() {
         }
       }
 
-      // ── Admin si l'une des trois sources est vraie ──
-      const finalIsAdmin = isAdminClaim || isAdminDb || isAdminServer;
+      // ── Admin si l'une des deux sources est vraie ──
+      const finalIsAdmin = isAdminClaim || isAdminServer;
 
       const authUser: AuthUser = {
         uid: firebaseUser.uid,
@@ -107,7 +111,7 @@ export function useAuth() {
 
       logger.debug(
         `✅ useAuth: ${authUser.email} — rôle: ${authUser.role}` +
-        ` (custom claim: ${isAdminClaim}, DB: ${isAdminDb}, serveur: ${isAdminServer})`
+        ` (custom claim: ${isAdminClaim}, serveur: ${isAdminServer})`
       );
 
       setUser(authUser);

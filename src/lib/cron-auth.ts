@@ -38,12 +38,29 @@ export function verifyCronSecret(request: Request): boolean {
   return true;
 }
 
-// Nettoyage périodique de la Map (évite la fuite mémoire)
-setInterval(() => {
-  const now = Date.now();
-  for (const [ip, attempt] of failedAttempts.entries()) {
-    if (now > attempt.resetAt) {
-      failedAttempts.delete(ip);
+let cleanupInterval: ReturnType<typeof setInterval> | null = null;
+
+function startCleanupInterval(): void {
+  if (cleanupInterval) return; // Déjà démarré
+  cleanupInterval = setInterval(() => {
+    const now = Date.now();
+    for (const [ip, attempt] of failedAttempts.entries()) {
+      if (now > attempt.resetAt) {
+        failedAttempts.delete(ip);
+      }
     }
+  }, 60 * 60 * 1000); // Toutes les heures
+}
+
+// Démarrer le nettoyage au premier import
+startCleanupInterval();
+
+/**
+ * Arrête le nettoyage périodique (utile pour les tests ou le HMR).
+ */
+export function stopCleanupInterval(): void {
+  if (cleanupInterval) {
+    clearInterval(cleanupInterval);
+    cleanupInterval = null;
   }
-}, 60 * 60 * 1000);
+}
