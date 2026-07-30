@@ -49,7 +49,7 @@ export default function PremiumBackground({
           className={`absolute inset-0 ${
             isDark 
               ? "bg-gradient-to-b from-[#081423]/95 via-[#081423]/80 to-[#081423]/95" 
-              : "bg-gradient-to-b from-gray-50/95 via-gray-100/70 to-gray-50/90"
+          : "bg-gradient-to-b from-gray-100/92 via-gray-100/85 to-gray-100/92"
           } ${overlayClassName || ""}`}
         />
       </div>
