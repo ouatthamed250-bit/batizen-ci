@@ -50,7 +50,7 @@ export function PremiumHeader() {
     <>
       <AdminSecretModal isOpen={showAdminModal} onClose={() => setShowAdminModal(false)} />
 
-      <header className="sticky top-0 z-40 w-full flex h-16 items-center justify-between bg-[#0D2B6B] px-4 shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
+      <header className="fixed top-0 z-50 w-full flex h-16 items-center justify-between bg-[#0D2B6B] px-4 shadow-md">
         
         {/* LOGO — 5 taps rapides pour ouvrir le modal admin secret */}
         <Link className="flex items-center gap-3" href="/dashboard" aria-label="Accueil BÂTIZEN CI">

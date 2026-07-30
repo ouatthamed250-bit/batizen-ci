@@ -34,7 +34,7 @@ export default function LayoutWrapper({ children, showHeader: showHeaderProp = t
 
   return (
     <PremiumBackground>
-      <main className="ios-scroll pt-4 pb-24 px-2 min-h-screen">
+      <main className="ios-scroll pt-16 pb-24 px-2 min-h-screen">
         {showHeader && <PremiumHeader />}
         
         <div className="w-full">
