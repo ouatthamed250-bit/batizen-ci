@@ -1,58 +1,71 @@
+type CloudinaryUploadResponse = {
+  secure_url: string;
+  public_id: string;
+  format: string;
+  bytes: number;
+};
+
+const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+
+function assertCloudinaryConfig(): void {
+  if (!UPLOAD_PRESET) {
+    throw new Error(
+      "[Cloudinary] Upload preset manquant. Définissez NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET dans .env.local"
+    );
+  }
+  if (!CLOUD_NAME) {
+    throw new Error(
+      "[Cloudinary] Cloud name manquant. Définissez NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME dans .env.local"
+    );
+  }
+}
+
+function isNetworkError(err: unknown): boolean {
+  if (err instanceof TypeError) return true;
+  if (err instanceof Error) {
+    const msg = err.message.toLowerCase();
+    return msg.includes("failed to fetch") || msg.includes("network") || msg.includes("connection");
+  }
+  return false;
+}
+
 export const uploadToCloudinary = async (file: File): Promise<string> => {
+  assertCloudinaryConfig();
+
   const formData = new FormData();
-  formData.append('file', file);
-  formData.append('upload_preset', 'batizen_upload');
+  formData.append("file", file);
+  formData.append("upload_preset", UPLOAD_PRESET!);
 
-  // CHANGEMENT ICI : /auto/upload au lieu de /image/upload pour accepter audio, pdf, etc.
-  const url = 'https://api.cloudinary.com/v1_1/f4iwk8g6/auto/upload';
+  const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`;
 
-  // 🔄 Retry 2 fois en cas d'erreur réseau (ERR_CONNECTION_RESET, Failed to fetch, etc.)
   const MAX_RETRIES = 2;
-  let lastError: Error | null = null;
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
       if (attempt > 0) {
-        console.log(`🔄 Cloudinary: tentative ${attempt + 1}/${MAX_RETRIES + 1}...`);
-        // Délai progressif : 1s puis 2s
-        await new Promise(resolve => setTimeout(resolve, attempt * 1000));
+        await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
       }
 
       const response = await fetch(url, {
-        method: 'POST',
+        method: "POST",
         body: formData,
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Erreur Cloudinary:', errorText);
         throw new Error("Erreur lors de l'upload du fichier sur Cloudinary");
       }
 
-      const data = await response.json();
-      return data.secure_url; // URL HTTPS du fichier (image, audio, pdf, etc.)
-    } catch (err: any) {
-      lastError = err;
-
-      // Si c'est une erreur réseau (Failed to fetch, ERR_CONNECTION_RESET), on retente
-      const isNetworkError = err?.message === 'Failed to fetch'
-        || err?.name === 'TypeError'
-        || err?.message?.includes('Failed to fetch')
-        || err?.message?.includes('NetworkError')
-        || err?.message?.includes('network')
-        || err?.message?.includes('Connection');
-
-      if (isNetworkError && attempt < MAX_RETRIES) {
-        console.warn(`⚠️ Cloudinary: erreur réseau (tentative ${attempt + 1}/${MAX_RETRIES + 1})`, err.message);
-        continue; // Retenter
+      const data: CloudinaryUploadResponse = await response.json();
+      return data.secure_url;
+    } catch (err: unknown) {
+      const isNetwork = isNetworkError(err);
+      if (isNetwork && attempt < MAX_RETRIES) {
+        continue;
       }
-
-      // Si ce n'est pas une erreur réseau ou qu'on a épuisé les tentatives, on stoppe
-      console.error('❌ Cloudinary: échec final après', attempt + 1, 'tentative(s):', err.message);
       throw new Error("Problème de connexion. Veuillez réessayer.");
     }
   }
 
-  // Ne devrait jamais arriver, mais garde-fou
   throw new Error("Problème de connexion. Veuillez réessayer.");
 };

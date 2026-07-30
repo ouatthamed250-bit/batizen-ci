@@ -21,9 +21,10 @@
  *   const { user, loading, isAdmin } = useAuth();
  */
 
-import { useState, useEffect } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
-import { getFirebaseServices } from '@/lib/firebase';
+import { useState, useEffect, useCallback } from 'react';
+import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, signOut, updateProfile } from 'firebase/auth';
+import { ref, set, get } from 'firebase/database';
+import { getFirebaseServices, hasFirebaseConfig } from '@/lib/firebase';
 import { logger } from '@/utils/logger';
 
 export type AuthUser = {
@@ -35,40 +36,44 @@ export type AuthUser = {
 };
 
 /**
- * Hook d'authentification Firebase.
- * Se met à jour automatiquement via onAuthStateChanged.
+ * Hook d'authentification Firebase unifié.
+ * Source de vérité unique pour toute l'auth.
+ *
+ * Retourne :
+ * - user : AuthUser | null
+ * - loading : boolean
+ * - error : string | null
+ * - isAdmin : boolean
+ * - isAuthenticated : boolean
+ * - login(email, password) : Promise<void>
+ * - register(email, password, name) : Promise<void>
+ * - loginWithGoogle() : Promise<void>
+ * - logout() : Promise<void>
  */
 export function useAuth() {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  useEffect(() => {
-    const { auth, db } = getFirebaseServices();
+  const isAuthenticated = user !== null;
 
-    // Vérifie si Firebase est configuré
-    if (!auth) {
-      console.warn('⚠️ useAuth: Firebase non configuré, mode démo');
+  useEffect(() => {
+    const { auth } = getFirebaseServices();
+
+    if (!auth || !hasFirebaseConfig()) {
       setLoading(false);
       return;
     }
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (!firebaseUser) {
-        logger.debug('❌ useAuth: Aucun utilisateur connecté');
         setUser(null);
         setIsAdmin(false);
         setLoading(false);
         return;
       }
 
-      logger.debug('👤 useAuth: Utilisateur connecté —', firebaseUser.email);
-
-      // ── Vérifications admin en parallèle ──
-      // 🔒 SÉCURITÉ : La vérification DB côté client a été supprimée.
-      // L'admin est désormais vérifié UNIQUEMENT via :
-      // 1. Custom Claims Firebase (serveur, infalsifiable)
-      // 2. API serveur /api/auth/check-admin (whitelist serveur)
       const [tokenResult, idToken] = await Promise.allSettled([
         firebaseUser.getIdTokenResult(),
         firebaseUser.getIdToken(),
@@ -78,9 +83,6 @@ export function useAuth() {
         ? tokenResult.value.claims?.role === 'admin' 
         : false;
 
-      // La vérification DB côté client a été supprimée pour des raisons de sécurité
-
-      // ── Vérification serveur (whitelist) ──
       let isAdminServer = false;
       if (idToken.status === 'fulfilled') {
         try {
@@ -93,12 +95,11 @@ export function useAuth() {
             const data = await res.json();
             isAdminServer = data.isAdmin;
           }
-        } catch (err) {
-          logger.error('❌ useAuth: Erreur vérification serveur admin:', err);
+        } catch {
+          // Silencieux — échec de la vérification serveur non bloquant
         }
       }
 
-      // ── Admin si l'une des deux sources est vraie ──
       const finalIsAdmin = isAdminClaim || isAdminServer;
 
       const authUser: AuthUser = {
@@ -109,11 +110,6 @@ export function useAuth() {
         role: finalIsAdmin ? 'admin' : 'client',
       };
 
-      logger.debug(
-        `✅ useAuth: ${authUser.email} — rôle: ${authUser.role}` +
-        ` (custom claim: ${isAdminClaim}, serveur: ${isAdminServer})`
-      );
-
       setUser(authUser);
       setIsAdmin(finalIsAdmin);
       setLoading(false);
@@ -122,5 +118,86 @@ export function useAuth() {
     return () => unsubscribe();
   }, []);
 
-  return { user, loading, isAdmin };
+  const login = useCallback(async (email: string, password: string): Promise<void> => {
+    setError(null);
+    const { auth } = getFirebaseServices();
+    if (!auth || !hasFirebaseConfig()) {
+      throw new Error('Firebase non configuré');
+    }
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Erreur de connexion';
+      setError(message);
+      throw err;
+    }
+  }, []);
+
+  const register = useCallback(async (email: string, password: string, name: string): Promise<void> => {
+    setError(null);
+    const { auth, database } = getFirebaseServices();
+    if (!auth || !hasFirebaseConfig()) {
+      throw new Error('Firebase non configuré');
+    }
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(cred.user, { displayName: name });
+      await set(ref(database, `users/${cred.user.uid}`), {
+        uid: cred.user.uid,
+        email: cred.user.email,
+        displayName: name,
+        role: 'client',
+        createdAt: Date.now(),
+      });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Erreur lors de l'inscription";
+      setError(message);
+      throw err;
+    }
+  }, []);
+
+  const loginWithGoogle = useCallback(async (): Promise<void> => {
+    setError(null);
+    const { auth, googleProvider } = getFirebaseServices();
+    if (!auth || !googleProvider || !hasFirebaseConfig()) {
+      throw new Error('Firebase non configuré');
+    }
+    try {
+      const { database } = getFirebaseServices();
+      const result = await signInWithPopup(auth, googleProvider);
+
+      const snapshot = await get(ref(database, `users/${result.user.uid}`));
+      if (!snapshot.exists()) {
+        await set(ref(database, `users/${result.user.uid}`), {
+          uid: result.user.uid,
+          email: result.user.email,
+          displayName: result.user.displayName || 'Utilisateur Google',
+          photoURL: result.user.photoURL || null,
+          role: 'client',
+          createdAt: Date.now(),
+        });
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Erreur connexion Google';
+      setError(message);
+      throw err;
+    }
+  }, []);
+
+  const logout = useCallback(async (): Promise<void> => {
+    setError(null);
+    const { auth } = getFirebaseServices();
+    if (auth && hasFirebaseConfig()) {
+      await signOut(auth);
+    }
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch {
+      // Silencieux
+    }
+    setUser(null);
+    setIsAdmin(false);
+  }, []);
+
+  return { user, loading, error, isAdmin, isAuthenticated, login, register, loginWithGoogle, logout };
 }

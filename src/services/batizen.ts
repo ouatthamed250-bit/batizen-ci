@@ -1,5 +1,7 @@
 // Service Batizen — désormais sans Drizzle (Firebase uniquement)
 // Les anciennes fonctions Drizzle ont été migrées vers Firebase Realtime Database.
+// Les fonctions getQuotes/getMessages/getProjects/getMaterials ont été supprimées
+// car elles n'étaient importées nulle part et retournaient systématiquement [].
 
 export type Quote = {
   id: string;
@@ -37,19 +39,8 @@ export type Material = {
   unit: string;
 };
 
-// Fonctions vides en attendant connexion Firebase
-export async function getQuotes(): Promise<Quote[]> {
-  return [];
-}
-
+// Utilisé par src/app/(tabs)/messages/page.tsx
+// TODO: migrer vers une vraie source de données Firebase
 export async function getMessages(): Promise<Message[]> {
-  return [];
-}
-
-export async function getProjects(): Promise<Project[]> {
-  return [];
-}
-
-export async function getMaterials(): Promise<Material[]> {
   return [];
 }

@@ -3,6 +3,12 @@ import { ref, get, update, query, orderByChild, equalTo } from 'firebase/databas
 import { getFirebaseServices } from '@/lib/firebase';
 import type { Chantier } from '@/types/chantier';
 
+type DonneesBrutes = Record<string, unknown>;
+
+function normaliserChantier([id, c]: [string, DonneesBrutes]): Chantier {
+  return { id, ...c } as Chantier;
+}
+
 /**
  * Hook centralisé pour la gestion des chantiers avec la relation Admin-Client.
  *
@@ -15,6 +21,10 @@ import type { Chantier } from '@/types/chantier';
 export function useChantiers() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  function lireMessage(err: unknown): string {
+    return err instanceof Error ? err.message : "Erreur inconnue";
+  }
 
   /**
    * Récupère tous les chantiers d'un coup (recommandé pour les dashboards)
@@ -31,21 +41,17 @@ export function useChantiers() {
       const { database } = getFirebaseServices();
       const chantiersRef = ref(database, 'chantiers');
       const snapshot = await get(chantiersRef);
-      const data = snapshot.val() || {};
+      const data = (snapshot.val() as Record<string, DonneesBrutes> | null) || {};
 
-      const chantiers: Chantier[] = Object.entries(data).map(([id, c]: [string, any]) => ({
-        id,
-        ...c,
-      }));
+      const chantiers: Chantier[] = Object.entries(data).map(normaliserChantier);
 
       const assignes = chantiers.filter((c) => c.adminId && c.adminId.length > 0);
       const enAttente = chantiers.filter((c) => !c.adminId || c.adminId.length === 0);
 
       return { assignes, enAttente };
-    } catch (err: any) {
-      const message = err.message || 'Erreur lors du chargement des chantiers';
+    } catch (err: unknown) {
+      const message = lireMessage(err);
       setError(message);
-      console.error('❌ useChantiers.getAllChantiers:', message);
       return { assignes: [], enAttente: [] };
     } finally {
       setLoading(false);
@@ -66,16 +72,12 @@ export function useChantiers() {
       const chantiersRef = ref(database, 'chantiers');
       const q = query(chantiersRef, orderByChild('adminId'), equalTo(adminId));
       const snapshot = await get(q);
-      const data = snapshot.val() || {};
+      const data = (snapshot.val() as Record<string, DonneesBrutes> | null) || {};
 
-      return Object.entries(data).map(([id, c]: [string, any]) => ({
-        id,
-        ...c,
-      })) as Chantier[];
-    } catch (err: any) {
-      const message = err.message || 'Erreur lors du chargement des chantiers par admin';
+      return Object.entries(data).map(normaliserChantier);
+    } catch (err: unknown) {
+      const message = lireMessage(err);
       setError(message);
-      console.error('❌ useChantiers.getChantiersByAdmin:', message);
       return [];
     } finally {
       setLoading(false);
@@ -93,18 +95,14 @@ export function useChantiers() {
       const { database } = getFirebaseServices();
       const chantiersRef = ref(database, 'chantiers');
       const snapshot = await get(chantiersRef);
-      const data = snapshot.val() || {};
+      const data = (snapshot.val() as Record<string, DonneesBrutes> | null) || {};
 
       return Object.entries(data)
-        .filter(([_, c]: [string, any]) => !c.adminId || c.adminId.length === 0)
-        .map(([id, c]: [string, any]) => ({
-          id,
-          ...c,
-        })) as Chantier[];
-    } catch (err: any) {
-      const message = err.message || 'Erreur lors du chargement des chantiers en attente';
+        .filter(([_, c]: [string, DonneesBrutes]) => !c.adminId || String(c.adminId).length === 0)
+        .map(normaliserChantier);
+    } catch (err: unknown) {
+      const message = lireMessage(err);
       setError(message);
-      console.error('❌ useChantiers.getChantiersEnAttente:', message);
       return [];
     } finally {
       setLoading(false);
@@ -124,18 +122,14 @@ export function useChantiers() {
       const { database } = getFirebaseServices();
       const chantiersRef = ref(database, 'chantiers');
       const snapshot = await get(chantiersRef);
-      const data = snapshot.val() || {};
+      const data = (snapshot.val() as Record<string, DonneesBrutes> | null) || {};
 
       return Object.entries(data)
-        .filter(([_, c]: [string, any]) => c.userId === clientId || c.client_id === clientId)
-        .map(([id, c]: [string, any]) => ({
-          id,
-          ...c,
-        })) as Chantier[];
-    } catch (err: any) {
-      const message = err.message || 'Erreur lors du chargement des chantiers du client';
+        .filter(([_, c]: [string, DonneesBrutes]) => c.userId === clientId || c.client_id === clientId)
+        .map(normaliserChantier);
+    } catch (err: unknown) {
+      const message = lireMessage(err);
       setError(message);
-      console.error('❌ useChantiers.getChantiersByClient:', message);
       return [];
     } finally {
       setLoading(false);
@@ -162,18 +156,15 @@ export function useChantiers() {
       const { database } = getFirebaseServices();
       const chantierRef = ref(database, `chantiers/${chantierId}`);
 
-      // ⚠️ Utiliser update() et non set() pour ne pas écraser les autres champs du chantier !
       await update(chantierRef, {
         adminId,
         assignedAt: new Date().toISOString(),
       });
 
-      console.log(`✅ Chantier ${chantierId} assigné à l'admin ${adminId}`);
       return true;
-    } catch (err: any) {
-      const message = err.message || "Erreur lors de l'assignation du chantier";
+    } catch (err: unknown) {
+      const message = lireMessage(err);
       setError(message);
-      console.error('❌ useChantiers.assignerChantier:', message);
       return false;
     } finally {
       setLoading(false);

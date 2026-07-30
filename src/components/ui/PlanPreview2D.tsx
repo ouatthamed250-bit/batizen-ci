@@ -5,6 +5,18 @@ type PlanPreview2DProps = {
   plan: GeneratedPlan;
 };
 
+/**
+ * Nettoie une chaîne SVG de tout contenu dangereux (XSS).
+ */
+function sanitizeSvg(svg: string): string {
+  return svg
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+    .replace(/\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*')/gi, "")
+    .replace(/\s+href\s*=\s*(?:"javascript:[^"]*"|'javascript:[^']*')/gi, ' href=""')
+    .replace(/\s+xlink:href\s*=\s*(?:"javascript:[^"]*"|'javascript:[^']*')/gi, ' xlink:href=""')
+    .replace(/<foreignObject\b[^>]*>[\s\S]*?<\/foreignObject>/gi, "");
+}
+
 export function PlanPreview2D({ plan }: PlanPreview2DProps) {
   return (
     <div className="space-y-4">
@@ -16,7 +28,7 @@ export function PlanPreview2D({ plan }: PlanPreview2DProps) {
         <Badge tone="orange">3D Gratuit</Badge>
       </div>
       <div className="overflow-hidden rounded-[28px] border border-[#DDE9FF] bg-white shadow-[0_18px_40px_rgba(13,43,107,0.08)]">
-        <div className="overflow-x-auto [&_svg]:w-full [&_svg]:h-auto" dangerouslySetInnerHTML={{ __html: plan.svg }} />
+        <div className="overflow-x-auto [&_svg]:w-full [&_svg]:h-auto" dangerouslySetInnerHTML={{ __html: sanitizeSvg(plan.svg) }} />
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="rounded-[20px] bg-[#F7F9FC] p-4">

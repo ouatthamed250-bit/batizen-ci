@@ -14,23 +14,26 @@ import {
   type Unsubscribe,
 } from "firebase/database";
 import { getFirebaseServices, hasFirebaseConfig } from "./firebase";
-import { logger } from "@/utils/logger";
 
-/**
- * Helpers pour la lecture depuis Firebase Realtime Database.
- * Toutes les fonctions renvoient `null` (ou un tableau vide) en mode
- * "sans configuration Firebase" afin de ne jamais casser le rendu.
- */
+// Valeur sentinelle pour les fonctions qui n'ont pas besoin de retour
+const noopUnsubscribe: Unsubscribe = () => {};
 
 function dbRef(path: string): DatabaseReference | null {
   if (!hasFirebaseConfig()) return null;
   try {
     const { database } = getFirebaseServices();
     return ref(database, path);
-  } catch (err) {
-    logger.error("❌ RTDB dbRef:", err);
+  } catch {
     return null;
   }
+}
+
+/** Normalise un Record<string, T> en T[] avec une propriété `id`. */
+function normaliserListe<T>(data: Record<string, T>): T[] {
+  return Object.entries(data).map(([id, value]) => ({
+    ...(value as object),
+    id,
+  })) as T[];
 }
 
 /** Récupère une valeur brute depuis un chemin. */
@@ -40,8 +43,7 @@ export async function rtdbGet<T = unknown>(path: string): Promise<T | null> {
   try {
     const snap = await get(r);
     return snap.exists() ? (snap.val() as T) : null;
-  } catch (err) {
-    logger.error("❌ RTDB rtdbGet:", err);
+  } catch {
     return null;
   }
 }
@@ -55,10 +57,7 @@ export async function rtdbGetList<T = Record<string, unknown>>(
 ): Promise<T[]> {
   const data = await rtdbGet<Record<string, T>>(path);
   if (!data) return [];
-  return Object.entries(data).map(([id, value]) => ({
-    ...(value as object),
-    id,
-  })) as T[];
+  return normaliserListe(data);
 }
 
 /**
@@ -76,38 +75,28 @@ export async function rtdbGetListByChild<T = Record<string, unknown>>(
     const snap = await get(q);
     if (!snap.exists()) return [];
     const data = snap.val() as Record<string, T>;
-    return Object.entries(data).map(([id, value]) => ({
-      ...(value as object),
-      id,
-    })) as T[];
-  } catch (err) {
-    logger.error("❌ RTDB rtdbGetListByChild:", err);
+    return normaliserListe(data);
+  } catch {
     return [];
   }
 }
 
 /**
  * Écrit une valeur à un chemin Firebase Realtime Database.
- * ⚠️ ATTENTION : `set()` REMPLACE INTÉGRALEMENT le nœud ciblé. Si vous ne
- * passez qu'un objet partiel (ex: { statut: "actif" }), toutes les autres
- * propriétés existantes à ce chemin seront DÉFINITIVEMENT PERDUES.
- * Pour une mise à jour partielle, utilisez `rtdbUpdate` à la place.
  */
 export async function rtdbSet<T = unknown>(path: string, value: T): Promise<void> {
   const r = dbRef(path);
   if (!r) return;
   try {
     await set(r, value);
-  } catch (err) {
-    logger.error("❌ RTDB rtdbSet:", err);
+  } catch {
+    // Silencieux
   }
 }
 
 /**
  * Met à jour partiellement un ou plusieurs champs à un chemin donné, SANS
  * écraser le reste des données existantes (contrairement à `rtdbSet`).
- * À privilégier systématiquement pour toute mise à jour partielle d'un objet
- * (ex: changer un statut, un champ, etc.).
  */
 export async function rtdbUpdate(
   path: string,
@@ -117,8 +106,8 @@ export async function rtdbUpdate(
   if (!r) return;
   try {
     await update(r, values);
-  } catch (err) {
-    logger.error("❌ RTDB rtdbUpdate:", err);
+  } catch {
+    // Silencieux
   }
 }
 
@@ -131,7 +120,7 @@ export function rtdbSubscribe<T = unknown>(
   callback: (data: T | null) => void
 ): Unsubscribe {
   const r = dbRef(path);
-  if (!r) return () => {};
+  if (!r) return noopUnsubscribe;
   
   try {
     const unsubscribe = onValue(r, (snapshot) => {
@@ -139,9 +128,8 @@ export function rtdbSubscribe<T = unknown>(
       callback(data);
     });
     return unsubscribe;
-  } catch (err) {
-    logger.error("❌ RTDB rtdbSubscribe:", err);
-    return () => {};
+  } catch {
+    return noopUnsubscribe;
   }
 }
 
@@ -158,11 +146,7 @@ export function rtdbSubscribeList<T = Record<string, unknown>>(
       callback([]);
       return;
     }
-    const normalized = Object.entries(data).map(([id, value]) => ({
-      ...(value as object),
-      id,
-    })) as T[];
-    callback(normalized);
+    callback(normaliserListe(data));
   });
 }
 
@@ -177,7 +161,7 @@ export function rtdbSubscribeListByChild<T = Record<string, unknown>>(
   childValue: string | number | boolean,
   callback: (data: T[]) => void
 ): Unsubscribe {
-  if (!hasFirebaseConfig()) return () => {};
+  if (!hasFirebaseConfig()) return noopUnsubscribe;
   try {
     const { database } = getFirebaseServices();
     const r = ref(database, path);
@@ -188,15 +172,10 @@ export function rtdbSubscribeListByChild<T = Record<string, unknown>>(
         return;
       }
       const data = snapshot.val() as Record<string, T>;
-      const normalized = Object.entries(data).map(([id, value]) => ({
-        ...(value as object),
-        id,
-      })) as T[];
-      callback(normalized);
+      callback(normaliserListe(data));
     });
     return unsubscribe;
-  } catch (err) {
-    logger.error("❌ RTDB rtdbSubscribeListByChild:", err);
-    return () => {};
+  } catch {
+    return noopUnsubscribe;
   }
 }

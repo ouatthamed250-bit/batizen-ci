@@ -1,6 +1,5 @@
 import { ref, set, update, get, onValue, type Unsubscribe } from "firebase/database";
 import { getFirebaseServices } from "./firebase";
-import { logger } from "@/utils/logger";
 
 export type NotificationType = 
   | "nouveau_chantier"
@@ -27,24 +26,43 @@ export type Notification = {
   planChoisi?: string;
 };
 
+/** Données brutes d'une notification depuis Firebase (sans l'id qui est la clé). */
+type NotificationData = Omit<Notification, "id">;
+
+/** Génère un ID unique via Web Crypto API. */
+function generateNotifId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  // Fallback ancien navigateur (très rare)
+  return `notif_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+}
+
+/** Normalise les entrées Firebase en tableau de Notification. */
+function normaliserNotifications(data: Record<string, unknown>): Notification[] {
+  return Object.entries(data)
+    .filter(([key]) => key !== "id")
+    .map(([id, val]) => ({ id, ...(val as NotificationData) } as Notification))
+    .sort((a, b) => b.dateCreation - a.dateCreation);
+}
+
 // Envoyer une notification à un utilisateur
 export async function sendNotification(userId: string, notification: {
   type: NotificationType;
   chantierId?: string;
   chantierNom?: string;
   message: string;
-}) {
+}): Promise<string | null> {
   try {
     const { database } = getFirebaseServices();
-    const notifId = `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const notifId = generateNotifId();
     await set(ref(database, `notifications/${userId}/${notifId}`), {
       ...notification,
       dateCreation: Date.now(),
       lu: false,
     });
     return notifId;
-  } catch (error) {
-    logger.error("❌ Notification sendNotification:", error);
+  } catch {
     return null;
   }
 }
@@ -57,51 +75,50 @@ export async function sendAdminNotification(notification: {
   userName?: string;
   planChoisi?: string;
   message: string;
-}) {
+}): Promise<string | null> {
   try {
     const { database } = getFirebaseServices();
-    const notifId = `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const notifId = generateNotifId();
     await set(ref(database, `notifications/admin/${notifId}`), {
       ...notification,
       dateCreation: Date.now(),
       lu: false,
     });
     return notifId;
-  } catch (error) {
-    logger.error("❌ Notification sendAdminNotification:", error);
+  } catch {
     return null;
   }
 }
 
 // Marquer une notification comme lue
-export async function markAsRead(userId: string, notifId: string) {
+export async function markAsRead(userId: string, notifId: string): Promise<void> {
   try {
     const { database } = getFirebaseServices();
     await update(ref(database, `notifications/${userId}/${notifId}`), {
       lu: true,
     });
-  } catch (error) {
-    logger.error("❌ Notification markAsRead:", error);
+  } catch {
+    // Silencieux
   }
 }
 
 // Marquer toutes les notifications comme lues
-export async function markAllAsRead(userId: string) {
+export async function markAllAsRead(userId: string): Promise<void> {
   try {
     const { database } = getFirebaseServices();
     const snapshot = await get(ref(database, `notifications/${userId}`));
-    const data = snapshot.val();
+    const data = snapshot.val() as Record<string, unknown> | null;
     
     if (!data) return;
     
     const updates: Record<string, boolean> = {};
-    Object.entries(data).forEach(([notifId]) => {
+    Object.keys(data).forEach((notifId) => {
       updates[`notifications/${userId}/${notifId}/lu`] = true;
     });
     
     await update(ref(database), updates);
-  } catch (error) {
-    logger.error("❌ Notification markAllAsRead:", error);
+  } catch {
+    // Silencieux
   }
 }
 
@@ -110,16 +127,9 @@ export async function getUserNotifications(userId: string): Promise<Notification
   try {
     const { database } = getFirebaseServices();
     const snapshot = await get(ref(database, `notifications/${userId}`));
-    const data = snapshot.val() || {};
-    
-    return Object.entries(data)
-      .map(([id, notif]: [string, any]) => ({
-        id,
-        ...notif,
-      }))
-      .sort((a, b) => b.dateCreation - a.dateCreation);
-  } catch (error) {
-    logger.error("❌ Notification getUserNotifications:", error);
+    const data = (snapshot.val() as Record<string, unknown>) || {};
+    return normaliserNotifications(data);
+  } catch {
     return [];
   }
 }
@@ -129,17 +139,9 @@ export async function getUnreadNotifications(userId: string): Promise<Notificati
   try {
     const { database } = getFirebaseServices();
     const snapshot = await get(ref(database, `notifications/${userId}`));
-    const data = snapshot.val() || {};
-    
-    return Object.entries(data)
-      .filter(([_, notif]: any) => !notif.lu)
-      .map(([id, notif]: any) => ({
-        id,
-        ...notif,
-      }))
-      .sort((a, b) => b.dateCreation - a.dateCreation);
-  } catch (error) {
-    logger.error("❌ Notification getUnreadNotifications:", error);
+    const data = (snapshot.val() as Record<string, unknown>) || {};
+    return normaliserNotifications(data).filter((n) => !n.lu);
+  } catch {
     return [];
   }
 }
@@ -153,15 +155,8 @@ export function subscribeToNotifications(
   const notifRef = ref(database, `notifications/${userId}`);
   
   return onValue(notifRef, (snapshot) => {
-    const data = snapshot.val() || {};
-    const notifications = Object.entries(data)
-      .map(([id, notif]: [string, any]) => ({
-        id,
-        ...notif,
-      }))
-      .sort((a, b) => b.dateCreation - a.dateCreation);
-    
-    callback(notifications);
+    const data = (snapshot.val() as Record<string, unknown>) || {};
+    callback(normaliserNotifications(data));
   });
 }
 
@@ -173,15 +168,8 @@ export function subscribeToAdminNotifications(
   const notifRef = ref(database, `notifications/admin`);
   
   return onValue(notifRef, (snapshot) => {
-    const data = snapshot.val() || {};
-    const notifications = Object.entries(data)
-      .map(([id, notif]: [string, any]) => ({
-        id,
-        ...notif,
-      }))
-      .sort((a, b) => b.dateCreation - a.dateCreation);
-    
-    callback(notifications);
+    const data = (snapshot.val() as Record<string, unknown>) || {};
+    callback(normaliserNotifications(data));
   });
 }
 

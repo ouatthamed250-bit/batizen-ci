@@ -10,7 +10,6 @@ import { getDatabase, ref as dbRef, onValue, update } from "firebase/database";
 import dynamic from "next/dynamic";
 import AdminSecretModal from "@/components/auth/AdminSecretModal";
 import AnnonceTicker from "@/components/ui/AnnonceTicker";
-import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { useChantiersQuery } from "@/hooks/useChantiersQuery";
 import { useRenovationsQuery } from "@/hooks/useRenovationsQuery";
 import { formatDateCourte, formatFcfa } from "@/utils/formatters";
@@ -95,18 +94,6 @@ export default function DashboardClientPage() {
     <>
       <AdminSecretModal isOpen={showAdminModal} onClose={() => setShowAdminModal(false)} />
       
-      <div className="fixed top-0 left-0 right-0 z-50 h-16 bg-[#0D2B6B] px-4 flex items-center justify-between shadow-md">
-        <button type="button" onClick={() => setMenuOpen(true)} className="grid size-11 place-items-center rounded-full text-white transition hover:bg-white/15" aria-label="Menu"><Menu size={24} /></button>
-        <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 cursor-pointer" onClick={handleLogoTap}>
-          <Image alt="Logo" src="/assets/images/logo.png" width={48} height={48} className="rounded-xl" />
-          <span className="text-white font-black text-lg hidden sm:inline">BÂTIZEN CI</span>
-        </div>
-        <div className="flex items-center gap-2 text-white">
-          <ThemeToggle />
-          <Link href="/notifications" className="relative grid size-11 place-items-center rounded-full bg-white/15"><Bell size={21} /><span className="absolute right-2 top-2 size-2 rounded-full bg-[#FF7A00]" /></Link>
-          <Link href="/profil" className="grid size-11 place-items-center rounded-full bg-white/15"><UserRound size={21} /></Link>
-        </div>
-      </div>
 
       {menuOpen && (
         <>
@@ -129,7 +116,7 @@ export default function DashboardClientPage() {
         </>
       )}
 
-      <div className="flex flex-col gap-5 pt-20 pb-4">
+      <div className="flex flex-col gap-5 pt-20 pb-4 text-gray-900 dark:text-white">
         <DashboardHeader userName={userName} />
 
         <div className="w-full overflow-hidden bg-[#FF7A00]/10 backdrop-blur-md rounded-[24px] border border-[#FF7A00]/30 py-3 shadow-lg">

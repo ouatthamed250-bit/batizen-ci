@@ -27,19 +27,15 @@ export default function LayoutWrapper({ children, showHeader: showHeaderProp = t
     return <>{children}</>;
   }
 
-  // 2. Règle stricte : Cacher le header UNIQUEMENT sur Dashboard et Profil
-  const isDashboard = pathname === "/dashboard";
-  const isProfile = pathname === "/profil" || pathname?.startsWith("/profil");
-  
-  // On affiche le header PARTOUT, sauf si c'est le dashboard ou le profil,
-  // sauf si la page appelante a explicitement désactivé le header via la prop showHeader.
-  const showHeader = showHeaderProp && !isDashboard && !isProfile;
+  // Le PremiumHeader est maintenant affiché PARTOUT sur les pages connectées
+  // (y compris dashboard et profil) pour uniformiser l'expérience.
+  const showHeader = showHeaderProp;
 
   return (
     <PremiumBackground>
       <main className="ios-scroll pt-4 pb-24 px-2 min-h-screen">
-        {/* Le header s'affiche sur Nouveau Chantier, Simulation, Messages, Chantier en cours, etc. */}
-        {showHeader && <PremiumHeader />}
+        {/* Header uniforme sur toutes les pages connectées */}
+        <PremiumHeader />
         
         <div className="w-full">
           {children}

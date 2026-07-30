@@ -11,16 +11,19 @@ export default function HomePage() {
   const { isAuthenticated, loading } = useAuthContext();
 
   useEffect(() => {
+    // Si l'auth est déjà résolue → rediriger immédiatement
+    if (!loading) {
+      router.replace(isAuthenticated ? "/dashboard" : "/login");
+      return;
+    }
+
+    // Timeout de secours : si l'auth n'est pas résolue après 5s → /login
     const timer = setTimeout(() => {
-      if (!loading && isAuthenticated) {
-        router.replace("/dashboard");
-      } else if (!loading && !isAuthenticated) {
-        router.replace("/login");
-      }
-    }, 2500); // ⚠️ 2.5 SECONDES MINIMUM - NE PAS RÉDUIRE
+      router.replace("/login");
+    }, 5000);
 
     return () => clearTimeout(timer);
-  }, [isAuthenticated, loading, router]);
+  }, [loading, isAuthenticated, router]);
 
   if (loading) {
     return (

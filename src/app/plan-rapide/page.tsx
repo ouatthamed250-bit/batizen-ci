@@ -5,6 +5,18 @@ import { ArrowLeft, Download } from "lucide-react";
 import Link from "next/link";
 import { TEMPLATES } from "@/lib/plan-templates";
 
+/**
+ * Nettoie une chaîne SVG de tout contenu dangereux (XSS).
+ */
+function sanitizeSvg(svg: string): string {
+  return svg
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+    .replace(/\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*')/gi, "")
+    .replace(/\s+href\s*=\s*(?:"javascript:[^"]*"|'javascript:[^']*')/gi, ' href=""')
+    .replace(/\s+xlink:href\s*=\s*(?:"javascript:[^"]*"|'javascript:[^']*')/gi, ' xlink:href=""')
+    .replace(/<foreignObject\b[^>]*>[\s\S]*?<\/foreignObject>/gi, "");
+}
+
 export default function PlanRapidePage() {
   const [surface, setSurface] = useState(100);
   const [chambres, setChambres] = useState(3);
@@ -41,8 +53,7 @@ export default function PlanRapidePage() {
       if (!templateFn) { alert("Aucun template disponible pour ces critères"); setGenerating(false); return; }
       const svg = templateFn(surface, toitLabel);
       setSvgString(svg);
-    } catch (err) {
-      console.error("Erreur génération plan:", err);
+    } catch {
       alert("Erreur lors de la génération du plan");
     } finally {
       setGenerating(false);
@@ -62,8 +73,7 @@ export default function PlanRapidePage() {
       pdf.addImage(imgData, "PNG", 0, 0, pdfW, pdfH);
       const dateStr = new Date().toISOString().split("T")[0];
       pdf.save(`plan-batizen-${getTemplateKey()}-${dateStr}.pdf`);
-    } catch (err) {
-      console.error("Erreur PDF:", err);
+    } catch {
       alert("Erreur lors de la génération du PDF");
     }
   };
@@ -146,7 +156,8 @@ export default function PlanRapidePage() {
             ) : (
               <>
                 <div ref={svgRef} className="rounded-[28px] overflow-hidden border border-white/30 bg-white shadow-xl"
-                  dangerouslySetInnerHTML={{ __html: svgString }} />
+                  dangerouslySetInnerHTML={{ __html: sanitizeSvg(svgString) }}
+                  />
                 <button onClick={handleDownloadPDF}
                   className="w-full h-[56px] rounded-[18px] bg-gradient-to-r from-green-500 to-green-600 font-black text-white shadow-lg flex items-center justify-center gap-2 text-lg">
                   <Download size={22} /> Télécharger PDF

@@ -1,15 +1,44 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 
+interface ChatMessage {
+  role: string;
+  text: string;
+}
+
+const CHAT_STORAGE_KEY = "rhinozen_chat";
+const MAX_CHAT_SIZE = 50;
+
+function loadChatHistory(): ChatMessage[] {
+  const defaultMsg: ChatMessage = { role: 'assistant', text: '👋 Bonjour ! Je suis l\'assistant BATIZEN.CI. Comment puis-je vous aider aujourd\'hui ?' };
+  if (typeof window === "undefined") return [defaultMsg];
+  const raw = sessionStorage.getItem(CHAT_STORAGE_KEY);
+  if (!raw) return [defaultMsg];
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [defaultMsg];
+    const valid = parsed.filter((m: unknown): m is ChatMessage =>
+      typeof m === "object" && m !== null && "role" in m && "text" in m
+    );
+    return valid.length > 0 ? valid : [defaultMsg];
+  } catch {
+    return [defaultMsg];
+  }
+}
+
+function saveChatHistory(messages: ChatMessage[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    const trimmed = messages.slice(-MAX_CHAT_SIZE);
+    sessionStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(trimmed));
+  } catch {
+    // Silencieux — échec de sauvegarde non bloquant
+  }
+}
+
 export default function ChatBot() {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<{role: string; text: string}[]>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("rhinozen_chat");
-      return saved ? JSON.parse(saved) : [{ role: 'assistant', text: '👋 Bonjour ! Je suis l\'assistant BATIZEN.CI. Comment puis-je vous aider aujourd\'hui ?' }];
-    }
-    return [{ role: 'assistant', text: '👋 Bonjour ! Je suis l\'assistant BATIZEN.CI. Comment puis-je vous aider aujourd\'hui ?' }];
-  });
+  const [messages, setMessages] = useState<ChatMessage[]>(loadChatHistory);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -26,10 +55,9 @@ export default function ChatBot() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Persistance localStorage
+  // Persistance sessionStorage
   useEffect(() => {
-    const trimmed = messages.slice(-50);
-    localStorage.setItem("rhinozen_chat", JSON.stringify(trimmed));
+    saveChatHistory(messages);
   }, [messages]);
 
   // Click outside pour fermer
@@ -85,14 +113,14 @@ export default function ChatBot() {
       {!isOpen && (
       <div
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-28 right-5 z-50 animate-float cursor-pointer w-28 h-28 rounded-full bg-[#0D2B6B]/20 backdrop-blur-xl shadow-xl border border-white/20 flex items-center justify-center p-3 hover:bg-[#0D2B6B]/30 transition-all"
+        className="fixed bottom-28 right-5 z-50 animate-float cursor-pointer w-[123px] h-[123px] rounded-full bg-[#0D2B6B]/20 backdrop-blur-xl shadow-xl border border-white/20 flex items-center justify-center p-3 hover:bg-[#0D2B6B]/30 transition-all"
         title="RHINOZEN - Assistant BÂTIZEN"
         aria-label="Ouvrir l'assistant"
       >
         <img 
           src="/images/rhinozen.png" 
           alt="RHINOZEN - Assistant BÂTIZEN" 
-          className="w-full h-full object-contain drop-shadow-xl scale-110"
+          className="w-full h-full object-contain drop-shadow-xl"
         />
       </div>
       )}

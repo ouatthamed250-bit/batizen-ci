@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 
 interface Plan2DProps {
   surface: number;
@@ -245,6 +245,20 @@ export default function PlanGenerator2D({
     ctx.textAlign = "center";
     ctx.fillText("─── 5m", offsetX + houseWidth / 2, offsetY + houseLength + 25);
   }, [surface, largeur, longueur, nbChambres, nbSdb, totalRooms, etages, garage, piscine, style, isLoading]);
+
+  /** Sanitize une chaîne SVG en supprimant tout contenu dangereux (scripts, event handlers, etc.). */
+  const sanitizeSvg = useCallback((svgString: string): string => {
+    return svgString
+      // Supprime les balises <script> et leur contenu
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      // Supprime les attributs on* (onclick, onload, onerror, etc.)
+      .replace(/\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*')/gi, '')
+      // Supprime les href/javascript:
+      .replace(/\s+href\s*=\s*(?:"javascript:[^"]*"|'javascript:[^']*')/gi, '')
+      .replace(/\s+xlink:href\s*=\s*(?:"javascript:[^"]*"|'javascript:[^']*')/gi, '')
+      // Supprime les balises <foreignObject> (peuvent contenir du HTML)
+      .replace(/<foreignObject\b[^>]*>[\s\S]*?<\/foreignObject>/gi, '');
+  }, []);
 
   const downloadPNG = () => {
     const canvas = canvasRef.current;

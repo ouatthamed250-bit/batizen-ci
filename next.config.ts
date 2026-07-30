@@ -7,9 +7,6 @@ const nextConfig: NextConfig = {
 		"10.158.112.181",
 		"*.local",
 	],
-	turbopack: {
-		root: __dirname,
-	},
 	images: {
 		remotePatterns: [
 			{ protocol: "https", hostname: "lh3.googleusercontent.com" },

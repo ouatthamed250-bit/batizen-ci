@@ -35,40 +35,46 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
+/** Vérifie que les variables d'env Firebase critiques sont présentes et non vides. Lance une erreur sinon. */
+function validateFirebaseConfig(): void {
+  const required = ["apiKey", "authDomain", "projectId"] as const;
+  for (const key of required) {
+    const value = firebaseConfig[key];
+    if (!value) {
+      throw new Error(
+        `[Firebase Init] Variable manquante : NEXT_PUBLIC_FIREBASE_${key
+          .replace(/([A-Z])/g, "_$1")
+          .toUpperCase()}. Vérifiez votre .env.local`
+      );
+    }
+  }
+}
+
 export function hasFirebaseConfig(): boolean {
-  return Object.values(firebaseConfig).every((value) => Boolean(value));
+  try {
+    validateFirebaseConfig();
+    return true;
+  } catch {
+    return false;
+  }
 }
 
-// Initialize Firebase safely
-let firebaseApp: FirebaseApp;
-let firebaseAuth: Auth;
-let firebaseDatabase: Database;
-let firebaseStorage: FirebaseStorage;
-let firebaseGoogleProvider: GoogleAuthProvider;
+// Initialisation stricte — throw immédiat si config invalide
+validateFirebaseConfig();
 
-try {
-  firebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-  firebaseAuth = getAuth(firebaseApp);
-  firebaseDatabase = getDatabase(firebaseApp);
-  firebaseStorage = getStorage(firebaseApp);
-  firebaseGoogleProvider = new GoogleAuthProvider();
-  firebaseGoogleProvider.setCustomParameters({ prompt: "select_account" });
-} catch (error) {
-  console.warn("⚠️ Erreur d'initialisation Firebase:", error);
-  // Services null — les composants doivent vérifier avec hasFirebaseConfig()
-  firebaseApp = null as unknown as FirebaseApp;
-  firebaseAuth = null as unknown as Auth;
-  firebaseDatabase = null as unknown as Database;
-  firebaseStorage = null as unknown as FirebaseStorage;
-  firebaseGoogleProvider = null as unknown as GoogleAuthProvider;
-}
+const firebaseApp: FirebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+const firebaseAuth: Auth = getAuth(firebaseApp);
+const firebaseDatabase: Database = getDatabase(firebaseApp);
+const firebaseStorage: FirebaseStorage = getStorage(firebaseApp);
+const firebaseGoogleProvider: GoogleAuthProvider = new GoogleAuthProvider();
+firebaseGoogleProvider.setCustomParameters({ prompt: "select_account" });
 
 /**
  * Vérifie si Firebase est correctement initialisé.
  * À utiliser avant tout appel aux services Firebase.
  */
 export function isFirebaseReady(): boolean {
-  return firebaseApp !== null && firebaseAuth !== null && firebaseDatabase !== null;
+  return true;
 }
 
 export const app = firebaseApp;

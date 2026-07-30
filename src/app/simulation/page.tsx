@@ -9,6 +9,8 @@ import { formatFcfa } from "@/utils/currency";
 import SuperCalculateur from "@/components/btp/SuperCalculateur";
 import PlanGenerator2D from "@/components/simulation/PlanGenerator2D";
 import PlanGenerator3D from "@/components/simulation/PlanGenerator3D";
+import { PlanEngine } from "@/services/PlanEngine";
+import type { GeneratedPlan } from "@/types/batizen";
 import ChatBot from "@/components/ChatBot";
 
 type Etape = "formulaire" | "loading" | "propositions";
@@ -72,6 +74,7 @@ export default function SimulationPage() {
   });
 
   const [propositions, setPropositions] = useState<Proposition[]>([]);
+  const [generatedPlan, setGeneratedPlan] = useState<GeneratedPlan | null>(null);
 
   const generatePropositions = () => {
     const { budget, terrain, batiment } = preferences;
@@ -82,7 +85,35 @@ export default function SimulationPage() {
     ];
   };
 
-  const handleGenerate = () => { setEtape("loading"); setTimeout(() => { setPropositions(generatePropositions()); setEtape("propositions"); }, 3000); };
+  const handleGenerate = () => {
+    setEtape("loading");
+    // Générer le plan via PlanEngine pendant le chargement
+    const plan = PlanEngine.generateFreePlan({
+      landWidth: preferences.terrain.largeur,
+      landLength: preferences.terrain.longueur,
+      location: "Abidjan",
+      hasAdminPapers: false,
+      landShape: "rectangulaire",
+      orientation: "nord",
+      type: preferences.budget >= 40000000 ? "lux" : preferences.budget >= 25000000 ? "standard" : "base",
+      hasEtage: preferences.batiment.etages > 1,
+      quality: preferences.budget >= 40000000 ? "premium" : preferences.budget >= 25000000 ? "standard" : "eco",
+      bedrooms: preferences.batiment.chambres,
+      bathrooms: preferences.batiment.sallesDeBain,
+      livingRooms: 1,
+      hasDining: true,
+      kitchenType: "semi-ouverte",
+      hasOffice: false,
+      hasGarage: preferences.batiment.garage,
+      hasTerrace: false,
+      hasGuestRoom: false,
+    });
+    setGeneratedPlan(plan);
+    setTimeout(() => {
+      setPropositions(generatePropositions());
+      setEtape("propositions");
+    }, 3000);
+  };
 
   const updateTerrain = (field: string, value: any) => setPreferences({ ...preferences, terrain: { ...preferences.terrain, [field]: value } });
   const updateBatiment = (field: string, value: any) => setPreferences({ ...preferences, batiment: { ...preferences.batiment, [field]: value } });
@@ -409,17 +440,18 @@ export default function SimulationPage() {
                        style={preferences.style.architectural}
                      />
                    ) : (
-                     <PlanGenerator3D
-                       surface={preferences.terrain.surface}
-                       largeur={preferences.terrain.largeur}
-                       longueur={preferences.terrain.longueur}
-                       chambres={preferences.batiment.chambres}
-                       sallesDeBain={preferences.batiment.sallesDeBain}
-                       etages={preferences.batiment.etages}
-                       garage={preferences.batiment.garage}
-                       piscine={preferences.batiment.piscine}
-                       style={preferences.style.architectural}
-                     />
+                      <PlanGenerator3D
+                        surface={preferences.terrain.surface}
+                        largeur={preferences.terrain.largeur}
+                        longueur={preferences.terrain.longueur}
+                        chambres={preferences.batiment.chambres}
+                        sallesDeBain={preferences.batiment.sallesDeBain}
+                        etages={preferences.batiment.etages}
+                        garage={preferences.batiment.garage}
+                        piscine={preferences.batiment.piscine}
+                        style={preferences.style.architectural}
+                        plan={generatedPlan}
+                      />
                    )}
                  </div>
                 
