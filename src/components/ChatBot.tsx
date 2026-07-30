@@ -120,7 +120,7 @@ export default function ChatBot() {
         <img 
           src="/images/rhinozen.png" 
           alt="RHINOZEN - Assistant BÂTIZEN" 
-          className="w-32 h-32 object-contain drop-shadow-xl transition-transform hover:scale-110"
+          className="w-[141px] h-[141px] object-contain drop-shadow-xl transition-transform hover:scale-110"
         />
       </button>
       )}
