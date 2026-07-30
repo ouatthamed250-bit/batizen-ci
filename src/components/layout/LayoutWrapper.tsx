@@ -27,15 +27,15 @@ export default function LayoutWrapper({ children, showHeader: showHeaderProp = t
     return <>{children}</>;
   }
 
-  // Le PremiumHeader est maintenant affiché PARTOUT sur les pages connectées
-  // (y compris dashboard et profil) pour uniformiser l'expérience.
-  const showHeader = showHeaderProp;
+  // Cacher le header UNIQUEMENT sur Dashboard et Profil (ils ont leur propre header inline)
+  const isDashboard = pathname === "/dashboard";
+  const isProfile = pathname === "/profil" || pathname?.startsWith("/profil");
+  const showHeader = showHeaderProp && !isDashboard && !isProfile;
 
   return (
     <PremiumBackground>
       <main className="ios-scroll pt-4 pb-24 px-2 min-h-screen">
-        {/* Header uniforme sur toutes les pages connectées */}
-        <PremiumHeader />
+        {showHeader && <PremiumHeader />}
         
         <div className="w-full">
           {children}
