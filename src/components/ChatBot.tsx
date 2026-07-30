@@ -98,8 +98,8 @@ export default function ChatBot() {
       )}
 
       {isOpen && (
-        <div ref={chatRef} className="fixed bottom-5 right-5 z-[9999] flex flex-col w-[400px] max-w-[calc(100vw-40px)] h-[600px] max-h-[calc(100vh-40px)] rounded-[28px] border border-white/30 bg-white/20 backdrop-blur-xl shadow-xl animate-slideUp">
-          <div className="rounded-[28px_28px_0_0] bg-gradient-to-br from-[#0D2B6B] to-[#0B5FFF] text-white px-6 py-5 flex items-center justify-between">
+        <div ref={chatRef} className="fixed bottom-5 right-5 z-[9999] flex flex-col w-[440px] max-w-[calc(100vw-40px)] h-[660px] max-h-[calc(100vh-40px)] rounded-[28px] border border-white/30 bg-transparent backdrop-blur-xl shadow-xl animate-slideUp">
+          <div className="rounded-[28px_28px_0_0] bg-transparent text-white px-6 py-5 flex items-center justify-between">
             <div>
               <h3 className="m-0 text-lg font-black">🦏 RHINOZEN — Assistant BATIZEN</h3>
               <p className="mt-1 text-xs text-white/70">En ligne</p>
@@ -107,7 +107,7 @@ export default function ChatBot() {
             <button onClick={() => setIsOpen(false)} className="grid size-8 place-items-center rounded-full bg-white/20 text-white text-lg border-none cursor-pointer hover:bg-white/30 transition" aria-label="Fermer">✕</button>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-5 bg-white/10 backdrop-blur-sm space-y-4">
+          <div className="flex-1 overflow-y-auto p-5 bg-transparent backdrop-blur-sm space-y-4">
             {messages.map((msg, idx) => (
               <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} mb-4`}>
                 <div className={`max-w-[80%] px-4 py-3 text-sm font-semibold shadow-lg ${
@@ -130,14 +130,14 @@ export default function ChatBot() {
           </div>
 
           {messages.length === 1 && (
-            <div className="px-5 py-3 bg-white/10 backdrop-blur-sm border-t border-white/20 flex flex-wrap gap-2">
+            <div className="px-5 py-3 bg-transparent backdrop-blur-sm border-t border-white/20 flex flex-wrap gap-2">
               {suggestions.map((sug, idx) => (
                 <button key={idx} onClick={() => sendMessage(sug)} className="rounded-[18px] border border-[#FF7A00]/50 bg-white/80 text-[#FF7A00] text-xs font-bold px-3 py-2 cursor-pointer hover:bg-[#FF7A00]/10 transition">{sug}</button>
               ))}
             </div>
           )}
 
-          <div className="px-5 py-4 bg-white/10 backdrop-blur-sm border-t border-white/20 rounded-[0_0_28px_28px] flex gap-3">
+          <div className="px-5 py-4 bg-transparent backdrop-blur-sm border-t border-white/20 rounded-[0_0_28px_28px] flex gap-3">
             <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && sendMessage(input)} placeholder="Posez votre question..." className="flex-1 px-4 py-3 rounded-[25px] border border-white/30 bg-white/80 text-sm text-[#1A1A1A] outline-none focus:border-[#0B5FFF] focus:ring-2 focus:ring-[#0B5FFF]/20 placeholder:text-gray-400" />
             <button onClick={() => sendMessage(input)} disabled={isLoading || !input.trim()} className="size-[45px] rounded-full bg-gradient-to-br from-[#0B5FFF] to-[#0D2B6B] border-none text-white text-xl cursor-pointer grid place-items-center shadow-lg disabled:opacity-50 hover:shadow-xl transition">➤</button>
           </div>
