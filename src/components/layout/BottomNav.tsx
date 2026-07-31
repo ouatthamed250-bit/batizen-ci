@@ -85,7 +85,7 @@ export function BottomNav() {
             aria-current={active ? "page" : undefined}
             className={cn(
               "relative flex min-w-16 flex-col items-center gap-1 text-xs transition-all duration-300 active:scale-90",
-              active ? "text-white font-semibold" : "text-white/70 font-medium"
+                active ? "text-white font-semibold" : "text-white/70 font-medium"
             )}
           >
             <span className={cn(
