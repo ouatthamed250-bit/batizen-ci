@@ -3,16 +3,7 @@
 import { Suspense, useEffect, useState, type FormEvent } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import {
-  Search,
-  Eye,
-  Pencil,
-  Ban,
-  Check,
-  Plus,
-  TrendingUp,
-  AlertCircle,
-} from "lucide-react";
+import { Search } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -21,10 +12,10 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { subscribeToAdminNotifications, markAsRead, type Notification } from "@/lib/notifications";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { getFirebaseServices } from '../../lib/firebase';
+import { logger } from "@/utils/logger";
 import { ref, onValue, get, push, set, update } from 'firebase/database';
 
 type Localisation = {
@@ -278,12 +269,12 @@ const getLastInteraction = (client: any): { type: string; date: number; label: s
 };
 
 async function updateChantier(chantierId: string, updates: Partial<Chantier>) {
-  const { db: db } = getFirebaseServices();
+  const { db } = getFirebaseServices();
   try {
     await update(ref(db, `chantiers/${chantierId}`), updates);
-    console.log(`✅ Chantier ${chantierId} mis à jour:`, updates);
+    logger.debug(`Chantier ${chantierId} mis à jour`, updates);
   } catch (error) {
-    console.error(`❌ Erreur mise à jour chantier ${chantierId}:`, error);
+    logger.error(`Erreur mise à jour chantier ${chantierId}`, error);
     throw error;
   }
 }
@@ -339,18 +330,13 @@ function AdminContent() {
 
 useEffect(() => {
     if (!user?.uid) {
-      console.log("⏳ Attente authentification admin...");
+      logger.debug("Attente authentification admin...");
       return;
     }
 
-    const { db: db } = getFirebaseServices();
+    const { db } = getFirebaseServices();
 
-    console.log("🔍 [DIAG] User connecté:", {
-      uid: user?.uid,
-      role: user?.role,
-      email: user?.email,
-      displayName: user?.displayName
-    });
+    logger.debug("User connecté", { uid: user?.uid, role: user?.role });
 
     const usersRef = ref(db, 'users');
     const chantiersRef = ref(db, 'chantiers');
@@ -361,7 +347,6 @@ useEffect(() => {
     const renovationRef = ref(db, 'demandesRenovation');
     
     const unsubRapports = onValue(rapportsRef, (snapshot) => {
-      console.log("✅ [SEC-ADMIN] Requête rapports compatible règles strictes (admin-only)");
       const data = snapshot.val();
       setAllRapports(data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : []);
     });
@@ -380,46 +365,24 @@ useEffect(() => {
     });
 
     const unsubPaiements = onValue(paiementsRef, (snapshot) => {
-      console.log("✅ [SEC-ADMIN] Requête paiements compatible règles strictes (admin-only)");
       const data = snapshot.val();
       setAllPaiements(data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : []);
     });
-    
-    onValue(usersRef, (snapshot) => {
-      const userData = snapshot.val();
-      console.log("🔐 [AUTH] Données user Firebase:", userData);
-      
-      if (userData?.role !== "admin" && userData?.userRole !== "admin") {
-        console.info("ℹ️ [AUTH] Rôle DB:", userData?.role || userData?.userRole, "— fallback sur vérification session/cookie");
-      } else {
-        console.log("✅ [AUTH] Rôle admin confirmé");
-      }
-    }, { onlyOnce: true });
 
     const unsubClients = onValue(usersRef, async (snapshot) => {
-      console.log("✅ [SEC-ADMIN] Requête users compatible règles strictes (admin-only)");
-      console.log("📦 [DIAG] Snapshot reçu. Existe ?", snapshot.exists());
-      
       const data = snapshot.val();
       if (!data) {
-        console.log("❌ [DIAG] Aucune donnée dans /users");
+        logger.debug("Aucune donnée dans /users");
         setClients([]);
         return;
       }
 
       const allUsers = Object.entries(data);
-      console.log(`👥 [DIAG] Total users trouvés: ${allUsers.length}`);
 
       const clientsList = allUsers
         .filter(([id, u]: [string, any]) => {
           const roleValue = u.role || u.userRole || "";
-          const isClient = roleValue === "client";
-          
-          if (isClient) {
-            console.log(`  ✅ [DIAG] Client détecté: ${id} (${u.displayName || u.nom})`);
-          }
-          
-          return isClient;
+          return roleValue === "client";
         })
         .map(([id, u]: [string, any]) => ({ 
           id, 
@@ -428,12 +391,12 @@ useEffect(() => {
           role: u.role || u.userRole || "unknown"
         }));
 
-      console.log(`✅ [DIAG] Clients filtrés: ${clientsList.length}`);
+      logger.debug(`Clients filtrés: ${clientsList.length}`);
 
-      // 🔍 ÉTAPE 1 : Charger TOUS les chantiers en une seule fois
+      // ÉTAPE 1 : Charger TOUS les chantiers en une seule fois
       const chantiersSnap = await get(chantiersRef);
       const allChantiers = chantiersSnap.val() || {};
-      console.log(`🏗️ [DIAG] ${Object.keys(allChantiers).length} chantiers totaux chargés`);
+      logger.debug(`${Object.keys(allChantiers).length} chantiers totaux chargés`);
 
       // 🔍 ÉTAPE 2 : Charger TOUS les rapports en une seule fois
       const rapportsSnap = await get(rapportsRef);
@@ -487,19 +450,12 @@ useEffect(() => {
         return { ...client, chantiers: clientChantiers, rapports: clientRapports, paiements: clientPaiements, dernierMessage, rdvConfirmes: clientRdvConfirmes };
       });
 
-      console.log("✅ Clients enrichis avec chantiers:", clientsWithChantiers.map(c => ({
-        nom: c.displayName,
-        nbChantiers: c.chantiers.length
-      })));
-      
       setClients(clientsWithChantiers);
     }, (error) => {
-      console.error("❌ [DIAG] Erreur Firebase:", error);
+      logger.error("Erreur Firebase:", error);
     });
 
-    console.log("🔓 ADMIN MODE - Chargement de TOUS les chantiers sans filtre");
     const unsubChantiers = onValue(chantiersRef, (snapshot) => {
-      console.log("✅ [SEC-ADMIN] Requête chantiers compatible règles strictes (admin-only)");
       const data = snapshot.val();
       if (data) {
         const chantiersData = Object.keys(data).map(key => ({ id: key, ...data[key] }));
@@ -512,7 +468,6 @@ useEffect(() => {
 
     const partenairesRef = ref(db, 'partenaires');
     const unsubPartenaires = onValue(partenairesRef, (snapshot) => {
-      console.log("✅ [SEC-ADMIN] Requête partenaires compatible règles strictes (admin-only)");
       const data = snapshot.val();
       if (data) {
         const partenairesData = Object.entries(data)
@@ -526,7 +481,6 @@ useEffect(() => {
 
 const promotionsRef = ref(db, 'promotions');
     const unsubPromotions = onValue(promotionsRef, (snapshot) => {
-      console.log("✅ [SEC-ADMIN] Requête promotions compatible règles strictes (admin-only)");
       const data = snapshot.val();
       if (data) {
         const promotionsData = Object.entries(data)
@@ -540,14 +494,12 @@ const promotionsRef = ref(db, 'promotions');
 
     const ouvriersRef = ref(db, 'ouvriers');
     const unsubOuvriers = onValue(ouvriersRef, (snapshot) => {
-      console.log("✅ [SEC-ADMIN] Requête ouvriers compatible règles strictes (admin-only)");
       const data = snapshot.val();
       setOuvriers(data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : []);
     });
 
     const materiauxRef = ref(db, 'materiaux');
     const unsubMateriaux = onValue(materiauxRef, (snapshot) => {
-      console.log("✅ [SEC-ADMIN] Requête materiaux compatible règles strictes (admin-only)");
       const data = snapshot.val();
       setMateriaux(data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : []);
     });
@@ -757,12 +709,12 @@ const promotionsRef = ref(db, 'promotions');
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     placeholder="Rechercher par nom, email ou téléphone..."
-                    className="w-full pl-12 pr-12 py-3 bg-white border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF7A00]/50 focus:border-[#FF7A00] transition shadow-sm"
+                    className="w-full pl-12 pr-12 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#FF7A00]/50 focus:border-[#FF7A00] transition"
                   />
                   {searchTerm && (
                     <button
                       onClick={() => setSearchTerm("")}
-                      className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition"
+                      className="absolute inset-y-0 right-0 pr-4 flex items-center text-white/50 hover:text-white transition"
                     >
                       ✕
                     </button>
@@ -771,15 +723,15 @@ const promotionsRef = ref(db, 'promotions');
 
                 {/* Indicateur de résultats */}
                 {searchTerm && (
-                  <p className="text-sm text-gray-500 mb-4">
+                  <p className="text-sm text-white/60 mb-4">
                     {filteredAndSortedClients.length} résultat{filteredAndSortedClients.length > 1 ? "s" : ""} pour "{searchTerm}"
                   </p>
                 )}
 
                 {filteredAndSortedClients.length === 0 && searchTerm && (
-                  <div className="text-center py-12 bg-white rounded-2xl border border-gray-200">
-                    <p className="text-gray-500 text-lg">Aucun client trouvé</p>
-                    <p className="text-sm text-gray-400 mt-2">Essayez avec un autre nom, email ou numéro de téléphone</p>
+                  <div className="text-center py-12 bg-white/5 rounded-2xl border border-white/10">
+                    <p className="text-white/70 text-lg">Aucun client trouvé</p>
+                    <p className="text-sm text-white/50 mt-2">Essayez avec un autre nom, email ou numéro de téléphone</p>
                   </div>
                 )}
 
@@ -795,7 +747,7 @@ const promotionsRef = ref(db, 'promotions');
                     const lastInteraction = getLastInteraction(client);
                     
                     return (
-                      <div key={client.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 hover:shadow-md transition relative">
+                      <div key={client.id} className="rounded-[16px] border border-white/10 bg-white/5 p-5 transition hover:bg-white/[0.08] relative">
                         {/* Badge de priorité visuel */}
                         {prioriteScore >= 80 && (
                           <div className="absolute top-3 right-3 w-3 h-3 bg-red-500 rounded-full animate-pulse" title="Urgence élevée" />
@@ -810,20 +762,20 @@ const promotionsRef = ref(db, 'promotions');
                             {getInitials(client.displayName || client.nom || "Sans nom")}
                           </div>
                           <div>
-                            <h4 className="font-bold text-[var(--navy)]">{client.displayName || client.nom || "Sans nom"}</h4>
-                            <p className="text-xs text-gray-500">{client.email || "—"}</p>
+                            <h4 className="font-bold text-white">{client.displayName || client.nom || "Sans nom"}</h4>
+                            <p className="text-xs text-white/60">{client.email || "—"}</p>
                           </div>
                         </div>
 
                         {/* Historique d'interaction rapide */}
                         {lastInteraction && (
-                          <div className="mt-3 pt-3 border-t border-gray-100 flex items-center gap-2">
-                            <span className="text-xs text-gray-500">Dernière activité :</span>
+                          <div className="mt-3 pt-3 border-t border-white/10 flex items-center gap-2">
+                            <span className="text-xs text-white/60">Dernière activité :</span>
                             <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                              lastInteraction.type === "message" ? "bg-blue-50 text-blue-700" :
-                              lastInteraction.type === "paiement" ? "bg-green-50 text-green-700" :
-                              lastInteraction.type === "rapport" ? "bg-purple-50 text-purple-700" :
-                              "bg-orange-50 text-orange-700"
+                              lastInteraction.type === "message" ? "bg-blue-500/20 text-blue-300" :
+                              lastInteraction.type === "paiement" ? "bg-green-500/20 text-green-300" :
+                              lastInteraction.type === "rapport" ? "bg-purple-500/20 text-purple-300" :
+                              "bg-orange-500/20 text-orange-300"
                             }`}>
                               {lastInteraction.label} • {getTempsRelatif(lastInteraction.date)}
                             </span>
@@ -831,13 +783,13 @@ const promotionsRef = ref(db, 'promotions');
                         )}
 
                         {/* Section : Liste des chantiers du client */}
-                        <div className="mt-4 pt-4 border-t border-gray-100">
-                          <p className="text-xs font-semibold text-gray-600 mb-2 flex items-center gap-1">
+                        <div className="mt-4 pt-4 border-t border-white/10">
+                          <p className="text-xs font-semibold text-white/70 mb-2 flex items-center gap-1">
                             🏗️ Ses chantiers ({client.chantiers?.length || 0})
                           </p>
                           
                           {(!client.chantiers || client.chantiers.length === 0) ? (
-                            <p className="text-xs text-gray-400 italic">Aucun chantier assigné</p>
+                            <p className="text-xs text-white/50 italic">Aucun chantier assigné</p>
                           ) : (
                             <div className="space-y-2">
                               {client.chantiers.slice(0, 3).map((chantier: any) => {
@@ -849,22 +801,22 @@ const promotionsRef = ref(db, 'promotions');
                                   <Link 
                                     key={chantier.id} 
                                     href={`/admin/chantier/${chantier.id}`}
-                                    className="flex items-center justify-between p-2 bg-gray-50 rounded-lg hover:bg-[#FF7A00]/5 hover:border-[#FF7A00]/30 border border-transparent transition group"
+                                    className="flex items-center justify-between p-2 bg-white/5 rounded-lg hover:bg-[#FF7A00]/10 hover:border-[#FF7A00]/30 border border-transparent transition group"
                                   >
                                     <div className="flex-1 min-w-0">
-                                      <p className="text-sm font-medium text-[var(--navy)] truncate group-hover:text-[#FF7A00]">
+                                      <p className="text-sm font-medium text-white truncate group-hover:text-[#FF7A00]">
                                         {chantier.nom_projet || chantier.nom || "Sans nom"}
                                       </p>
-                                      <p className="text-xs text-gray-500 truncate">
+                                      <p className="text-xs text-white/60 truncate">
                                         {chantier.localisation?.ville || "Localisation inconnue"}
                                       </p>
                                     </div>
                                     
                                     {/* Badge de santé visuel */}
                                     <span className={`ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap ${
-                                      sante.couleur === "green" ? "bg-green-100 text-green-700" :
-                                      sante.couleur === "orange" ? "bg-orange-100 text-orange-700" :
-                                      "bg-red-100 text-red-700"
+                                      sante.couleur === "green" ? "bg-green-500/20 text-green-300" :
+                                      sante.couleur === "orange" ? "bg-orange-500/20 text-orange-300" :
+                                      "bg-red-500/20 text-red-300"
                                     }`}>
                                       {sante.label}
                                     </span>
@@ -960,8 +912,8 @@ const promotionsRef = ref(db, 'promotions');
                           }}
                           className={`w-full rounded-full px-3 py-1 text-xs font-bold border transition ${
                             p.actif 
-                              ? "bg-green-50 border-green-200 text-green-700 hover:bg-green-100" 
-                              : "bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100"
+                              ? "bg-green-500/20 border-green-500/30 text-green-300 hover:bg-green-500/30" 
+                              : "bg-white/5 border-white/10 text-white/50 hover:bg-white/10"
                           }`}
                         >
                           {p.actif ? "✅ Actif" : "⏸️ Inactif"}
@@ -1006,8 +958,8 @@ const promotionsRef = ref(db, 'promotions');
                           }}
                           className={`w-full rounded-full px-3 py-1 text-xs font-bold border transition ${
                             p.active 
-                              ? "bg-green-50 border-green-200 text-green-700 hover:bg-green-100" 
-                              : "bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100"
+                              ? "bg-green-500/20 border-green-500/30 text-green-300 hover:bg-green-500/30" 
+                              : "bg-white/5 border-white/10 text-white/50 hover:bg-white/10"
                           }`}
                         >
                           {p.active ? "✅ Active" : "⏸️ Inactive"}

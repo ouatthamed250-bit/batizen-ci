@@ -1,18 +1,41 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import Link from "next/link";
-import { Calendar, CalendarDays, Calendar as CalendarIcon } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { getFirebaseServices } from "@/lib/firebase";
+import { logger } from "@/utils/logger";
 import { ref, onValue, push, update } from 'firebase/database';
+
+type Rdv = {
+  id: string;
+  actif?: boolean;
+  chantierId?: string;
+  clientId?: string;
+  titre?: string;
+  type?: string;
+  date?: string;
+  heure?: string;
+  duree?: string;
+  lieu?: string;
+  description?: string;
+  statut?: string;
+};
+
+type ChantierItem = {
+  id: string;
+  nom?: string;
+  nom_projet?: string;
+  userId?: string;
+  localisation?: { ville?: string };
+};
 
 export default function AdminCalendarPage() {
   const { user } = useAuthContext();
   const { database } = getFirebaseServices();
 
-  const [rdvs, setRdvs] = useState<any[]>([]);
-  const [chantiers, setChantiers] = useState<any[]>([]);
+  const [rdvs, setRdvs] = useState<Rdv[]>([]);
+  const [chantiers, setChantiers] = useState<ChantierItem[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showForm, setShowForm] = useState(false);
   const [rdvForm, setRdvForm] = useState({
@@ -36,9 +59,9 @@ export default function AdminCalendarPage() {
       const data = snapshot.val();
       if (data) {
         const rdvsData = Object.entries(data)
-          .filter(([id, r]: [string, any]) => r.actif)
-          .map(([id, r]: [string, any]) => ({ id, ...r }))
-          .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
+          .filter(([, r]: [string, any]) => r.actif)
+          .map(([id, r]: [string, any]) => ({ id, ...r } as Rdv))
+          .sort((a, b) => new Date(a.date ?? 0).getTime() - new Date(b.date ?? 0).getTime());
         setRdvs(rdvsData);
       }
     });
@@ -49,7 +72,7 @@ export default function AdminCalendarPage() {
       const data = snapshot.val();
       if (data) {
         const chantiersData = Object.entries(data)
-          .map(([id, c]: [string, any]) => ({ id, ...c }));
+          .map(([id, c]: [string, any]) => ({ id, ...c } as ChantierItem));
         setChantiers(chantiersData);
       }
     });
@@ -60,7 +83,7 @@ export default function AdminCalendarPage() {
     };
   }, [user, database]);
 
-  const handleCreerRdv = async (e: React.FormEvent) => {
+  const handleCreerRdv = async (e: FormEvent) => {
     e.preventDefault();
     if (!rdvForm.titre.trim() || !rdvForm.date || !rdvForm.chantierId) {
       alert("Veuillez remplir tous les champs obligatoires");
@@ -95,7 +118,7 @@ export default function AdminCalendarPage() {
         description: ""
       });
     } catch (error) {
-      console.error("Erreur création RDV:", error);
+      logger.error("Erreur création RDV:", error);
       alert("Erreur lors de la création du RDV");
     }
   };
@@ -272,7 +295,7 @@ export default function AdminCalendarPage() {
             ) : (
               rdvs.map((rdv) => {
                 const chantier = chantiers.find(c => c.id === rdv.chantierId);
-                const isPast = new Date(rdv.date) < new Date();
+                const isPast = new Date(rdv.date ?? 0) < new Date();
                 
                 return (
                   <div 
@@ -300,7 +323,7 @@ export default function AdminCalendarPage() {
                           <h4 className="font-bold text-white text-lg">{rdv.titre}</h4>
                         </div>
                         <p className="text-sm text-white/70">
-                          📅 {new Date(rdv.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} à {rdv.heure}
+                          📅 {new Date(rdv.date ?? 0).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} à {rdv.heure}
                         </p>
                         <p className="text-sm text-white/70">
                           ⏱️ Durée : {rdv.duree}
@@ -402,7 +425,7 @@ export default function AdminCalendarPage() {
                 const dayDate = new Date(currentDate);
                 dayDate.setDate(1 - startDay + idx);
                 
-                const dayRdvs = rdvs.filter(r => new Date(r.date).toDateString() === dayDate.toDateString());
+                const dayRdvs = rdvs.filter(r => new Date(r.date ?? 0).toDateString() === dayDate.toDateString());
                 const isCurrentMonth = dayDate.getMonth() === currentDate.getMonth();
                 const isToday = dayDate.toDateString() === new Date().toDateString();
                 
@@ -428,7 +451,7 @@ export default function AdminCalendarPage() {
                           }`}
                           title={rdv.titre}
                         >
-                          {rdv.heure} {rdv.titre.substring(0, 15)}
+                          {rdv.heure} {(rdv.titre ?? "").substring(0, 15)}
                         </div>
                       ))}
                       {dayRdvs.length > 2 && (

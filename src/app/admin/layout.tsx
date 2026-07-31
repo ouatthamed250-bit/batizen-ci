@@ -8,13 +8,14 @@ import AdminLayoutClient from "./AdminLayoutClient";
 /**
  * Layout admin — Client Component
  *
- * 🔒 Vérification côté client de l'accès admin via le hook useAuth().
- * L'utilisateur doit avoir le rôle "admin" dans la Realtime Database.
+ * 🔒 Vérification de l'accès admin via le hook useAuth().
+ * Le hook vérifie le rôle admin via :
+ * 1. Custom Claim Firebase (getIdTokenResult — infalsifiable, côté serveur)
+ * 2. API serveur /api/auth/check-admin (whitelist serveur + firebase-admin)
  *
- * Architecture simplifiée :
- * - Plus de vérification côté serveur (cookies, firebase-admin)
- * - Plus de middleware
- * - Vérification 100% côté client via Firebase Auth + Realtime Database
+ * ⚠️ SÉCURITÉ : La vérification via Realtime Database seule a été supprimée car
+ *    elle permettait l'auto-attribution du rôle. Les sources serveur restent la
+ *    référence (cf. database.rules.json pour le déploiement des règles).
  */
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, isAdmin } = useAuth();
