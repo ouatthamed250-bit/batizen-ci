@@ -7,6 +7,28 @@ const ADMIN_UIDS = new Set([
   "aaGhSvV60KTntvVaZxIT6AKfTD43",
 ]);
 
+/**
+ * GET /api/auth/check-admin
+ *
+ * Méthode de diagnostic/héritée : répond proprement (pas de 500/405)
+ * pour ne jamais bloquer la connexion admin. La vérification réelle
+ * se fait via POST (utilisé par useAuth) ou le Custom Claim Firebase.
+ */
+export async function GET() {
+  try {
+    const adminAuth = getFirebaseAdminAuth();
+
+    if (!adminAuth) {
+      return NextResponse.json({ isAdmin: false, source: "unavailable" });
+    }
+
+    return NextResponse.json({ isAdmin: false, source: "no-token" });
+  } catch (error) {
+    console.error("Erreur vérification admin (GET):", error);
+    return NextResponse.json({ isAdmin: false });
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const { idToken } = await request.json();
