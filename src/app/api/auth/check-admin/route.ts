@@ -10,9 +10,9 @@ const ADMIN_UIDS = new Set([
 /**
  * GET /api/auth/check-admin
  *
- * Méthode de diagnostic/héritée : répond proprement (pas de 500/405)
- * pour ne jamais bloquer la connexion admin. La vérification réelle
- * se fait via POST (utilisé par useAuth) ou le Custom Claim Firebase.
+ * Méthode de diagnostic/héritée : répond toujours 200, jamais 500.
+ * La vérification réelle se fait via POST (utilisé par useAuth) ou le
+ * Custom Claim Firebase (getIdTokenResult, infalsifiable).
  */
 export async function GET() {
   try {
@@ -23,31 +23,45 @@ export async function GET() {
     }
 
     return NextResponse.json({ isAdmin: false, source: "no-token" });
-  } catch (error) {
-    console.error("Erreur vérification admin (GET):", error);
+  } catch {
     return NextResponse.json({ isAdmin: false });
   }
 }
 
+/**
+ * POST /api/auth/check-admin
+ *
+ * RÈGLE D'OR : cette route ne renvoie JAMAIS de 500. Quoi qu'il arrive
+ * (body mal formé, SDK Admin non initialisé, token invalide), elle
+ * répond 200 avec `{ isAdmin: false }` — jamais de statut d'erreur.
+ */
 export async function POST(request: Request) {
   try {
-    const { idToken } = await request.json();
-    
+    // Lecture sécurisée du body : ne throw JAMAIS (pas de request.json()).
+    const bodyText = await request.text();
+    let idToken: string | undefined;
+
+    try {
+      const parsed = bodyText ? JSON.parse(bodyText) : {};
+      idToken = typeof parsed?.idToken === "string" ? parsed.idToken : undefined;
+    } catch {
+      idToken = undefined; // body invalide → non-admin silencieux
+    }
+
     if (!idToken) {
-      return NextResponse.json({ isAdmin: false }, { status: 401 });
+      return NextResponse.json({ isAdmin: false });
     }
 
     const adminAuth = getFirebaseAdminAuth();
 
-    // Si le SDK Admin n'est pas initialisé (variables d'env manquantes),
-    // on ne renvoie PAS une 500 : le client retombe sur le Custom Claim
-    // Firebase via getIdTokenResult (infalsifiable).
+    // SDK Admin non initialisé (env vars manquantes) → non-admin silencieux
+    // Le client retombe sur le Custom Claim Firebase (infalsifiable).
     if (!adminAuth) {
       return NextResponse.json({ isAdmin: false, source: "unavailable" });
     }
 
     const decoded = await adminAuth.verifyIdToken(idToken);
-    
+
     // Vérification 1 : Custom Claims Firebase
     if (decoded.role === "admin") {
       return NextResponse.json({ isAdmin: true, source: "claims" });
@@ -59,8 +73,8 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ isAdmin: false });
-  } catch (error) {
-    console.error("Erreur vérification admin:", error);
-    return NextResponse.json({ isAdmin: false }, { status: 500 });
+  } catch {
+    // Ne JAMAIS renvoyer 500 : échec silencieux → non-admin
+    return NextResponse.json({ isAdmin: false });
   }
 }
