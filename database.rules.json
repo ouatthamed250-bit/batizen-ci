@@ -19,7 +19,7 @@
         ".write": "auth != null && auth.uid == $uid",
         "role": {
           ".read": "auth != null",
-          ".write": "(root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('admins').child(auth.uid).exists()) || (!data.exists() && newData.val() == 'client')",
+          ".write": "(root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('admins').child(auth.uid).exists()) || (!data.exists() && newData.val() == 'client') || (data.exists() && newData.val() == data.val())",
           ".validate": "newData.val() == 'admin' || newData.val() == 'client'"
         }
       }
