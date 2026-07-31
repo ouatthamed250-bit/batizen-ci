@@ -15,6 +15,7 @@ const ADMIN_UIDS = new Set([
  * Custom Claim Firebase (getIdTokenResult, infalsifiable).
  */
 export async function GET() {
+  console.log("[check-admin] handler appelé (GET)");
   try {
     const adminAuth = getFirebaseAdminAuth();
 
@@ -36,6 +37,7 @@ export async function GET() {
  * répond 200 avec `{ isAdmin: false }` — jamais de statut d'erreur.
  */
 export async function POST(request: Request) {
+  console.log("[check-admin] handler appelé (POST)");
   try {
     // Lecture sécurisée du body : ne throw JAMAIS (pas de request.json()).
     const bodyText = await request.text();
