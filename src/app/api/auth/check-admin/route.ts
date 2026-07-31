@@ -16,6 +16,14 @@ export async function POST(request: Request) {
     }
 
     const adminAuth = getFirebaseAdminAuth();
+
+    // Si le SDK Admin n'est pas initialisé (variables d'env manquantes),
+    // on ne renvoie PAS une 500 : le client retombe sur le Custom Claim
+    // Firebase via getIdTokenResult (infalsifiable).
+    if (!adminAuth) {
+      return NextResponse.json({ isAdmin: false, source: "unavailable" });
+    }
+
     const decoded = await adminAuth.verifyIdToken(idToken);
     
     // Vérification 1 : Custom Claims Firebase

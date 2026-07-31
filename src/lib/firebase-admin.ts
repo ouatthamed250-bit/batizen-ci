@@ -96,18 +96,31 @@ try {
 
 export const firebaseAdmin = firebaseApp;
 
+/**
+ * Retourne l'instance Auth Firebase Admin, ou null si non initialisé.
+ * Ne lance jamais d'exception à l'import (initialisation différée sécurisée).
+ */
 export function getFirebaseAdminAuth() {
-  if (!firebaseApp) throw new Error('Firebase Admin non initialisé');
-  return getAuth(firebaseApp);
+  if (!firebaseApp) return null;
+  try {
+    return getAuth(firebaseApp);
+  } catch {
+    return null;
+  }
 }
 
 export function getFirebaseAdminDb() {
-  if (!firebaseApp) throw new Error('Firebase Admin non initialisé');
-  return getDatabase(firebaseApp);
+  if (!firebaseApp) return null;
+  try {
+    return getDatabase(firebaseApp);
+  } catch {
+    return null;
+  }
 }
 
-export const adminAuth = firebaseApp ? getAuth(firebaseApp) : null;
-export const adminDb = firebaseApp ? getDatabase(firebaseApp) : null;
+// Accès différés (remplacé par les getters ci-dessus pour éviter les erreurs à l'import)
+export const adminAuth = null;
+export const adminDb = null;
 
 export function ensureFirebaseAdmin(): void {
   if (!firebaseApp) {

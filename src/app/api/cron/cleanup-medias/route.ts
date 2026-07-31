@@ -11,6 +11,9 @@ export async function GET(request: Request) {
 
   try {
     const adminDb = getFirebaseAdminDb();
+    if (!adminDb) {
+      return NextResponse.json({ error: "Service admin indisponible" }, { status: 503 });
+    }
 
     const snapshot = await adminDb.ref("chantiers").get();
     if (!snapshot.exists()) {

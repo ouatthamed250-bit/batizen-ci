@@ -11,6 +11,9 @@ export async function GET(request: Request) {
 
   try {
     const adminDb = getFirebaseAdminDb();
+    if (!adminDb) {
+      return NextResponse.json({ error: "Service admin indisponible" }, { status: 503 });
+    }
 
     // Récupérer tous les RDV confirmés
     const rdvsSnapshot = await adminDb.ref("rendezvous").get();

@@ -98,9 +98,17 @@ export async function POST(request: NextRequest) {
     }
 
     // 5. Vérification de l'idToken Firebase
+    const adminAuth = getFirebaseAdminAuth();
+    if (!adminAuth) {
+      return NextResponse.json(
+        { error: "Service admin indisponible." },
+        { status: 503 }
+      );
+    }
+
     let decodedToken;
     try {
-      decodedToken = await getFirebaseAdminAuth().verifyIdToken(idToken);
+      decodedToken = await adminAuth.verifyIdToken(idToken);
     } catch {
       return NextResponse.json(
         { error: "Token invalide ou expiré." },
@@ -112,7 +120,7 @@ export async function POST(request: NextRequest) {
 
     // 6. Définition du custom claim { role: 'admin' }
     try {
-      await getFirebaseAdminAuth().setCustomUserClaims(uid, { role: "admin" });
+      await adminAuth.setCustomUserClaims(uid, { role: "admin" });
     } catch (err) {
       console.error("❌ Erreur setCustomUserClaims:", err);
       return NextResponse.json(

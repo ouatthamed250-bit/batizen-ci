@@ -23,11 +23,14 @@ export async function POST(request: NextRequest) {
 
     if (sessionCookie) {
       try {
-        // checkRevoked: false ici volontairement — on veut décoder le cookie
-        // même s'il est déjà expiré/révoqué, juste pour récupérer l'uid et
-        // s'assurer que la révocation est bien (re)déclenchée.
-        const decoded = await getFirebaseAdminAuth().verifySessionCookie(sessionCookie, false);
-        await getFirebaseAdminAuth().revokeRefreshTokens(decoded.uid);
+        const adminAuth = getFirebaseAdminAuth();
+        if (adminAuth) {
+          // checkRevoked: false ici volontairement — on veut décoder le cookie
+          // même s'il est déjà expiré/révoqué, juste pour récupérer l'uid et
+          // s'assurer que la révocation est bien (re)déclenchée.
+          const decoded = await adminAuth.verifySessionCookie(sessionCookie, false);
+          await adminAuth.revokeRefreshTokens(decoded.uid);
+        }
       } catch {
         // Cookie déjà invalide/expiré/malformé : rien à révoquer, on continue
         // simplement pour nettoyer le cookie côté navigateur.

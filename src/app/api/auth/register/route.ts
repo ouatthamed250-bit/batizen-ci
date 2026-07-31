@@ -38,9 +38,17 @@ export async function POST(request: NextRequest) {
     const { email, password, displayName } = parseResult.data;
 
     // 1. Création de l'utilisateur — toujours avec le rôle 'client'
+    const adminAuth = getFirebaseAdminAuth();
+    if (!adminAuth) {
+      return NextResponse.json(
+        { error: "Service d'inscription indisponible." },
+        { status: 503 }
+      );
+    }
+
     let userRecord;
     try {
-      userRecord = await getFirebaseAdminAuth().createUser({
+      userRecord = await adminAuth.createUser({
         email,
         password,
         displayName: displayName || email.split('@')[0],
