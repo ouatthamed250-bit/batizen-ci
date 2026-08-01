@@ -1,3 +1,4 @@
+console.log("[DEBUG] check-admin route.ts module loaded at top-level");
 import { NextResponse } from "next/server";
 import { getFirebaseAdminAuth } from "@/lib/firebase-admin";
 
@@ -14,7 +15,9 @@ const ADMIN_UIDS = new Set([
  * La vérification réelle se fait via POST (utilisé par useAuth) ou le
  * Custom Claim Firebase (getIdTokenResult, infalsifiable).
  */
-export async function GET() {
+export async function GET(request: Request) {
+  console.log("[DEBUG] check-admin GET handler called");
+  console.log(`[check-admin] ${request.method} appelé à`, new Date().toISOString());
   console.log("[check-admin] handler appelé (GET)");
   try {
     const adminAuth = getFirebaseAdminAuth();
@@ -37,6 +40,8 @@ export async function GET() {
  * répond 200 avec `{ isAdmin: false }` — jamais de statut d'erreur.
  */
 export async function POST(request: Request) {
+  console.log("[DEBUG] check-admin POST handler called");
+  console.log(`[check-admin] ${request.method} appelé à`, new Date().toISOString());
   console.log("[check-admin] handler appelé (POST)");
   try {
     // Lecture sécurisée du body : ne throw JAMAIS (pas de request.json()).

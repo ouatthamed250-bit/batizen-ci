@@ -7,6 +7,7 @@
  * ✅ Anti-brute-force par IP (5 tentatives échouées en 10 min → 429)
  */
 
+console.log("[DEBUG] make-admin route.ts module loaded at top-level");
 import { NextRequest, NextResponse } from "next/server";
 import { getFirebaseAdminAuth } from "@/lib/firebase-admin";
 import { timingSafeEqualString } from "@/lib/security";
@@ -47,6 +48,7 @@ function resetRateLimit(ip: string): void {
 }
 
 export async function POST(request: NextRequest) {
+  console.log("[DEBUG] make-admin POST handler called");
   try {
     // 1. Récupération IP (headers proxy ou direct)
     const ip =
