@@ -27,12 +27,13 @@ function buildServiceAccountFromEnv(): ServiceAccountShape | null {
     return { projectId, privateKey, clientEmail };
   }
 
-  // Fallback : FIREBASE_SERVICE_ACCOUNT_KEY (JSON stringifié)
-  const legacy = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-  if (legacy) {
+  // Fallback : FIREBASE_SERVICE_ACCOUNT_KEY (JSON stringifié du service account complet)
+  // Recommandé pour Vercel (une seule variable d'env contenant tout le JSON)
+  const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+  if (serviceAccountKey) {
     try {
-      const parsed = JSON.parse(legacy);
-      if (parsed.private_key && parsed.client_email && parsed.project_id) {
+      const parsed = JSON.parse(serviceAccountKey);
+      if (parsed.project_id && parsed.private_key && parsed.client_email) {
         return {
           projectId: parsed.project_id,
           privateKey: parsed.private_key.replace(/\\n/g, '\n'),
@@ -40,7 +41,7 @@ function buildServiceAccountFromEnv(): ServiceAccountShape | null {
         };
       }
     } catch {
-      return null;
+      // JSON invalide — on ignore et on continue vers le fallback suivant
     }
   }
 

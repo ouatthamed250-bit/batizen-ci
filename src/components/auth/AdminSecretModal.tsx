@@ -2,11 +2,8 @@
 
 import { useState } from "react";
 import { X, Lock } from "lucide-react";
-import { ref, set } from "firebase/database";
+import { getAuth } from "firebase/auth";
 import { useAuthContext } from "@/contexts/AuthContext";
-import { getFirebaseServices } from "@/lib/firebase";
-
-const ADMIN_SECRET_CODE = "batizen2022";
 
 interface AdminSecretModalProps {
   isOpen: boolean;
@@ -22,9 +19,10 @@ export default function AdminSecretModal({ isOpen, onClose }: AdminSecretModalPr
   if (!isOpen) return null;
 
   /**
-   * Vérifie le mot de passe admin et écrit le rôle "admin" dans la Realtime Database.
-   * Écriture directe côté client : users/{uid}/role = "admin".
-   * Les règles Firebase protègent cette écriture (auth.token.role === 'admin' requis).
+   * Envoie le mot de passe à POST /api/auth/make-admin.
+   * Le serveur vérifie le secret (MAKE_ME_ADMIN_SECRET), vérifie l'idToken
+   * Firebase, puis définit le custom claim { role: 'admin' } côté serveur.
+   * Ce composant ne fait QUE de l'UI + appel API — aucun accès direct à la RTDB.
    */
   async function handleVerify(e: React.FormEvent) {
     e.preventDefault();
@@ -39,33 +37,44 @@ export default function AdminSecretModal({ isOpen, onClose }: AdminSecretModalPr
         return;
       }
 
-      // 2. Vérifier le code secret
-      if (password !== ADMIN_SECRET_CODE) {
+      // 2. Récupérer l'idToken Firebase de l'utilisateur connecté
+      const authInstance = getAuth();
+      const currentUser = authInstance.currentUser;
+      if (!currentUser) {
+        setError("Session Firebase expirée. Reconnectez-vous.");
+        setLoading(false);
+        return;
+      }
+      const idToken = await currentUser.getIdToken(true);
+
+      // 3. Appeler la route API qui vérifie le secret et définit le rôle admin
+      const response = await fetch("/api/auth/make-admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken, secret: password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // 4. Succès : redirection vers le dashboard admin
+        window.location.href = "/admin/dashboard";
+      } else if (response.status === 403) {
         setError("Code secret invalide.");
         setLoading(false);
-        return;
-      }
-
-      // 3. Écrire directement le rôle admin dans la Realtime Database
-      const { db } = getFirebaseServices();
-      if (!db) {
-        setError("Base de données non disponible.");
+      } else if (response.status === 429) {
+        setError("Trop de tentatives. Réessayez dans 10 minutes.");
         setLoading(false);
-        return;
-      }
-
-      await set(ref(db, `users/${user.uid}/role`), "admin");
-
-      // 4. Redirection vers le dashboard admin
-      window.location.href = "/admin/dashboard";
-
-    } catch (err: any) {
-      console.error("🔥 Erreur lors de l'activation du mode admin :", err);
-      if (err.code === "PERMISSION_DENIED") {
-        setError("Permission refusée par les règles Firebase.");
+      } else if (response.status === 503) {
+        setError("Service administrateur indisponible. Réessayez plus tard.");
+        setLoading(false);
       } else {
-        setError("Une erreur est survenue. Vérifiez votre connexion internet.");
+        setError(data?.error || "Une erreur est survenue. Vérifiez votre connexion internet.");
+        setLoading(false);
       }
+    } catch (err) {
+      console.error("🔥 Erreur lors de l'activation du mode admin :", err);
+      setError("Une erreur est survenue. Vérifiez votre connexion internet.");
       setLoading(false);
     }
   }
