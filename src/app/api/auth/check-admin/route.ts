@@ -22,12 +22,19 @@ export async function GET(request: Request) {
   try {
     const adminAuth = getFirebaseAdminAuth();
 
+    // SDK Admin non initialisé → JSON explicite, jamais de page d'erreur HTML
     if (!adminAuth) {
-      return NextResponse.json({ isAdmin: false, source: "unavailable" });
+      console.warn("[check-admin] Firebase Admin indisponible (env vars manquantes)");
+      return NextResponse.json(
+        { isAdmin: false, error: "Service admin indisponible" },
+        { status: 503 }
+      );
     }
 
     return NextResponse.json({ isAdmin: false, source: "no-token" });
-  } catch {
+  } catch (error) {
+    // Ne JAMAIS renvoyer de HTML : échec silencieux → JSON
+    console.error("[check-admin] Erreur GET:", error);
     return NextResponse.json({ isAdmin: false });
   }
 }
@@ -61,10 +68,13 @@ export async function POST(request: Request) {
 
     const adminAuth = getFirebaseAdminAuth();
 
-    // SDK Admin non initialisé (env vars manquantes) → non-admin silencieux
-    // Le client retombe sur le Custom Claim Firebase (infalsifiable).
+    // SDK Admin non initialisé → JSON explicite, jamais de page d'erreur HTML
     if (!adminAuth) {
-      return NextResponse.json({ isAdmin: false, source: "unavailable" });
+      console.warn("[check-admin] Firebase Admin indisponible (env vars manquantes)");
+      return NextResponse.json(
+        { isAdmin: false, error: "Service admin indisponible" },
+        { status: 503 }
+      );
     }
 
     const decoded = await adminAuth.verifyIdToken(idToken);
@@ -80,8 +90,9 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ isAdmin: false });
-  } catch {
-    // Ne JAMAIS renvoyer 500 : échec silencieux → non-admin
+  } catch (error) {
+    // Ne JAMAIS renvoyer de HTML : échec silencieux → JSON
+    console.error("[check-admin] Erreur POST:", error);
     return NextResponse.json({ isAdmin: false });
   }
 }

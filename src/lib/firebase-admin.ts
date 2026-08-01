@@ -67,22 +67,28 @@ export function initFirebaseAdmin(): App | null {
   const serviceAccount = buildServiceAccountFromEnv();
   if (serviceAccount) {
     try {
+      console.log("[firebase-admin] Service account via variables d'env (FIREBASE_ADMIN_* ou FIREBASE_SERVICE_ACCOUNT_KEY)");
       return initializeApp({
         credential: cert(serviceAccount),
         databaseURL: databaseURL || undefined,
       });
-    } catch {
+    } catch (err) {
+      console.error("[firebase-admin] Échec certificat service account:", err);
       return null;
     }
   }
 
   // Priorité 2 : Application Default Credentials (Cloud Run, GCP, etc.)
+  // En local, utilise GOOGLE_APPLICATION_CREDENTIALS qui pointe vers un fichier JSON.
+  console.log("[firebase-admin] Aucune variable FIREBASE_ADMIN_* / FIREBASE_SERVICE_ACCOUNT_KEY. Fallback sur applicationDefault().");
   try {
     return initializeApp({
       credential: applicationDefault(),
       databaseURL: databaseURL || undefined,
     });
-  } catch {
+  } catch (err) {
+    // Fichier GOOGLE_APPLICATION_CREDENTIALS absent/invalide → null propre, pas de throw
+    console.error("[firebase-admin] Échec applicationDefault():", err);
     return null;
   }
 }

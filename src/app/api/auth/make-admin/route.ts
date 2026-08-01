@@ -101,7 +101,9 @@ export async function POST(request: NextRequest) {
 
     // 5. Vérification de l'idToken Firebase
     const adminAuth = getFirebaseAdminAuth();
+    // SDK Admin non initialisé → JSON explicite (jamais de HTML/500)
     if (!adminAuth) {
+      console.warn("[make-admin] Firebase Admin indisponible (env vars manquantes)");
       return NextResponse.json(
         { error: "Service admin indisponible." },
         { status: 503 }
@@ -150,6 +152,7 @@ export async function POST(request: NextRequest) {
       uid,
     });
   } catch (err) {
+    // Ne JAMAIS renvoyer de HTML : erreur → JSON explicite
     console.error("❌ Erreur make-admin:", err);
     return NextResponse.json(
       { error: "Erreur interne du serveur." },
