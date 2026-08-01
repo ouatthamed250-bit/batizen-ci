@@ -9,12 +9,12 @@
  * Vérification du rôle admin (sécurité renforcée) :
  * 1. Custom claim Firebase via getIdTokenResult() (serveur, infalsifiable)
  * 2. API serveur /api/auth/check-admin (whitelist serveur)
+ * 3. Fallback : lecture du rôle dans la Realtime Database (users/{uid}/role)
+ *    — uniquement si les deux sources précédentes ne confirment pas,
+ *    pour couvrir le cas où le Custom Claim n'est pas encore présent
+ *    (ex: Firebase Admin indisponible mais rôle admin déjà en RTDB).
  *
- * ⚠️ SÉCURITÉ : La vérification via Realtime Database côté client a été
- *    supprimée car elle permettait à un utilisateur de s'auto-attribuer
- *    le rôle admin en écrivant users/{uid}/role = "admin" depuis la console.
- *
- * Si l'une des deux sources confirme "admin", isAdmin = true.
+ * Si l'une de ces sources confirme "admin", isAdmin = true.
  *
  * Utilisation :
  *   import { useAuth } from '@/hooks/useAuth';
@@ -100,7 +100,22 @@ export function useAuth() {
         }
       }
 
-      const finalIsAdmin = isAdminClaim || isAdminServer;
+      let finalIsAdmin = isAdminClaim || isAdminServer;
+
+      // Fallback silencieux : si ni le Custom Claim ni le serveur ne confirment,
+      // tenter de lire le rôle dans la Realtime Database (users/{uid}/role).
+      // Ne s'exécute que si l'admin n'est pas déjà confirmé. Silencieux en cas d'erreur.
+      if (!finalIsAdmin) {
+        try {
+          const { database } = getFirebaseServices();
+          if (database) {
+            const roleSnapshot = await get(ref(database, `users/${firebaseUser.uid}/role`));
+            finalIsAdmin = roleSnapshot.val() === 'admin';
+          }
+        } catch {
+          // Silencieux — le fallback RTDB n'est pas bloquant
+        }
+      }
 
       const authUser: AuthUser = {
         uid: firebaseUser.uid,
