@@ -16,7 +16,9 @@ const nextConfig: NextConfig = {
 	},
 	// Empêche Next.js de bundler ces packages côté serveur (nécessaire pour
 	// firebase-admin qui utilise jwks-rsa/jose en ESM — incompatible avec
-	// le bundling CommonJS de Next.js en production serverless Vercel)
+	// le bundling CommonJS de Next.js en production serverless Vercel).
+	// serverExternalPackages force Node.js à charger ces modules nativement
+	// au runtime (pas de require() sur un module ESM par un module CJS).
 	serverExternalPackages: ["firebase-admin", "jose", "jwks-rsa"],
 	// Header nécessaire pour que la popup Google OAuth fonctionne
 	// Cross-Origin-Opener-Policy bloque window.closed si la valeur est 'same-origin'
