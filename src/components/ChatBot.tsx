@@ -113,14 +113,14 @@ export default function ChatBot() {
       {!isOpen && (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-24 right-3 z-50 cursor-pointer bg-transparent border-none p-0"
+        className="fixed bottom-28 right-2 z-50 cursor-pointer bg-transparent border-none p-0"
         title="RHINOZEN - Assistant BÂTIZEN"
         aria-label="Ouvrir l'assistant"
       >
         <img 
           src="/images/rhinozen.png" 
           alt="RHINOZEN - Assistant BÂTIZEN" 
-          className="w-[141px] h-[141px] object-contain drop-shadow-xl transition-transform hover:scale-110"
+          className="w-[90px] h-[90px] object-contain drop-shadow-xl transition-transform hover:scale-110"
         />
       </button>
       )}

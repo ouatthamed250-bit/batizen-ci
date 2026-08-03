@@ -106,6 +106,17 @@ export default function ChantierDetailPage() {
   const [editDescription, setEditDescription] = useState("");
   const [editProgression, setEditProgression] = useState(0);
   const [editStatut, setEditStatut] = useState<"en_attente_rdv" | "en_cours" | "termine">("en_attente_rdv");
+  const [editType, setEditType] = useState("");
+  const [editBudget, setEditBudget] = useState(0);
+  const [editSurface, setEditSurface] = useState(0);
+  const [editChambres, setEditChambres] = useState(0);
+  const [editSallesDeBain, setEditSallesDeBain] = useState(0);
+  const [editEtages, setEditEtages] = useState(0);
+  const [editVille, setEditVille] = useState("");
+  const [editCommune, setEditCommune] = useState("");
+  const [editQuartier, setEditQuartier] = useState("");
+  const [editAdresse, setEditAdresse] = useState("");
+  const [editDelai, setEditDelai] = useState("");
 
   const [medias, setMedias] = useState<{ id: string; type: string; url: string; nom: string; dateAjout: number }[]>([]);
   const [mediaType, setMediaType] = useState<"photo" | "video" | "pdf">("photo");
@@ -146,6 +157,17 @@ export default function ChantierDetailPage() {
           if (data.statut === "en_cours") setEditStatut("en_cours");
           else if (data.statut === "termine") setEditStatut("termine");
           else setEditStatut("en_attente_rdv");
+          setEditType(data.type || "");
+          setEditBudget(data.budget || 0);
+          setEditSurface(Number((data as any).surface) || 0);
+          setEditChambres(Number((data as any).chambres) || 0);
+          setEditSallesDeBain(Number((data as any).sallesDeBain) || 0);
+          setEditEtages(Number((data as any).etages) || 0);
+          setEditVille(data.localisation?.ville || "");
+          setEditCommune(data.localisation?.commune || "");
+          setEditQuartier(data.localisation?.quartier || "");
+          setEditAdresse(data.localisation?.adresse || "");
+          setEditDelai((data as any).delai || "");
         }
       } catch (error) {
         console.error("Erreur lors du chargement du chantier:", error);
@@ -348,6 +370,19 @@ export default function ChantierDetailPage() {
         description: editDescription,
         progression: editProgression,
         statut: editStatut,
+        type: editType,
+        budget: editBudget,
+        surface: editSurface,
+        chambres: editChambres,
+        sallesDeBain: editSallesDeBain,
+        etages: editEtages,
+        delai: editDelai,
+        localisation: {
+          ville: editVille,
+          commune: editCommune,
+          quartier: editQuartier,
+          adresse: editAdresse,
+        },
       });
       
       setMessage({ type: "success", text: "✅ Modifications sauvegardées avec succès !" });
@@ -583,6 +618,50 @@ export default function ChantierDetailPage() {
           <div className="grid gap-3 sm:grid-cols-2">
             <InputField label="Nom du projet" value={editNom} set={setEditNom} />
             <InputField label="Description" value={editDescription} set={setEditDescription} />
+            <div>
+              <label className="block">
+                <span className="mb-1 block text-xs font-bold">Type de projet</span>
+                <select
+                  value={editType}
+                  onChange={(e) => setEditType(e.target.value)}
+                  className="h-10 w-full rounded-[10px] bg-white/5 px-3 text-xs font-bold outline-none ring-1 ring-white/10"
+                >
+                  <option value="">Sélectionnez...</option>
+                  <option value="villa">Villa</option>
+                  <option value="immeuble">Immeuble</option>
+                  <option value="duplex">Duplex</option>
+                  <option value="commerce">Commerce</option>
+                  <option value="entrepot">Entrepôt</option>
+                  <option value="renovation">Rénovation</option>
+                  <option value="autre">Autre</option>
+                </select>
+              </label>
+            </div>
+            <InputField label="Budget total (FCFA)" value={String(editBudget)} set={(v) => setEditBudget(Number(v) || 0)} />
+            <InputField label="Surface construite (m²)" value={String(editSurface)} set={(v) => setEditSurface(Number(v) || 0)} />
+            <InputField label="Chambres" value={String(editChambres)} set={(v) => setEditChambres(Number(v) || 0)} />
+            <InputField label="Salles de bain" value={String(editSallesDeBain)} set={(v) => setEditSallesDeBain(Number(v) || 0)} />
+            <InputField label="Étages" value={String(editEtages)} set={(v) => setEditEtages(Number(v) || 0)} />
+            <div>
+              <label className="block">
+                <span className="mb-1 block text-xs font-bold">Délai souhaité</span>
+                <select
+                  value={editDelai}
+                  onChange={(e) => setEditDelai(e.target.value)}
+                  className="h-10 w-full rounded-[10px] bg-white/5 px-3 text-xs font-bold outline-none ring-1 ring-white/10"
+                >
+                  <option value="">Sélectionnez...</option>
+                  <option value="6mois">6 mois</option>
+                  <option value="12mois">12 mois</option>
+                  <option value="18mois">18 mois</option>
+                  <option value="24mois">24 mois+</option>
+                </select>
+              </label>
+            </div>
+            <InputField label="Ville" value={editVille} set={setEditVille} />
+            <InputField label="Commune" value={editCommune} set={setEditCommune} />
+            <InputField label="Quartier" value={editQuartier} set={setEditQuartier} />
+            <InputField label="Adresse précise" value={editAdresse} set={setEditAdresse} />
             <div className="sm:col-span-2">
               <label className="flex items-center gap-3">
                 <span className="text-xs font-bold">Progression (%)</span>
