@@ -113,7 +113,7 @@ export default function ChatBot() {
       {!isOpen && (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-28 right-5 z-50 cursor-pointer bg-transparent border-none p-0"
+        className="fixed bottom-24 right-3 z-50 cursor-pointer bg-transparent border-none p-0"
         title="RHINOZEN - Assistant BÂTIZEN"
         aria-label="Ouvrir l'assistant"
       >

@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Bell, Wallet, CalendarClock, Megaphone, Menu, X, Home, MessageCircle, Headphones, LogOut, UserRound, HardHat, FileText, ShieldCheck, Truck, Building2, ClipboardList } from "lucide-react";
+import { Bell, Wallet, CalendarClock, Menu, X, Home, MessageCircle, Headphones, LogOut, UserRound, HardHat, FileText, ShieldCheck, Truck, Building2, ClipboardList } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { WeatherWidget } from "@/components/btp/WeatherWidget";
@@ -17,8 +17,6 @@ import { formatDateCourte, formatFcfa } from "@/utils/formatters";
 import { DashboardHeader } from "./sections/DashboardHeader";
 import { DashboardChantiersList } from "./sections/DashboardChantiersList";
 const ChatBot = dynamic(() => import("@/components/ChatBot"), { ssr: false });
-
-const ANNONCES_DEMO = ["🎉 Promo: -10% sur votre premier chantier ce mois-ci !","📢 Nouveau: Suivi de chantier par drone disponible.","🔥 Offre spéciale: Audit gratuit pour les rénovations.","⚠️ Rappel: Pensez à valider vos devis en attente."];
 
 const PLACEHOLDERS_PARTENAIRES = [
   { nom: "Cimentier partenaire", role: "Fournisseur ciment & béton", icon: HardHat },
@@ -129,14 +127,8 @@ export default function DashboardClientPage() {
         </>
       )}
 
-      <div className="flex flex-col gap-5 pt-20 pb-4 text-gray-900 dark:text-white">
+      <div className="flex flex-col gap-5 pt-10 pb-4 text-gray-900 dark:text-white">
         <DashboardHeader userName={userName} />
-
-        <div className="w-full overflow-hidden bg-[#FF7A00]/10 backdrop-blur-md rounded-[24px] border border-[#FF7A00]/30 py-3 shadow-lg">
-          <div className="flex animate-marquee whitespace-nowrap gap-12 px-3">
-            {[...ANNONCES_DEMO, ...ANNONCES_DEMO].map((a, i) => (<span key={i} className="text-sm font-bold text-[#FF7A00] drop-shadow-md flex items-center gap-2"><Megaphone size={14} />{a}</span>))}
-          </div>
-        </div>
 
         <AnnonceTicker />
         <div className="w-full rounded-[32px] p-6 md:p-8 bg-gradient-to-br from-[#1e3a8a] to-[#2563eb] text-white shadow-xl mb-2"><WeatherWidget title="Météo du jour" /></div>

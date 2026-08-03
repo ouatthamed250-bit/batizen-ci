@@ -315,23 +315,20 @@ export default function ChantierDetailPage() {
    };
 
   const handleDelete = async () => {
-    if (!window.confirm("Êtes-vous sûr de vouloir supprimer ce chantier ? Cette action est irréversible.")) return;
+    if (!window.confirm("Archiver ce chantier ? Il disparaîtra de la liste mais restera récupérable.")) return;
     setActionLoading(true);
     try {
-      const { getDatabase, ref: dbRef, remove } = await import("firebase/database");
+      const { ref: dbRef, update } = await import("firebase/database");
       const { getFirebaseServices } = await import("@/lib/firebase");
       const { database } = getFirebaseServices();
-      await remove(dbRef(database, `rapports/${chantierId}`));
-      await remove(dbRef(database, `messages/${chantierId}`));
-      await remove(dbRef(database, `documents/${chantierId}`));
-      await remove(dbRef(database, `notes/${chantierId}`));
-      await remove(dbRef(database, `paiements/${chantierId}`));
-      await remove(dbRef(database, `rendezvous/${chantierId}`));
-      await remove(dbRef(database, `chantiers/${chantierId}`));
+      await update(dbRef(database, `chantiers/${chantierId}`), {
+        archive: true,
+        archivedAt: Date.now(),
+      });
       router.push("/admin/chantiers");
     } catch (err) {
-      console.error("Erreur suppression:", err);
-      alert("Erreur lors de la suppression");
+      console.error("Erreur archivage:", err);
+      alert("Erreur lors de l'archivage");
     } finally {
       setActionLoading(false);
     }
