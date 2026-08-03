@@ -62,10 +62,7 @@ export default function AdminDashboardPage() {
 
   const loadDashboard = useCallback(async () => {
     if (authLoading) return;
-    if (!user || user.role !== "admin") {
-      router.push('/login?redirect=admin');
-      return;
-    }
+    if (!user) return;
 
     const { db: db } = getFirebaseServices();
     const usersRef = ref(db, 'users');
