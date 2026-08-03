@@ -83,6 +83,15 @@ export function useAuth() {
         ? tokenResult.value.claims?.role === 'admin' 
         : false;
 
+      // Pose le cookie de session HttpOnly nécessaire à proxy.ts pour /admin/*
+      if (idToken.status === 'fulfilled') {
+        fetch('/api/auth/session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken: idToken.value }),
+        }).catch(() => {});
+      }
+
       let isAdminServer = false;
       if (idToken.status === 'fulfilled') {
         try {
