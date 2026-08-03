@@ -3,7 +3,7 @@
 import { useState, useEffect, type FormEvent } from "react";
 import { ref, onValue, push, set, update } from "firebase/database";
 import { getFirebaseServices } from "@/lib/firebase";
-import { Megaphone, Plus, Trash2 } from "lucide-react";
+import { Megaphone, Plus, Trash2, Pencil } from "lucide-react";
 
 type Annonce = {
   id: string;
@@ -20,6 +20,7 @@ export default function AdminAnnoncesPage() {
   const [annonces, setAnnonces] = useState<Annonce[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     titre: "",
@@ -55,20 +56,48 @@ export default function AdminAnnoncesPage() {
 
     try {
       const { db } = getFirebaseServices();
-      const newRef = push(ref(db, "annonces"));
-      await set(newRef, {
-        titre: form.titre,
-        contenu: form.contenu,
-        dateDebut: form.dateDebut,
-        dateFin: form.dateFin,
-        active: form.active,
-        createdAt: Date.now(),
-      });
+      if (editingId) {
+        await update(ref(db, `annonces/${editingId}`), {
+          titre: form.titre,
+          contenu: form.contenu,
+          dateDebut: form.dateDebut,
+          dateFin: form.dateFin,
+          active: form.active,
+        });
+        setMessage({ type: "success", text: "✅ Annonce modifiée !" });
+        setEditingId(null);
+      } else {
+        const newRef = push(ref(db, "annonces"));
+        await set(newRef, {
+          titre: form.titre,
+          contenu: form.contenu,
+          dateDebut: form.dateDebut,
+          dateFin: form.dateFin,
+          active: form.active,
+          createdAt: Date.now(),
+        });
+        setMessage({ type: "success", text: "✅ Annonce ajoutée !" });
+      }
       setForm({ titre: "", contenu: "", dateDebut: "", dateFin: "", active: true });
-      setMessage({ type: "success", text: "✅ Annonce ajoutée !" });
     } catch (err: any) {
       setMessage({ type: "error", text: `Erreur : ${err.message}` });
     }
+  }
+
+  function handleEdit(annonce: Annonce) {
+    setForm({
+      titre: annonce.titre,
+      contenu: annonce.contenu,
+      dateDebut: annonce.dateDebut || "",
+      dateFin: annonce.dateFin || "",
+      active: annonce.active,
+    });
+    setEditingId(annonce.id);
+  }
+
+  function handleCancelEdit() {
+    setEditingId(null);
+    setForm({ titre: "", contenu: "", dateDebut: "", dateFin: "", active: true });
   }
 
   async function handleToggle(annonce: Annonce) {
@@ -154,12 +183,23 @@ export default function AdminAnnoncesPage() {
             />{" "}
             Active
           </label>
-          <button
-            type="submit"
-            className="h-10 rounded-[10px] bg-[#FF7A00] font-bold text-white hover:bg-[#E66E00] transition sm:col-span-2"
-          >
-            Ajouter
-          </button>
+          <div className="sm:col-span-2 flex gap-2">
+            <button
+              type="submit"
+              className="flex-1 h-10 rounded-[10px] bg-[#FF7A00] font-bold text-white hover:bg-[#E66E00] transition"
+            >
+              {editingId ? "Enregistrer les modifications" : "Ajouter"}
+            </button>
+            {editingId && (
+              <button
+                type="button"
+                onClick={handleCancelEdit}
+                className="h-10 px-4 rounded-[10px] bg-white/10 font-bold text-white hover:bg-white/20 transition"
+              >
+                Annuler
+              </button>
+            )}
+          </div>
         </div>
       </form>
 
@@ -192,6 +232,12 @@ export default function AdminAnnoncesPage() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => handleEdit(annonce)}
+                    className="rounded-[10px] bg-blue-500/20 p-2 text-blue-400 hover:bg-blue-500/30 transition"
+                  >
+                    <Pencil size={16} />
+                  </button>
                   <button
                     onClick={() => handleToggle(annonce)}
                     className={`rounded-full px-3 py-1 text-xs font-bold border transition ${

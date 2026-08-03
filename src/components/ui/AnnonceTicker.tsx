@@ -30,14 +30,8 @@ export default function AnnonceTicker() {
     const unsub = onValue(annoncesRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        const now = new Date();
         const actives = Object.entries(data)
-          .filter(([_, a]: [string, any]) => {
-            if (!a.active) return false;
-            if (a.dateDebut && new Date(a.dateDebut) > now) return false;
-            if (a.dateFin && new Date(a.dateFin) < now) return false;
-            return true;
-          })
+          .filter(([_, a]: [string, any]) => a.active === true)
           .map(([id, a]: [string, any]) => ({ id, ...a } as Annonce));
         setAnnonces(actives);
       } else {
