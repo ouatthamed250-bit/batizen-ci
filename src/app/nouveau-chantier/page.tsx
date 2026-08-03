@@ -191,6 +191,9 @@ function NouveauChantierContent() {
         nom: formData.nom || "Chantier sans nom",
         type: formData.type || "construction",
         surface: Number(formData.surfaceConstruite) || 150,
+        chambres: Number(formData.chambres) || 3,
+        sallesDeBain: Number(formData.sallesDeBain) || 2,
+        etages: Number(formData.niveaux) || 1,
         localisation: {
           ville: formData.ville || "—",
           commune: formData.commune || "—",

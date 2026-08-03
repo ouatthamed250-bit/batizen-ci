@@ -2,7 +2,9 @@
 
 import { formatFcfa } from "@/utils/currency";
 import { formatDateFr } from "@/utils/formatDate";
-import { LazySection } from "@/components/LazySection";
+import dynamic from "next/dynamic";
+
+const SuperCalculateur = dynamic(() => import("@/components/btp/SuperCalculateur"), { ssr: false });
 
 interface ChantierResumeProps {
   chantier: any;
@@ -23,9 +25,6 @@ function formatLocalisation(loc: any, fallbackAdresse?: string): string {
   return base || fallbackAdresse || "—";
 }
 
-const LazySuperCalculateurSuivi = () => (
-  <LazySection loader={() => import("@/components/btp/SuperCalculateur")} />
-);
 
 export function ChantierResume({ chantier, nom, pct, totalPaye }: ChantierResumeProps) {
   return (
@@ -49,7 +48,21 @@ export function ChantierResume({ chantier, nom, pct, totalPaye }: ChantierResume
           {chantier?.date_fin && <div className="p-3 bg-gray-50 rounded-xl"><p className="text-xs font-bold text-[#6B7280]">Date de fin prévue</p><p className="text-sm font-black text-[var(--navy)]">{formatDateFr(chantier.date_fin)}</p></div>}
         </div>
       </div>
-      {chantier?.budget && <LazySuperCalculateurSuivi />}
+      {chantier?.budget && (
+        <SuperCalculateur
+          surface={Number(chantier?.surface) || 150}
+          chambres={Number(chantier?.chambres) || 3}
+          sallesDeBain={Number(chantier?.sallesDeBain) || 2}
+          etages={Number(chantier?.etages) || 1}
+          garage={false}
+          piscine={false}
+          jardin={false}
+          standing="moyen"
+          style="Moderne"
+          mode="suivi"
+          budgetDepense={totalPaye}
+        />
+      )}
     </section>
   );
 }
