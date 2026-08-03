@@ -63,7 +63,6 @@
     },
 
     "notifications": {
-      ".read": "auth != null",
       "admin": {
         ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('admins').child(auth.uid).exists())",
         ".write": "auth != null"
