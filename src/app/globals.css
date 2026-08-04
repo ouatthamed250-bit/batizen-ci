@@ -816,7 +816,7 @@ html, body {
 .ios-scroll {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior-y: contain;
+  overscroll-behavior-y: auto;
   scroll-behavior: smooth;
 }
 
