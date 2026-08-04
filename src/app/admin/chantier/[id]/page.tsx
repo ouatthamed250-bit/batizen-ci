@@ -548,6 +548,8 @@ export default function ChantierDetailPage() {
     await rtdbSet(`chantiers/${chantierId}/medias`, newMedias.map(m => ({ type: m.type, url: m.url, nom: m.nom, dateAjout: m.dateAjout })));
   };
 
+  const [activeTab, setActiveTab] = useState<"info" | "avancement" | "suivi" | "messages">("info");
+
   const handleContactClient = () => {
     if (chantier?.client_telephone) {
       const phone = chantier.client_telephone.replace(/\s/g, "");
@@ -600,6 +602,27 @@ export default function ChantierDetailPage() {
             {message.text}
           </div>
         )}
+
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {[
+            { key: "info", label: "Informations" },
+            { key: "avancement", label: "Avancement" },
+            { key: "messages", label: "Messages" },
+            { key: "suivi", label: "Suivi" },
+          ].map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setActiveTab(t.key as any)}
+              className={`shrink-0 rounded-[12px] px-4 py-2 text-xs font-black transition ${
+                activeTab === t.key ? "bg-[#FF7A00] text-white" : "bg-white/5 text-white/60"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {activeTab === "info" && (<>
 
         {/* SECTION 1: Informations soumises par le client (PRÉ-ACTIVATION V2) */}
         <Section title="📋 Informations soumises par le client" icon={FileText}>
@@ -889,6 +912,16 @@ export default function ChantierDetailPage() {
           )}
         </Section>
 
+        </>)}
+
+        {activeTab === "avancement" && (
+          <div className="rounded-[16px] border border-white/10 bg-white/5 p-6 text-center text-white/50">
+            🚧 Suivi des étapes — bientôt disponible
+          </div>
+        )}
+
+        {activeTab === "suivi" && (<>
+
         {/* SECTION 7: Rendez-vous */}
         {chantier.rdv_date && (
           <Section title="Rendez-vous" icon={Calendar}>
@@ -1143,14 +1176,26 @@ export default function ChantierDetailPage() {
         {/* SECTION 11: Notes & Checklists */}
         <NotesSection chantierId={chantierId} />
 
+        </>)}
+
+        {activeTab === "messages" && (<>
+
         {/* SECTION 12: Messagerie avec le client */}
         <MessagerieSection chantierId={chantierId} clientUserId={chantier?.userId} />
+
+        </>)}
+
+        {activeTab === "suivi" && (<>
 
 {/* SECTION 13: Paiements & Finances */}
         <PaiementsSection chantierId={chantierId} chantier={chantier} />
 
         {/* SECTION 14: Documents du chantier */}
         <DocumentsSection chantierId={chantierId} />
+
+        </>)}
+
+        {activeTab === "info" && (<>
 
         {/* BOUTON SUPPRIMER */}
         {chantier.statut !== "en_cours" && chantier.statut !== "termine" && (
@@ -1206,6 +1251,7 @@ export default function ChantierDetailPage() {
             📄 Générer le contrat
           </button>
         </div>
+        </>)}
       </div>
     </div>
   );
