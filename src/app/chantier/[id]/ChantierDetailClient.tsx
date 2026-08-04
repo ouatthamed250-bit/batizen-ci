@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Info, ListChecks, Calendar, CalendarClock, ImageOff, Image as ImageIcon, Users, CreditCard, FileText, FileDown, MessageSquare, BookOpen, BarChart3 } from "lucide-react";
 import { update } from "firebase/database";
-import { ref, onValue, type Unsubscribe } from "firebase/database";
+import { ref, onValue, query, orderByChild, equalTo, type Unsubscribe } from "firebase/database";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { rtdbGet, rtdbGetList } from "@/lib/rtdb";
 import { getFirebaseServices } from "@/lib/firebase";
@@ -103,7 +103,7 @@ export default function ChantierDetailClient() {
     load();
     usEq = onValue(ref(database, 'equipes'), (snap) => { const d = snap.val(); if (d) { const eq = Object.entries(d).map(([idEq, e]:[string,any])=>({id:idEq,...e})).filter((e:any)=>String(e.chantierId)===String(id)&&e.actif); eq.sort((a:any,b:any)=>(a.foncion==="chef"?-1:1)); setEquipe(eq); } else setEquipe([]); });
     if (user && id) {
-      usMsg = onValue(ref(database, 'messages'), (snap) => { const d = snap.val(); if (d) { const msgs = Object.entries(d).filter(([_, m]:[string,any])=>m.chantierId===id).map(([idMsg, m]:[string,any])=>({id:idMsg,...m})).sort((a:any,b:any)=>a.dateEnvoi-b.dateEnvoi); setMessages(msgs); msgs.forEach(async (m:any)=>{if (m.expediteurRole==="admin"&&!m.lu) await update(ref(database,`messages/${m.id}`),{lu:true,dateLecture:Date.now()});}); } else setMessages([]); });
+      usMsg = onValue(query(ref(database, 'messages'), orderByChild('chantierId'), equalTo(String(id))), (snap) => { const d = snap.val(); if (d) { const msgs = Object.entries(d).map(([idMsg, m]:[string,any])=>({id:idMsg,...m})).sort((a:any,b:any)=>a.dateEnvoi-b.dateEnvoi); setMessages(msgs); msgs.forEach(async (m:any)=>{if (m.expediteurRole==="admin"&&!m.lu) await update(ref(database,`messages/${m.id}`),{lu:true,dateLecture:Date.now()});}); } else setMessages([]); });
     }
     return () => { cancelled = true; if (usMsg) usMsg(); if (usEq) usEq(); };
   }, [id]);
