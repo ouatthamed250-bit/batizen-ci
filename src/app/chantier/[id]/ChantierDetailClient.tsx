@@ -107,7 +107,7 @@ export default function ChantierDetailClient() {
       usMsg = onValue(query(ref(database, 'messages'), orderByChild('chantierId'), equalTo(String(id))), (snap) => { const d = snap.val(); if (d) { const msgs = Object.entries(d).map(([idMsg, m]:[string,any])=>({id:idMsg,...m})).sort((a:any,b:any)=>a.dateEnvoi-b.dateEnvoi); setMessages(msgs); msgs.forEach(async (m:any)=>{if (m.expediteurRole==="admin"&&!m.lu) await update(ref(database,`messages/${m.id}`),{lu:true,dateLecture:Date.now()});}); } else setMessages([]); });
     }
     return () => { cancelled = true; if (usMsg) usMsg(); if (usEq) usEq(); };
-  }, [id]);
+  }, [id, user?.uid]);
 
   const nom = chantier?.nom_projet || chantier?.nom || "Chantier";
   const pct = Number(chantier?.progression ?? chantier?.progress ?? 0);
