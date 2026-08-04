@@ -32,6 +32,7 @@ import DocumentsSection from "./DocumentsSection";
 import { getFirebaseServices } from "@/lib/firebase";
 import { ref, onValue, push, update, remove, Unsubscribe } from 'firebase/database';
 import { getContratTemplate } from "@/lib/documents-templates";
+import { etapeIcon, etapeLabel, etapeColor } from "@/utils/chantier-helpers";
 
 type Localisation = {
   adresse?: string;
@@ -79,6 +80,7 @@ type Chantier = {
   plan_prix?: number;
   plan_details?: string;
   date_fin?: string;
+  etapes?: { nom: string; statut: string }[];
 };
 
 type ClientInfo = {
@@ -349,6 +351,63 @@ export default function ChantierDetailPage() {
      }
    };
 
+  const ETAPES_DEFAUT = [
+    { nom: "Fondations", statut: "en_cours" },
+    { nom: "Murs / Gros œuvre", statut: "a_venir" },
+    { nom: "Toiture", statut: "a_venir" },
+    { nom: "Finitions", statut: "a_venir" },
+    { nom: "Autre", statut: "a_venir" },
+  ];
+
+  const handleInitEtapes = async () => {
+    setEtapeLoading(true);
+    try {
+      const { ref: dbRef, update } = await import("firebase/database");
+      const { getFirebaseServices } = await import("@/lib/firebase");
+      const { database } = getFirebaseServices();
+      await update(dbRef(database, `chantiers/${chantierId}`), { etapes: ETAPES_DEFAUT });
+      setChantier((prev: any) => (prev ? { ...prev, etapes: ETAPES_DEFAUT } : prev));
+    } catch (err) {
+      console.error("Erreur initialisation étapes:", err);
+      alert("Erreur lors de l'initialisation des étapes");
+    } finally {
+      setEtapeLoading(false);
+    }
+  };
+
+  const handleValiderEtape = async (index: number) => {
+    if (!chantier?.etapes) return;
+    setEtapeLoading(true);
+    try {
+      const { ref: dbRef, update, push } = await import("firebase/database");
+      const { getFirebaseServices } = await import("@/lib/firebase");
+      const { database } = getFirebaseServices();
+      const nouvellesEtapes = [...chantier.etapes];
+      nouvellesEtapes[index] = { ...nouvellesEtapes[index], statut: "termine" };
+      if (nouvellesEtapes[index + 1]) {
+        nouvellesEtapes[index + 1] = { ...nouvellesEtapes[index + 1], statut: "en_cours" };
+      }
+      await update(dbRef(database, `chantiers/${chantierId}`), { etapes: nouvellesEtapes });
+      const destinataire = chantier.userId || chantier.client_id;
+      if (destinataire) {
+        await push(dbRef(database, `notifications/${destinataire}`), {
+          type: "etape_validee",
+          message: `Étape validée : ${nouvellesEtapes[index].nom}`,
+          chantierId,
+          chantierNom: chantier.nom_projet || chantier.nom || "",
+          lu: false,
+          date: Date.now(),
+        });
+      }
+      setChantier((prev: any) => (prev ? { ...prev, etapes: nouvellesEtapes } : prev));
+    } catch (err) {
+      console.error("Erreur validation étape:", err);
+      alert("Erreur lors de la validation de l'étape");
+    } finally {
+      setEtapeLoading(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (!window.confirm("Archiver ce chantier ? Il disparaîtra de la liste mais restera récupérable.")) return;
     setActionLoading(true);
@@ -549,6 +608,7 @@ export default function ChantierDetailPage() {
   };
 
   const [activeTab, setActiveTab] = useState<"info" | "avancement" | "suivi" | "messages">("info");
+  const [etapeLoading, setEtapeLoading] = useState(false);
 
   const handleContactClient = () => {
     if (chantier?.client_telephone) {
@@ -915,8 +975,40 @@ export default function ChantierDetailPage() {
         </>)}
 
         {activeTab === "avancement" && (
-          <div className="rounded-[16px] border border-white/10 bg-white/5 p-6 text-center text-white/50">
-            🚧 Suivi des étapes — bientôt disponible
+          <div className="space-y-3">
+            {!chantier?.etapes || chantier.etapes.length === 0 ? (
+              <div className="rounded-[16px] border border-white/10 bg-white/5 p-6 text-center">
+                <p className="mb-4 text-sm text-white/60">Aucune étape initialisée pour ce chantier.</p>
+                <button
+                  onClick={handleInitEtapes}
+                  disabled={etapeLoading}
+                  className="rounded-[12px] bg-[#FF7A00] px-5 py-2.5 text-xs font-black text-white disabled:opacity-50"
+                >
+                  Démarrer le suivi des étapes
+                </button>
+              </div>
+            ) : (
+              chantier.etapes.map((e: any, i: number) => (
+                <div key={i} className="flex items-center justify-between rounded-[14px] border border-white/10 bg-white/5 p-4">
+                  <div className="flex items-center gap-3">
+                    {etapeIcon(e.statut)}
+                    <div>
+                      <p className="text-sm font-bold">{e.nom}</p>
+                      <p className="text-xs" style={{ color: etapeColor(e.statut) }}>{etapeLabel(e.statut)}</p>
+                    </div>
+                  </div>
+                  {e.statut === "en_cours" && (
+                    <button
+                      onClick={() => handleValiderEtape(i)}
+                      disabled={etapeLoading}
+                      className="shrink-0 rounded-[10px] bg-[#22C55E] px-3 py-2 text-xs font-black text-white disabled:opacity-50"
+                    >
+                      Marquer terminée
+                    </button>
+                  )}
+                </div>
+              ))
+            )}
           </div>
         )}
 
