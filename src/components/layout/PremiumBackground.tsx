@@ -12,10 +12,10 @@ interface PremiumBackgroundProps {
 
 // Images premium par défaut - chantiers et villas modernes
 const DEFAULT_IMAGES = [
-  "https://images.unsplash.com/photo-1600584381426-93885c20958a?q=80&w=2070&auto=format&fit=crop", // Villa moderne
-  "https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=2070&auto=format&fit=crop", // Chantier construction
-  "https://images.unsplash.com/photo-1600607687949-ce7752b5c8f2?q=80&w=2070&auto=format&fit=crop", // Villa luxe
-  "https://images.unsplash.com/photo-1600566847245-5a37b4891b3c?q=80&w=2070&auto=format&fit=crop", // Architecte
+  "/images/villa-bg.jpg",
+  "/images/chantier-bg.jpg",
+  "/images/hero-bg.jpg",
+  "/images/equipe-bg.jpg",
 ];
 
 export default function PremiumBackground({ 
