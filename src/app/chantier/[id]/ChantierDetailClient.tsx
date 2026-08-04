@@ -91,13 +91,14 @@ export default function ChantierDetailClient() {
       if (cancelled) return; setChantier(c); setEtapes(e); setPhotos(p); setPaiements(pa); setDocuments(d); setLoading(false);
       if (!cancelled && id) {
         const { getDatabase, query, orderByChild, equalTo, ref: dbRef } = await import("firebase/database"); const { db: db } = getFirebaseServices();
-        const [plan, med, docsF, notesF, rapportsF] = await Promise.all([
+        const [plan, med, docsF, notesF, rapportsF, paiementsF] = await Promise.all([
           rtdbGetList<any>(`chantiers/${id}/planning`), rtdbGetList<any>(`chantiers/${id}/medias`),
           (async () => { const q = query(dbRef(db, 'documents'), orderByChild("chantierId"), equalTo(String(id))); const snap = await (await import("firebase/database")).get(q); const d = snap.val(); return d ? Object.entries(d).filter(([_, x]:[string,any])=>x?.actif).map(([docId, x]:[string,any])=>({id:docId,...x})) : []; })(),
           (async () => { const q = query(dbRef(db, 'notes'), orderByChild("chantierId"), equalTo(String(id))); const snap = await (await import("firebase/database")).get(q); const d = snap.val(); return d ? Object.entries(d).filter(([_, x]:[string,any])=>x?.actif).map(([noteId, x]:[string,any])=>({id:noteId,...x})) : []; })(),
           (async () => { const q = query(dbRef(db, 'rapports'), orderByChild("chantierId"), equalTo(String(id))); const snap = await (await import("firebase/database")).get(q); const d = snap.val(); return d ? Object.entries(d).filter(([_, x]:[string,any])=>x?.actif).map(([rId, x]:[string,any])=>({id:rId,...x})) : []; })(),
+          (async () => { const q = query(dbRef(db, 'paiements'), orderByChild("chantierId"), equalTo(String(id))); const snap = await (await import("firebase/database")).get(q); const d = snap.val(); return d ? Object.entries(d).filter(([_, x]:[string,any])=>x?.actif).map(([payId, x]:[string,any])=>({id:payId,...x})) : []; })(),
         ]);
-        setPlanning(plan); setMedias(med); setRapports(rapportsF); setNotes(notesF); if (docsF.length > 0) setDocuments(docsF);
+        setPlanning(plan); setMedias(med); setRapports(rapportsF); setNotes(notesF); if (docsF.length > 0) setDocuments(docsF); if (paiementsF.length > 0) setPaiements(paiementsF);
       }
     }
     load();
