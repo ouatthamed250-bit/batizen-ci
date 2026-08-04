@@ -72,8 +72,8 @@ export function PullToRefresh({ children }: { children: React.ReactNode }) {
       )}
       <div
         style={{
-          transform: `translateY(${refreshing ? 56 : pull * 0.6}px)`,
-          transition: dragging ? "none" : "transform 0.25s",
+          marginTop: refreshing ? 56 : pull * 0.6,
+          transition: dragging ? "none" : "margin-top 0.25s",
         }}
       >
         {children}
