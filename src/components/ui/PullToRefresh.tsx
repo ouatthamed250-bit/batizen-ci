@@ -22,6 +22,7 @@ export function PullToRefresh({ children }: { children: React.ReactNode }) {
     if (!dragging || refreshing) return;
     const dy = e.clientY - startY.current;
     if (dy > 0 && window.scrollY === 0) {
+      e.preventDefault();
       setPull(Math.min(dy, MAX_PULL));
     } else {
       setPull(0);

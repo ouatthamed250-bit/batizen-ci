@@ -838,3 +838,7 @@ html, body {
   40% { transform: rotate(14deg); }
   50% { transform: rotate(-4deg); }
 }
+
+html, body {
+  overscroll-behavior-y: contain;
+}
