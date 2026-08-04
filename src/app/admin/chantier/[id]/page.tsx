@@ -117,7 +117,13 @@ export default function ChantierDetailPage() {
   const [editQuartier, setEditQuartier] = useState("");
   const [editAdresse, setEditAdresse] = useState("");
   const [editDelai, setEditDelai] = useState("");
-
+  const [editPlanChoisi, setEditPlanChoisi] = useState("");
+  const [editDateDebut, setEditDateDebut] = useState("");
+  const [editApport, setEditApport] = useState(0);
+  const [editFinancement, setEditFinancement] = useState<string[]>([]);
+  const [editContraintes, setEditContraintes] = useState("");
+  const [editMateriauxGrosOeuvre, setEditMateriauxGrosOeuvre] = useState<Record<string, string>>({});
+  const [editMateriauxFinitions, setEditMateriauxFinitions] = useState<Record<string, string>>({});
   const [medias, setMedias] = useState<{ id: string; type: string; url: string; nom: string; dateAjout: number }[]>([]);
   const [mediaType, setMediaType] = useState<"photo" | "video" | "pdf">("photo");
   const [mediaLoading, setMediaLoading] = useState(false);
@@ -168,6 +174,13 @@ export default function ChantierDetailPage() {
           setEditQuartier(data.localisation?.quartier || "");
           setEditAdresse(data.localisation?.adresse || "");
           setEditDelai((data as any).delai || "");
+          setEditPlanChoisi((data as any).planChoisi || (data as any).plan_choisi || "");
+          setEditDateDebut((data as any).dateDebut || (data as any).date_debut || "");
+          setEditApport(Number((data as any).apport) || 0);
+          setEditFinancement((data as any).financement || []);
+          setEditContraintes((data as any).contraintes || "");
+          setEditMateriauxGrosOeuvre((data as any).materiaux?.grosOeuvre || {});
+          setEditMateriauxFinitions((data as any).materiaux?.finitions || {});
         }
       } catch (error) {
         console.error("Erreur lors du chargement du chantier:", error);
@@ -377,6 +390,15 @@ export default function ChantierDetailPage() {
         sallesDeBain: editSallesDeBain,
         etages: editEtages,
         delai: editDelai,
+        planChoisi: editPlanChoisi,
+        dateDebut: editDateDebut,
+        apport: editApport,
+        financement: editFinancement,
+        contraintes: editContraintes,
+        materiaux: {
+          grosOeuvre: editMateriauxGrosOeuvre,
+          finitions: editMateriauxFinitions,
+        },
         localisation: {
           ville: editVille,
           commune: editCommune,
@@ -667,6 +689,91 @@ export default function ChantierDetailPage() {
             <InputField label="Commune" value={editCommune} set={setEditCommune} />
             <InputField label="Quartier" value={editQuartier} set={setEditQuartier} />
             <InputField label="Adresse précise" value={editAdresse} set={setEditAdresse} />
+            <div>
+              <label className="block">
+                <span className="mb-1 block text-xs font-bold">Plan choisi</span>
+                <select value={editPlanChoisi} onChange={(e) => setEditPlanChoisi(e.target.value)} className="h-10 w-full rounded-[10px] bg-white/5 px-3 text-xs font-bold outline-none ring-1 ring-white/10">
+                  <option value="">Sélectionnez...</option>
+                  <option value="gratuit">Gratuit</option>
+                  <option value="standard">Standard</option>
+                  <option value="premium">Premium</option>
+                  <option value="expert">Expert</option>
+                </select>
+              </label>
+            </div>
+            <div>
+              <label className="block">
+                <span className="mb-1 block text-xs font-bold">Date de début</span>
+                <input type="date" value={editDateDebut} onChange={(e) => setEditDateDebut(e.target.value)} className="h-10 w-full rounded-[10px] bg-white/5 px-3 text-xs font-bold outline-none ring-1 ring-white/10" />
+              </label>
+            </div>
+            <InputField label="Apport personnel (FCFA)" value={String(editApport)} set={(v) => setEditApport(Number(v) || 0)} />
+            <div className="sm:col-span-2">
+              <span className="mb-2 block text-xs font-bold">Mode de financement</span>
+              <div className="flex flex-wrap gap-2">
+                {['Comptant', 'Échelonné', 'Crédit bancaire', 'Mixte'].map((mode) => (
+                  <button key={mode} type="button" onClick={() => setEditFinancement(editFinancement.includes(mode) ? editFinancement.filter((f) => f !== mode) : [...editFinancement, mode])} className={`rounded-full px-3 py-1.5 text-xs font-bold transition-all ${editFinancement.includes(mode) ? 'bg-[#FF7A00] text-white' : 'bg-white/10 text-white/60'}`}>
+                    {mode}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block">
+                <span className="mb-1 block text-xs font-bold">Contraintes particulières</span>
+                <textarea value={editContraintes} onChange={(e) => setEditContraintes(e.target.value)} rows={2} className="w-full rounded-[10px] bg-white/5 px-3 py-2 text-xs font-bold outline-none ring-1 ring-white/10" />
+              </label>
+            </div>
+            <div className="sm:col-span-2">
+              <span className="mb-2 block text-xs font-bold">Matériaux — Gros œuvre</span>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <select value={editMateriauxGrosOeuvre.ciment || ""} onChange={(e) => setEditMateriauxGrosOeuvre({ ...editMateriauxGrosOeuvre, ciment: e.target.value })} className="h-10 w-full rounded-[10px] bg-white/5 px-3 text-xs font-bold outline-none ring-1 ring-white/10">
+                  <option value="">Ciment...</option>
+                  <option value="cpj42">Ciment CPJ 42.5</option>
+                  <option value="cpj35">Ciment CPJ 35</option>
+                </select>
+                <select value={editMateriauxGrosOeuvre.fer || ""} onChange={(e) => setEditMateriauxGrosOeuvre({ ...editMateriauxGrosOeuvre, fer: e.target.value })} className="h-10 w-full rounded-[10px] bg-white/5 px-3 text-xs font-bold outline-none ring-1 ring-white/10">
+                  <option value="">Fer à béton...</option>
+                  <option value="ha12">HA 12mm</option>
+                  <option value="ha10">HA 10mm</option>
+                </select>
+                <select value={editMateriauxGrosOeuvre.briques || ""} onChange={(e) => setEditMateriauxGrosOeuvre({ ...editMateriauxGrosOeuvre, briques: e.target.value })} className="h-10 w-full rounded-[10px] bg-white/5 px-3 text-xs font-bold outline-none ring-1 ring-white/10">
+                  <option value="">Briques/Parpaings...</option>
+                  <option value="15x20x40">15x20x40</option>
+                  <option value="20x20x40">20x20x40</option>
+                </select>
+                <select value={editMateriauxGrosOeuvre.sable || ""} onChange={(e) => setEditMateriauxGrosOeuvre({ ...editMateriauxGrosOeuvre, sable: e.target.value })} className="h-10 w-full rounded-[10px] bg-white/5 px-3 text-xs font-bold outline-none ring-1 ring-white/10">
+                  <option value="">Sable...</option>
+                  <option value="sable1">Sable fin</option>
+                  <option value="sable2">Sable grossier</option>
+                </select>
+              </div>
+            </div>
+            <div className="sm:col-span-2">
+              <span className="mb-2 block text-xs font-bold">Matériaux — Finitions</span>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <select value={editMateriauxFinitions.carrelage || ""} onChange={(e) => setEditMateriauxFinitions({ ...editMateriauxFinitions, carrelage: e.target.value })} className="h-10 w-full rounded-[10px] bg-white/5 px-3 text-xs font-bold outline-none ring-1 ring-white/10">
+                  <option value="">Carrelage...</option>
+                  <option value="premium">Carrelage premium</option>
+                  <option value="standard">Carrelage standard</option>
+                </select>
+                <select value={editMateriauxFinitions.peinture || ""} onChange={(e) => setEditMateriauxFinitions({ ...editMateriauxFinitions, peinture: e.target.value })} className="h-10 w-full rounded-[10px] bg-white/5 px-3 text-xs font-bold outline-none ring-1 ring-white/10">
+                  <option value="">Peinture...</option>
+                  <option value="lux">Peinture lux</option>
+                  <option value="standard">Peinture standard</option>
+                </select>
+                <select value={editMateriauxFinitions.toiture || ""} onChange={(e) => setEditMateriauxFinitions({ ...editMateriauxFinitions, toiture: e.target.value })} className="h-10 w-full rounded-[10px] bg-white/5 px-3 text-xs font-bold outline-none ring-1 ring-white/10">
+                  <option value="">Toiture...</option>
+                  <option value="tuile">Tuile</option>
+                  <option value="bac">Bac acier</option>
+                </select>
+                <select value={editMateriauxFinitions.menuiserie || ""} onChange={(e) => setEditMateriauxFinitions({ ...editMateriauxFinitions, menuiserie: e.target.value })} className="h-10 w-full rounded-[10px] bg-white/5 px-3 text-xs font-bold outline-none ring-1 ring-white/10">
+                  <option value="">Menuiserie...</option>
+                  <option value="bois">Bois</option>
+                  <option value="alu">Aluminium</option>
+                </select>
+              </div>
+            </div>
             <div className="sm:col-span-2">
               <label className="flex items-center gap-3">
                 <span className="text-xs font-bold">Progression (%)</span>
