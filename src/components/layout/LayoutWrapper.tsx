@@ -5,6 +5,7 @@ import { PremiumHeader } from "./PremiumHeader";
 import { BottomNav } from "./BottomNav";
 import PremiumBackground from "./PremiumBackground";
 import AnnonceTicker from "@/components/ui/AnnonceTicker";
+import { PullToRefresh } from "@/components/ui/PullToRefresh";
 
 interface LayoutWrapperProps {
   children: React.ReactNode;
@@ -37,9 +38,11 @@ export default function LayoutWrapper({ children, showHeader: showHeaderProp = t
       <main className="ios-scroll pt-16 pb-24 px-2 min-h-screen">
         {showHeader && <PremiumHeader />}
         
-        <div className="w-full text-gray-900 dark:text-white">
-          {children}
-        </div>
+        <PullToRefresh>
+          <div className="w-full text-gray-900 dark:text-white">
+            {children}
+          </div>
+        </PullToRefresh>
       </main>
       
       {/* La barre de navigation du bas reste toujours visible */}
