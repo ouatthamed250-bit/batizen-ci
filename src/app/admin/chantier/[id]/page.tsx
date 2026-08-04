@@ -80,7 +80,7 @@ type Chantier = {
   plan_prix?: number;
   plan_details?: string;
   date_fin?: string;
-  etapes?: { nom: string; statut: string }[];
+  etapes?: { nom: string; statut: string; pourcentage?: number }[];
 };
 
 type ClientInfo = {
@@ -352,11 +352,11 @@ export default function ChantierDetailPage() {
    };
 
   const ETAPES_DEFAUT = [
-    { nom: "Fondations", statut: "en_cours" },
-    { nom: "Murs / Gros œuvre", statut: "a_venir" },
-    { nom: "Toiture", statut: "a_venir" },
-    { nom: "Finitions", statut: "a_venir" },
-    { nom: "Autre", statut: "a_venir" },
+    { nom: "Fondations", statut: "en_cours", pourcentage: 0 },
+    { nom: "Murs / Gros œuvre", statut: "a_venir", pourcentage: 0 },
+    { nom: "Toiture", statut: "a_venir", pourcentage: 0 },
+    { nom: "Finitions", statut: "a_venir", pourcentage: 0 },
+    { nom: "Autre", statut: "a_venir", pourcentage: 0 },
   ];
 
   const handleInitEtapes = async () => {
@@ -383,7 +383,7 @@ export default function ChantierDetailPage() {
       const { getFirebaseServices } = await import("@/lib/firebase");
       const { database } = getFirebaseServices();
       const nouvellesEtapes = [...chantier.etapes];
-      nouvellesEtapes[index] = { ...nouvellesEtapes[index], statut: "termine" };
+      nouvellesEtapes[index] = { ...nouvellesEtapes[index], statut: "termine", pourcentage: 100 };
       if (nouvellesEtapes[index + 1]) {
         nouvellesEtapes[index + 1] = { ...nouvellesEtapes[index + 1], statut: "en_cours" };
       }
@@ -403,6 +403,24 @@ export default function ChantierDetailPage() {
     } catch (err) {
       console.error("Erreur validation étape:", err);
       alert("Erreur lors de la validation de l'étape");
+    } finally {
+      setEtapeLoading(false);
+    }
+  };
+
+  const handleUpdatePourcentage = async (index: number, value: number) => {
+    if (!chantier?.etapes) return;
+    setEtapeLoading(true);
+    try {
+      const { ref: dbRef, update } = await import("firebase/database");
+      const { getFirebaseServices } = await import("@/lib/firebase");
+      const { database } = getFirebaseServices();
+      const nouvellesEtapes = [...chantier.etapes];
+      nouvellesEtapes[index] = { ...nouvellesEtapes[index], pourcentage: Math.max(0, Math.min(100, value)) };
+      await update(dbRef(database, `chantiers/${chantierId}`), { etapes: nouvellesEtapes });
+      setChantier((prev: any) => (prev ? { ...prev, etapes: nouvellesEtapes } : prev));
+    } catch (err) {
+      console.error("Erreur mise à jour pourcentage:", err);
     } finally {
       setEtapeLoading(false);
     }
@@ -989,22 +1007,47 @@ export default function ChantierDetailPage() {
               </div>
             ) : (
               chantier.etapes.map((e: any, i: number) => (
-                <div key={i} className="flex items-center justify-between rounded-[14px] border border-white/10 bg-white/5 p-4">
-                  <div className="flex items-center gap-3">
-                    {etapeIcon(e.statut)}
-                    <div>
-                      <p className="text-sm font-bold">{e.nom}</p>
-                      <p className="text-xs" style={{ color: etapeColor(e.statut) }}>{etapeLabel(e.statut)}</p>
+                <div key={i} className="rounded-[14px] border border-white/10 bg-white/5 p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {etapeIcon(e.statut)}
+                      <div>
+                        <p className="text-sm font-bold">{e.nom}</p>
+                        <p className="text-xs" style={{ color: etapeColor(e.statut) }}>{etapeLabel(e.statut)}</p>
+                      </div>
                     </div>
+                    {e.statut === "en_cours" && (
+                      <button
+                        onClick={() => handleValiderEtape(i)}
+                        disabled={etapeLoading}
+                        className="shrink-0 rounded-[10px] bg-[#22C55E] px-3 py-2 text-xs font-black text-white disabled:opacity-50"
+                      >
+                        Marquer terminée
+                      </button>
+                    )}
                   </div>
                   {e.statut === "en_cours" && (
-                    <button
-                      onClick={() => handleValiderEtape(i)}
-                      disabled={etapeLoading}
-                      className="shrink-0 rounded-[10px] bg-[#22C55E] px-3 py-2 text-xs font-black text-white disabled:opacity-50"
-                    >
-                      Marquer terminée
-                    </button>
+                    <div className="mt-3 flex items-center gap-2">
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        defaultValue={e.pourcentage ?? 0}
+                        id={`pourcentage-${i}`}
+                        className="h-9 w-20 rounded-[10px] bg-white/5 px-2 text-xs font-bold outline-none ring-1 ring-white/10"
+                      />
+                      <span className="text-xs text-white/50">% avancement</span>
+                      <button
+                        onClick={() => {
+                          const input = document.getElementById(`pourcentage-${i}`) as HTMLInputElement;
+                          handleUpdatePourcentage(i, Number(input.value) || 0);
+                        }}
+                        disabled={etapeLoading}
+                        className="rounded-[10px] bg-white/10 px-3 py-1.5 text-xs font-black text-white disabled:opacity-50"
+                      >
+                        Enregistrer
+                      </button>
+                    </div>
                   )}
                 </div>
               ))

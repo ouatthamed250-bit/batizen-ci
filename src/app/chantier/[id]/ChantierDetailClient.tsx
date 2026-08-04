@@ -85,7 +85,7 @@ export default function ChantierDetailClient() {
   }, [id, database]);
 
   useEffect(() => {
-    if (!id) return; let cancelled = false; let usMsg: Unsubscribe|null=null; let usEq: Unsubscribe|null=null;
+    if (!id) return; let cancelled = false; let usMsg: Unsubscribe|null=null; let usEq: Unsubscribe|null=null; let usEtapes: Unsubscribe|null=null;
     async function load() {
       const [c,e,p,pa,d] = await Promise.all([rtdbGet<any>(`chantiers/${id}`), rtdbGetList<any>(`chantiers/${id}/etapes`), rtdbGetList<any>(`chantiers/${id}/photos`), rtdbGetList<any>(`chantiers/${id}/paiements`), rtdbGetList<any>(`chantiers/${id}/documents`)]);
       if (cancelled) return; setChantier(c); setEtapes(e); setPhotos(p); setPaiements(pa); setDocuments(d); setLoading(false);
@@ -103,10 +103,11 @@ export default function ChantierDetailClient() {
     }
     load();
     usEq = onValue(ref(database, 'equipes'), (snap) => { const d = snap.val(); if (d) { const eq = Object.entries(d).map(([idEq, e]:[string,any])=>({id:idEq,...e})).filter((e:any)=>String(e.chantierId)===String(id)&&e.actif); eq.sort((a:any,b:any)=>(a.foncion==="chef"?-1:1)); setEquipe(eq); } else setEquipe([]); });
+    usEtapes = onValue(ref(database, `chantiers/${id}/etapes`), (snap) => { const d = snap.val(); setEtapes(Array.isArray(d) ? d : (d ? Object.values(d) : [])); });
     if (user && id) {
       usMsg = onValue(query(ref(database, 'messages'), orderByChild('chantierId'), equalTo(String(id))), (snap) => { const d = snap.val(); if (d) { const msgs = Object.entries(d).map(([idMsg, m]:[string,any])=>({id:idMsg,...m})).sort((a:any,b:any)=>a.dateEnvoi-b.dateEnvoi); setMessages(msgs); msgs.forEach(async (m:any)=>{if (m.expediteurRole==="admin"&&!m.lu) await update(ref(database,`messages/${m.id}`),{lu:true,dateLecture:Date.now()});}); } else setMessages([]); });
     }
-    return () => { cancelled = true; if (usMsg) usMsg(); if (usEq) usEq(); };
+    return () => { cancelled = true; if (usMsg) usMsg(); if (usEq) usEq(); if (usEtapes) usEtapes(); };
   }, [id, user?.uid]);
 
   const nom = chantier?.nom_projet || chantier?.nom || "Chantier";
