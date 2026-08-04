@@ -816,7 +816,7 @@ html, body {
 .ios-scroll {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior-y: auto; /* Active le rubber-band natif */
+  overscroll-behavior-y: contain;
   scroll-behavior: smooth;
 }
 
