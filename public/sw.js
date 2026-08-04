@@ -6,5 +6,11 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  event.respondWith(caches.match(event.request).then((response) => response || fetch(event.request)));
+  const req = event.request;
+  // Ne jamais intercepter : requêtes non-GET (POST/PUT/DELETE) et domaines externes
+  // (Cloudinary, Firebase, etc.) — seulement les GET vers notre propre domaine.
+  if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) {
+    return;
+  }
+  event.respondWith(caches.match(req).then((response) => response || fetch(req)));
 });

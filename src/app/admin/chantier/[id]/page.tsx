@@ -494,19 +494,24 @@ export default function ChantierDetailPage() {
     e.preventDefault();
     const input = document.createElement("input");
     input.type = "file";
+    input.multiple = true;
     input.accept = mediaType === "photo" ? "image/*" : mediaType === "video" ? "video/*" : ".pdf";
     input.onchange = async () => {
-      const file = input.files?.[0];
-      if (!file) return;
+      const files = input.files ? Array.from(input.files) : [];
+      if (files.length === 0) return;
       setMediaLoading(true);
       try {
-        const url = await handleImageUpload(file);
-        const newMedia = { type: mediaType, url, nom: file.name, dateAjout: Date.now() };
-        await rtdbSet(`chantiers/${chantierId}/medias`, [...medias, newMedia]);
-        setMedias([...medias, { ...newMedia, id: url }]);
+        const nouveauxMedias = [];
+        for (const file of files) {
+          const url = await handleImageUpload(file);
+          nouveauxMedias.push({ type: mediaType, url, nom: file.name, dateAjout: Date.now() });
+        }
+        const tousMedias = [...medias, ...nouveauxMedias];
+        await rtdbSet(`chantiers/${chantierId}/medias`, tousMedias);
+        setMedias(tousMedias.map((m, i) => ({ ...m, id: (m as any).id || `${m.url}_${i}` })));
       } catch (err) {
         console.error("Upload erreur", err);
-        setMessage({ type: "error", text: "Erreur lors de l'upload du média" });
+        setMessage({ type: "error", text: "Erreur lors de l'upload d'un ou plusieurs médias" });
       } finally {
         setMediaLoading(false);
       }
