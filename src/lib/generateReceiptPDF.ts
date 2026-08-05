@@ -112,8 +112,8 @@ export async function generateReceiptPDF(data: ReceiptData): Promise<void> {
     pdf.text("X", 45.5, rowsY[row]);
   });
 
-  pdf.setFontSize(11);
-  pdf.text(fmtFcfa(data.totalAmount), 182, 169.2, { align: "right" });
+  pdf.setFontSize(10);
+  pdf.text(fmtFcfa(data.totalAmount), 168, 169.2, { align: "right" });
 
   pdf.setFontSize(10);
   pdf.text(data.agentName, 42.0, 204.4);
