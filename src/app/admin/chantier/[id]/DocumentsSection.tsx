@@ -6,7 +6,7 @@ import { rtdbGetList } from "@/lib/rtdb";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { getFirebaseServices } from '../../../../lib/firebase';
-import { ref, onValue, push, update, Unsubscribe } from 'firebase/database';
+import { ref, onValue, push, update, query, orderByChild, equalTo, Unsubscribe } from 'firebase/database';
 
 type Document = {
   id: string;
@@ -41,7 +41,7 @@ export default function DocumentsSection({ chantierId }: DocumentsSectionProps) 
   useEffect(() => {
     if (!chantierId) return;
 
-    const docsRef = ref(db, `documents/${chantierId}`);
+    const docsRef = query(ref(db, 'documents'), orderByChild('chantierId'), equalTo(chantierId));
     const unsubDocs: Unsubscribe = onValue(docsRef, (snapshot) => {
       console.log("✅ [SEC-ADMIN] Requête documents compatible règles strictes (admin-only)");
       const data = snapshot.val();
@@ -69,7 +69,7 @@ export default function DocumentsSection({ chantierId }: DocumentsSectionProps) 
     try {
       const url = await uploadToCloudinary(file);
 
-      await push(ref(db, `documents/${chantierId}`), {
+      await push(ref(db, 'documents'), {
         chantierId,
         nom: file.name,
         type: docType,
@@ -95,7 +95,7 @@ export default function DocumentsSection({ chantierId }: DocumentsSectionProps) 
   // Supprimer (soft delete) un document
   const handleDeleteDocument = async (id: string) => {
     if (!confirm("Supprimer ce document ?")) return;
-    await update(ref(db, `documents/${chantierId}/${id}`), { actif: false });
+    await update(ref(db, `documents/${id}`), { actif: false });
   };
 
   // Icône selon le type

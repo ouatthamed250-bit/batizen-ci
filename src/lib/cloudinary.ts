@@ -30,7 +30,7 @@ function isNetworkError(err: unknown): boolean {
   return false;
 }
 
-export const uploadToCloudinary = async (file: File): Promise<string> => {
+export const uploadToCloudinary = async (file: File | Blob): Promise<string> => {
   assertCloudinaryConfig();
 
   const formData = new FormData();
