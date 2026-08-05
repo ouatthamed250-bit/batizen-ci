@@ -76,6 +76,11 @@ export function ChantierPaiementsSection({ chantierId, chantier }: { chantierId:
             <div className="mt-3">
               <GenerateReceiptButton
                 clientName={user?.displayName || user?.email || "Client"}
+                clientEmail={user?.email ?? undefined}
+                clientVille={chantier?.localisation?.ville ?? undefined}
+                clientAdresse={chantier?.localisation?.adresse ?? undefined}
+                chantierLieu={chantier?.localisation?.commune ?? undefined}
+                chantierType={chantier?.type ?? undefined}
                 projectName={chantier?.nom_projet || chantier?.nom}
                 items={[{ description: p.description || "Paiement chantier", quantity: 1, unitPrice: p.montant, total: p.montant }]}
                 totalAmount={p.montant}

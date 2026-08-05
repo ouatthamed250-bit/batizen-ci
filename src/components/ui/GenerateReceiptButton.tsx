@@ -14,6 +14,11 @@ import {
 interface GenerateReceiptButtonProps {
   clientName: string;
   clientContact?: string;
+  clientEmail?: string;
+  clientAdresse?: string;
+  clientVille?: string;
+  chantierLieu?: string;
+  chantierType?: string;
   projectName?: string;
   items: ReceiptItem[];
   totalAmount: number;
@@ -27,6 +32,11 @@ interface GenerateReceiptButtonProps {
 export function GenerateReceiptButton({
   clientName,
   clientContact,
+  clientEmail,
+  clientAdresse,
+  clientVille,
+  chantierLieu,
+  chantierType,
   projectName,
   items,
   totalAmount,
@@ -54,6 +64,11 @@ export function GenerateReceiptButton({
         time: formatTime(),
         clientName,
         clientContact,
+        clientEmail,
+        clientAdresse,
+        clientVille,
+        chantierLieu,
+        chantierType,
         projectName,
         items,
         totalAmount,
