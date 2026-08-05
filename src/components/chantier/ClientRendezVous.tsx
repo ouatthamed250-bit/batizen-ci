@@ -42,6 +42,7 @@ export default function ClientRendezVous({ chantierId }: ClientRendezVousProps) 
   const [rendezVous, setRendezVous] = useState<RendezVous[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [showHistorique, setShowHistorique] = useState(false);
   const [rdvForm, setRdvForm] = useState({
     titre: "",
     type: "rdv_client",
@@ -197,6 +198,59 @@ useEffect(() => {
     }
   };
 
+  const renderRdvCard = (rdv: RendezVous, isPast: boolean) => {
+    const isConfirmeParAdmin = rdv.statut === "confirme_admin";
+    return (
+      <div
+        key={rdv.id}
+        className={`rounded-[18px] border p-4 shadow-sm ${
+          isConfirmeParAdmin
+            ? "bg-green-50 border-green-200"
+            : isPast
+            ? "bg-gray-50 border-gray-200 opacity-60"
+            : "bg-white border-[#E7EBF5]"
+        }`}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-lg">{getTypeIcon(rdv.type)}</span>
+              <h4 className="font-bold text-[#0D2B6B]">{rdv.titre}</h4>
+              {getStatutBadge(rdv.statut)}
+            </div>
+            <p className="text-sm text-[#374151] flex items-center gap-1">
+              <Calendar size={14} />
+              {new Date(rdv.date).toLocaleDateString('fr-FR', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+              })} à {rdv.heure || "—"}
+            </p>
+            {rdv.lieu && (
+              <p className="text-xs text-[#6B7280] mt-1 flex items-center gap-1">
+                <MapPin size={12} />
+                {rdv.lieu}
+              </p>
+            )}
+            {rdv.description && (
+              <p className="text-xs text-[#6B7280] mt-1">{rdv.description}</p>
+            )}
+          </div>
+          {isConfirmeParAdmin && (
+            <button
+              onClick={() => handleConfirmerRdv(rdv.id)}
+              className="flex items-center gap-1 px-3 py-1.5 bg-green-500 text-white rounded-xl font-bold text-xs hover:bg-green-600 transition"
+            >
+              <Check size={14} />
+              Confirmer
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -207,6 +261,11 @@ useEffect(() => {
       </div>
     );
   }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const rendezVousAvenir = rendezVous.filter((rdv) => new Date(rdv.date) >= today);
+  const rendezVousHistorique = rendezVous.filter((rdv) => new Date(rdv.date) < today);
 
   return (
     <div className="space-y-4">
@@ -303,62 +362,20 @@ useEffect(() => {
         </div>
       ) : (
         <div className="space-y-3">
-          {rendezVous.map((rdv) => {
-            const isPast = new Date(rdv.date) < new Date();
-            const isConfirmeParAdmin = rdv.statut === "confirme_admin";
+          {rendezVousAvenir.map((rdv) => renderRdvCard(rdv, false))}
 
-            return (
-              <div
-                key={rdv.id}
-                className={`rounded-[18px] border p-4 shadow-sm ${
-                  isConfirmeParAdmin
-                    ? "bg-green-50 border-green-200"
-                    : isPast
-                    ? "bg-gray-50 border-gray-200 opacity-60"
-                    : "bg-white border-[#E7EBF5]"
-                }`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-lg">{getTypeIcon(rdv.type)}</span>
-                      <h4 className="font-bold text-[#0D2B6B]">{rdv.titre}</h4>
-                      {getStatutBadge(rdv.statut)}
-                    </div>
-                    <p className="text-sm text-[#374151] flex items-center gap-1">
-                      <Calendar size={14} />
-                      {new Date(rdv.date).toLocaleDateString('fr-FR', {
-                        weekday: 'long',
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric'
-                      })} à {rdv.heure || "—"}
-                    </p>
-                    {rdv.lieu && (
-                      <p className="text-xs text-[#6B7280] mt-1 flex items-center gap-1">
-                        <MapPin size={12} />
-                        {rdv.lieu}
-                      </p>
-                    )}
-                    {rdv.description && (
-                      <p className="text-xs text-[#6B7280] mt-1">{rdv.description}</p>
-                    )}
-                  </div>
+          {rendezVousHistorique.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowHistorique(!showHistorique)}
+              className="w-full flex items-center justify-between px-4 py-2 bg-gray-100 rounded-xl text-sm font-bold text-[#6B7280] hover:bg-gray-200 transition"
+            >
+              <span>📜 Historique ({rendezVousHistorique.length})</span>
+              <span>{showHistorique ? "▲" : "▼"}</span>
+            </button>
+          )}
 
-                  {/* Bouton confirmer si l'admin a confirmé et que le client n'a pas encore confirmé */}
-                  {isConfirmeParAdmin && (
-                    <button
-                      onClick={() => handleConfirmerRdv(rdv.id)}
-                      className="flex items-center gap-1 px-3 py-1.5 bg-green-500 text-white rounded-xl font-bold text-xs hover:bg-green-600 transition"
-                    >
-                      <Check size={14} />
-                      Confirmer
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+          {showHistorique && rendezVousHistorique.map((rdv) => renderRdvCard(rdv, true))}
         </div>
       )}
 
