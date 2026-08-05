@@ -85,29 +85,29 @@ export default function ChantierDetailClient() {
   }, [id, database]);
 
   useEffect(() => {
-    if (!id) return; let cancelled = false; let usMsg: Unsubscribe|null=null; let usEq: Unsubscribe|null=null; let usEtapes: Unsubscribe|null=null;
+    if (!id) return; let cancelled = false; let usMsg: Unsubscribe|null=null; let usEq: Unsubscribe|null=null; let usEtapes: Unsubscribe|null=null; let usDocs: Unsubscribe|null=null;
     async function load() {
-      const [c,e,p,pa,d] = await Promise.all([rtdbGet<any>(`chantiers/${id}`), rtdbGetList<any>(`chantiers/${id}/etapes`), rtdbGetList<any>(`chantiers/${id}/photos`), rtdbGetList<any>(`chantiers/${id}/paiements`), rtdbGetList<any>(`chantiers/${id}/documents`)]);
-      if (cancelled) return; setChantier(c); setEtapes(e); setPhotos(p); setPaiements(pa); setDocuments(d); setLoading(false);
+      const [c,e,p,pa] = await Promise.all([rtdbGet<any>(`chantiers/${id}`), rtdbGetList<any>(`chantiers/${id}/etapes`), rtdbGetList<any>(`chantiers/${id}/photos`), rtdbGetList<any>(`chantiers/${id}/paiements`)]);
+      if (cancelled) return; setChantier(c); setEtapes(e); setPhotos(p); setPaiements(pa); setLoading(false);
       if (!cancelled && id) {
         const { getDatabase, query, orderByChild, equalTo, ref: dbRef } = await import("firebase/database"); const { db: db } = getFirebaseServices();
-        const [plan, med, docsF, notesF, rapportsF, paiementsF] = await Promise.all([
+        const [plan, med, notesF, rapportsF, paiementsF] = await Promise.all([
           rtdbGetList<any>(`chantiers/${id}/planning`), rtdbGetList<any>(`chantiers/${id}/medias`),
-          (async () => { const q = query(dbRef(db, 'documents'), orderByChild("chantierId"), equalTo(String(id))); const snap = await (await import("firebase/database")).get(q); const d = snap.val(); return d ? Object.entries(d).filter(([_, x]:[string,any])=>x?.actif).map(([docId, x]:[string,any])=>({id:docId,...x})) : []; })(),
           (async () => { const q = query(dbRef(db, 'notes'), orderByChild("chantierId"), equalTo(String(id))); const snap = await (await import("firebase/database")).get(q); const d = snap.val(); return d ? Object.entries(d).filter(([_, x]:[string,any])=>x?.actif).map(([noteId, x]:[string,any])=>({id:noteId,...x})) : []; })(),
           (async () => { const q = query(dbRef(db, 'rapports'), orderByChild("chantierId"), equalTo(String(id))); const snap = await (await import("firebase/database")).get(q); const d = snap.val(); return d ? Object.entries(d).filter(([_, x]:[string,any])=>x?.actif).map(([rId, x]:[string,any])=>({id:rId,...x})) : []; })(),
           (async () => { const q = query(dbRef(db, 'paiements'), orderByChild("chantierId"), equalTo(String(id))); const snap = await (await import("firebase/database")).get(q); const d = snap.val(); return d ? Object.entries(d).filter(([_, x]:[string,any])=>x?.actif).map(([payId, x]:[string,any])=>({id:payId,...x})) : []; })(),
         ]);
-        setPlanning(plan); setMedias(med); setRapports(rapportsF); setNotes(notesF); if (docsF.length > 0) setDocuments(docsF); if (paiementsF.length > 0) setPaiements(paiementsF);
+        setPlanning(plan); setMedias(med); setRapports(rapportsF); setNotes(notesF); if (paiementsF.length > 0) setPaiements(paiementsF);
       }
     }
     load();
     usEq = onValue(ref(database, 'equipes'), (snap) => { const d = snap.val(); if (d) { const eq = Object.entries(d).map(([idEq, e]:[string,any])=>({id:idEq,...e})).filter((e:any)=>String(e.chantierId)===String(id)&&e.actif); eq.sort((a:any,b:any)=>(a.foncion==="chef"?-1:1)); setEquipe(eq); } else setEquipe([]); });
     usEtapes = onValue(ref(database, `chantiers/${id}/etapes`), (snap) => { const d = snap.val(); setEtapes(Array.isArray(d) ? d : (d ? Object.values(d) : [])); });
+    usDocs = onValue(query(ref(database, 'documents'), orderByChild('chantierId'), equalTo(String(id))), (snap) => { const d = snap.val(); setDocuments(d ? Object.entries(d).filter(([_, x]:[string,any])=>x?.actif).map(([docId, x]:[string,any])=>({id:docId,...x})) : []); });
     if (user && id) {
       usMsg = onValue(query(ref(database, 'messages'), orderByChild('chantierId'), equalTo(String(id))), (snap) => { const d = snap.val(); if (d) { const msgs = Object.entries(d).map(([idMsg, m]:[string,any])=>({id:idMsg,...m})).sort((a:any,b:any)=>a.dateEnvoi-b.dateEnvoi); setMessages(msgs); msgs.forEach(async (m:any)=>{if (m.expediteurRole==="admin"&&!m.lu) await update(ref(database,`messages/${m.id}`),{lu:true,dateLecture:Date.now()});}); } else setMessages([]); });
     }
-    return () => { cancelled = true; if (usMsg) usMsg(); if (usEq) usEq(); if (usEtapes) usEtapes(); };
+    return () => { cancelled = true; if (usMsg) usMsg(); if (usEq) usEq(); if (usEtapes) usEtapes(); if (usDocs) usDocs(); };
   }, [id, user?.uid]);
 
   const nom = chantier?.nom_projet || chantier?.nom || "Chantier";
