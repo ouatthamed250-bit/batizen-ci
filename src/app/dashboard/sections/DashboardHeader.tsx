@@ -1,11 +1,11 @@
 "use client";
-
-import { Moon, Sun } from "lucide-react";
-import { ThemeToggle } from "@/components/layout/ThemeToggle";
-
+import { useEffect, useState } from "react";
 export function DashboardHeader({ userName }: { userName: string }) {
-  const hour = new Date().getHours();
-  const greeting = hour < 18 ? "Bonjour" : "Bonsoir";
+  const [greeting, setGreeting] = useState("Bonjour");
+  useEffect(() => {
+    const hour = new Date().getHours();
+    setGreeting(hour < 18 ? "Bonjour" : "Bonsoir");
+  }, []);
   return (
     <div className="flex items-center gap-3 mb-2">
       <span className="text-4xl" style={{ display: "inline-block", transformOrigin: "70% 70%", animation: "wave 2.5s infinite" }} role="img" aria-label="Salutation">✋🏽</span>
