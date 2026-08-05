@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode } from "react";
+import { type ReactNode, useState, useEffect } from "react";
 import Image from "next/image";
 import { useTheme } from "@/contexts/ThemeContext";
 
@@ -25,9 +25,13 @@ export default function PremiumBackground({
 }: PremiumBackgroundProps) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
-  
-  // Rotation des images selon l'heure pour varier l'expérience
-  const imageIndex = Math.floor(new Date().getHours() / 6) % DEFAULT_IMAGES.length;
+
+  // Rotation des images selon l'heure — calculée après le premier affichage
+  // pour éviter un décalage entre le serveur et le navigateur
+  const [imageIndex, setImageIndex] = useState(0);
+  useEffect(() => {
+    setImageIndex(Math.floor(new Date().getHours() / 6) % DEFAULT_IMAGES.length);
+  }, []);
   const bgImage = imageUrl || DEFAULT_IMAGES[imageIndex];
 
   return (
