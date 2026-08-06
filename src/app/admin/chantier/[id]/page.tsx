@@ -1327,7 +1327,7 @@ export default function ChantierDetailPage() {
         {activeTab === "suivi" && (<>
 
 {/* SECTION 13: Paiements & Finances */}
-        <PaiementsSection chantierId={chantierId} chantier={chantier} />
+        <PaiementsSection chantierId={chantierId} chantier={chantier} clientInfo={clientInfo} />
 
         {/* SECTION 14: Documents du chantier */}
         <button

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { ref, push, update, onValue } from "firebase/database";
 import { getFirebaseServices } from "@/lib/firebase";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { generateReceiptPDF, generateReceiptNumber, formatDate, formatTime } from "@/lib/generateReceiptPDF";
 
 type Chantier = {
   id?: string;
@@ -28,7 +29,7 @@ type Chantier = {
   };
 };
 
-export default function PaiementsSection({ chantierId, chantier }: { chantierId: string; chantier: Chantier | null }) {
+export default function PaiementsSection({ chantierId, chantier, clientInfo }: { chantierId: string; chantier: Chantier | null; clientInfo?: any }) {
   const { database } = getFirebaseServices();
   const { user } = useAuthContext();
   
@@ -127,39 +128,33 @@ export default function PaiementsSection({ chantierId, chantier }: { chantierId:
   };
 
   // Générer un reçu PDF - VERSION AMÉLIORÉE
-  const handleGenererRecuPDF = (paiement: any) => {
-    const { getRecuTemplate } = require("@/lib/documents-templates");
-    
-    const template = getRecuTemplate({
-      numeroRecu: paiement.id?.substring(0, 8).toUpperCase() || "BZ-RECU",
-      datePaiement: new Date(paiement.datePaiement).toLocaleDateString('fr-FR'),
-      modePaiement: paiement.mode?.toUpperCase() || "CASH",
-      numeroContrat: chantierId?.substring(0, 8).toUpperCase() || "",
-      clientNom: chantier?.client_nom || "Client",
-      clientTelephone: chantier?.client_telephone || "",
-      clientEmail: chantier?.client_email || "",
-      clientAdresse: chantier?.localisation?.adresse || "",
-      clientVille: chantier?.localisation?.ville || "Abidjan",
-      chantierLieu: chantier?.localisation?.adresse || "",
-      chantierType: chantier?.type || "Construction",
-      chantierDescription: chantier?.nom_projet || chantier?.nom || "",
-      depotNumero: "1",
-      depotDesignation: paiement.description || "Paiement",
-      depotMontant: paiement.montant || 0,
-      depotObservations: paiement.reference || "",
-      montantTotal: paiement.montant || 0,
-      montantLettres: `${paiement.montant?.toLocaleString('fr-FR') || 0} Francs CFA`,
-      agentNom: user?.displayName || "Administrateur",
-      agentFonction: "Directeur de projet"
-    });
-    
-    const nouvelleFenetre = window.open('', '_blank');
-    if (nouvelleFenetre) {
-      nouvelleFenetre.document.write(template);
-      nouvelleFenetre.document.close();
-      setTimeout(() => {
-        nouvelleFenetre.print();
-      }, 500);
+  const handleGenererRecuPDF = async (paiement: any) => {
+    try {
+      await generateReceiptPDF({
+        receiptNumber: generateReceiptNumber(),
+        date: formatDate(),
+        time: formatTime(),
+        clientName: clientInfo?.displayName || clientInfo?.email || "Client",
+        clientContact: clientInfo?.telephone || clientInfo?.phone,
+        clientEmail: clientInfo?.email,
+        clientAdresse: chantier?.localisation?.adresse,
+        clientVille: chantier?.localisation?.ville,
+        chantierLieu: chantier?.localisation?.commune,
+        chantierType: chantier?.type,
+        items: [{
+          description: (paiement.description && paiement.description !== "null" && paiement.description !== "undefined") ? paiement.description : "Paiement chantier",
+          quantity: 1,
+          unitPrice: paiement.montant || 0,
+          total: paiement.montant || 0,
+        }],
+        totalAmount: paiement.montant || 0,
+        paymentMethod: paiement.mode?.toUpperCase() || "CASH",
+        projectName: chantier?.nom_projet || chantier?.nom,
+        agentName: user?.displayName || "Administrateur",
+      });
+    } catch (err) {
+      console.error("Erreur génération reçu:", err);
+      alert("Erreur lors de la génération du reçu");
     }
   };
 
