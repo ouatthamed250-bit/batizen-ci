@@ -1,6 +1,6 @@
 "use client";
 
-import { PRIX_REFERENCE, formatFcfa, formatEuros } from "@/lib/prix-btp";
+import { PRIX_REFERENCE, formatFcfa, formatEuros, estimerCoutChantier } from "@/lib/prix-btp";
 
 interface SuperCalculateurProps {
   surface: number;
@@ -37,20 +37,20 @@ export default function SuperCalculateur({
   mode = "complet",
   budgetDepense = 0,
 }: SuperCalculateurProps) {
-  // Calcul du prix de base
-  const prixBase = surface * PRIX_REFERENCE.standing[standing];
+  // Calcul réaliste basé sur les vrais prix BTP (poste par poste : dalle, murs, toiture, électricité...)
+  const typeConstruction = (standing === 'haut_standing' || standing === 'luxe') ? 'villa' : 'standard';
+  const { total: totalBase, details: detailsBTP } = estimerCoutChantier(surface, typeConstruction);
 
-  // Application du coefficient de style
+  // Coefficient de standing et de style appliqué sur ce calcul de base déjà réaliste
+  const coeffStanding = PRIX_REFERENCE.standing[standing] || 1;
   const styleKey = (style || "").toLowerCase() as keyof typeof PRIX_REFERENCE.style_coefficient;
   const coeffStyle = PRIX_REFERENCE.style_coefficient[styleKey] || 1.0;
-  const prixAjusteStyle = prixBase * coeffStyle;
+  const totalAjuste = totalBase * coeffStanding * coeffStyle;
 
-  // Ajustement pour les étages
-  let prixEtages = prixAjusteStyle;
+  // Étages supplémentaires (chaque étage en plus coûte ~85% d'un étage de base, pas de nouvelle fondation)
+  let prixEtages = totalAjuste;
   if (etages > 1) {
-    for (let i = 1; i < etages; i++) {
-      prixEtages += prixAjusteStyle * PRIX_REFERENCE.supplements.etage_supplementaire;
-    }
+    prixEtages += totalAjuste * 0.85 * (etages - 1);
   }
 
   // Suppléments optionnels
@@ -62,11 +62,14 @@ export default function SuperCalculateur({
   // Total
   const total = prixEtages + supplements;
 
-  // Répartition
-  const grosOeuvre = total * PRIX_REFERENCE.repartition.gros_oeuvre;
-  const finitions = total * PRIX_REFERENCE.repartition.finitions;
-  const mainOeuvre = total * PRIX_REFERENCE.repartition.main_oeuvre;
-  const divers = total * PRIX_REFERENCE.repartition.divers_imprevus;
+  // Répartition par grande catégorie, calculée à partir du détail réel poste par poste
+  const sommePoste = (mots: string[]) =>
+    detailsBTP.filter(d => mots.some(m => d.poste.toLowerCase().includes(m))).reduce((s, d) => s + d.total, 0);
+  const facteurAjustement = totalBase > 0 ? total / totalBase : 1;
+  const grosOeuvre = sommePoste(["dalle", "semelle", "mur", "enduit", "toiture"]) * facteurAjustement;
+  const finitions = sommePoste(["carrelage", "peinture", "porte", "fenêtre", "fenetre"]) * facteurAjustement;
+  const mainOeuvre = sommePoste(["main"]) * facteurAjustement;
+  const divers = Math.max(0, total - grosOeuvre - finitions - mainOeuvre);
 
   // Pour mode suivi
   const pourcentageDepense = budgetDepense ? Math.min(100, (budgetDepense / total) * 100) : 0;
