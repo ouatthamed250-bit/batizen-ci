@@ -45,7 +45,7 @@ export async function generateDevisPDF(data: DevisData): Promise<Blob> {
   pdf.text(data.devisNumber, 148.7, 37.7);
   pdf.text(data.devisDate, 141.5, 47.4);
   pdf.text(data.clientName, 139.5, 54.7);
-  if (data.clientAdresse) pdf.text(data.clientAdresse, 143.6, 61.9);
+  if (data.clientAdresse) pdf.text(data.clientAdresse, 143.6, 65.5);
 
   pdf.setFontSize(8.5);
   let totalMateriel = 0;
