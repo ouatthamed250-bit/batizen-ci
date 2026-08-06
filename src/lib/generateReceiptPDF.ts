@@ -1,4 +1,5 @@
 import jsPDF from "jspdf";
+import { montantEnLettresFcfa } from "@/lib/nombreEnLettres";
 
 export interface ReceiptItem {
   description: string;
@@ -114,6 +115,12 @@ export async function generateReceiptPDF(data: ReceiptData): Promise<void> {
 
   pdf.setFontSize(10);
   pdf.text(fmtFcfa(data.totalAmount), 168, 169.2, { align: "right" });
+
+  const lettres = montantEnLettresFcfa(data.totalAmount);
+  pdf.setFontSize(8.5);
+  const lettresLines = pdf.splitTextToSize(lettres, 175);
+  pdf.text(lettresLines[0] || "", 46.1, 184.7);
+  if (lettresLines[1]) pdf.text(lettresLines[1], 13.3, 190.1);
 
   pdf.setFontSize(10);
   pdf.text(data.agentName, 42.0, 204.4);
