@@ -193,8 +193,23 @@ export default function PlanGenerator3D({
   style,
   plan,
 }: Plan3DProps) {
-  const rooms = plan?.rooms;
-
+  const rawRooms = plan?.rooms;
+  // PlanEngine calcule les pièces dans un système "pixels" (échelle du canvas 2D),
+  // pas en mètres réels — on convertit à l'échelle en utilisant la surface réelle connue.
+  const ZONE_W = 720;
+  const ZONE_H = 390;
+  const rooms = rawRooms && plan?.totalBuiltAreaM2
+    ? (() => {
+        const scale = Math.sqrt(plan.totalBuiltAreaM2 / (ZONE_W * ZONE_H));
+        return rawRooms.map((r) => ({
+          ...r,
+          x: r.x * scale,
+          y: r.y * scale,
+          width: r.width * scale,
+          height: r.height * scale,
+        }));
+      })()
+    : rawRooms;
   // Si plan fourni avec des pièces, on utilise les données dynamiques
   if (plan && rooms && rooms.length > 0) {
     const bounds = computeBounds(rooms);
