@@ -66,7 +66,6 @@ export default function ChantierDetailClient() {
   const [medias, setMedias] = useState<any[]>([]);
   const [album, setAlbum] = useState<any[]>([]);
   const [rapports, setRapports] = useState<any[]>([]);
-  const [clientDocuments, setClientDocuments] = useState<any[]>([]);
   const [ouvriersList, setOuvriersList] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -77,12 +76,6 @@ export default function ChantierDetailClient() {
   const handleTelechargerFichier = async (url: string, nomFichier: string) => {
     try { const r = await fetch(url); const b = await r.blob(); const du = URL.createObjectURL(b); const a = document.createElement('a'); a.href = du; a.download = nomFichier; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(du); } catch { alert("Erreur téléchargement"); }
   };
-
-  useEffect(() => {
-    if (!id) return;
-    const unsub = onValue(ref(database, `documents/${id}`), (snap) => { const d = snap.val(); if (d) { setClientDocuments(Object.entries(d).filter(([_, x]: [string,any]) => x.actif !== false).map(([docId, x]: [string,any]) => ({ id: docId, ...x })).sort((a:any,b:any) => b.dateUpload - a.dateUpload)); } else setClientDocuments([]); });
-    return () => unsub();
-  }, [id, database]);
 
   useEffect(() => {
     if (!id) return; let cancelled = false; let usMsg: Unsubscribe|null=null; let usEq: Unsubscribe|null=null; let usEtapes: Unsubscribe|null=null; let usDocs: Unsubscribe|null=null;
@@ -155,7 +148,7 @@ export default function ChantierDetailClient() {
               {activeTab === "album" && <ChantierAlbum medias={medias} setAlbumIndex={setAlbumIndex} setLightbox={setLightbox} handleTelechargerFichier={handleTelechargerFichier} isTabLocked={isTabLocked("album")} />}
               {activeTab === "equipe" && <EquipeHierarchiqueClient chantierId={id!} />}
               {activeTab === "paiements" && <ChantierPaiementsSection chantierId={id!} chantier={chantier!} />}
-              {activeTab === "documents" && <ChantierDocuments clientDocuments={clientDocuments} isTabLocked={isTabLocked("documents")} />}
+              {activeTab === "documents" && <ChantierDocuments clientDocuments={documents} isTabLocked={isTabLocked("documents")} />}
               {activeTab === "notes" && <ChantierNotes notes={notes} isTabLocked={isTabLocked("notes")} formatDateFr={formatDateFr} />}
               {activeTab === "passeport" && <ChantierPasseport chantier={chantier} photos={photos} equipe={equipe} isTabLocked={isTabLocked("passeport")} formatLocalisation={(loc:any, fb?:string)=>{if(!loc)return fb||"—";if(typeof loc==="string")return loc;return[loc.quartier,loc.commune,loc.ville].filter(Boolean).join(", ")||fb||"—";}} formatDateFr={formatDateFr} />}
               {activeTab === "rapports" && <ChantierRapports rapports={rapports} isTabLocked={isTabLocked("rapports")} />}
