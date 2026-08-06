@@ -50,7 +50,7 @@ export function ContratFormModal({ chantier, chantierId, clientInfo, onClose }: 
         contractNumber: generateContractNumber(),
         contractDate: formatDateContract(),
         clientName: clientInfo?.displayName || clientInfo?.email || "Client",
-        clientPhone: clientInfo?.telephone || clientInfo?.phone,
+        clientPhone: clientInfo?.telephone || clientInfo?.phone || chantier?.rendezVous?.telephone,
         clientEmail: clientInfo?.email,
         clientAdresse: chantier?.localisation?.adresse,
         clientVille: chantier?.localisation?.ville,

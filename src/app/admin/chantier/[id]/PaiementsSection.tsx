@@ -27,6 +27,9 @@ type Chantier = {
     commune?: string;
     quartier?: string;
   };
+  rendezVous?: {
+    telephone?: string;
+  };
 };
 
 export default function PaiementsSection({ chantierId, chantier, clientInfo }: { chantierId: string; chantier: Chantier | null; clientInfo?: any }) {
@@ -135,7 +138,7 @@ export default function PaiementsSection({ chantierId, chantier, clientInfo }: {
         date: formatDate(),
         time: formatTime(),
         clientName: clientInfo?.displayName || clientInfo?.email || "Client",
-        clientContact: clientInfo?.telephone || clientInfo?.phone,
+        clientContact: clientInfo?.telephone || clientInfo?.phone || chantier?.rendezVous?.telephone,
         clientEmail: clientInfo?.email,
         clientAdresse: chantier?.localisation?.adresse,
         clientVille: chantier?.localisation?.ville,

@@ -76,6 +76,7 @@ export function ChantierPaiementsSection({ chantierId, chantier }: { chantierId:
             <div className="mt-3">
               <GenerateReceiptButton
                 clientName={user?.displayName || user?.email || "Client"}
+                clientContact={chantier?.rendezVous?.telephone ?? undefined}
                 clientEmail={user?.email ?? undefined}
                 clientVille={chantier?.localisation?.ville ?? undefined}
                 clientAdresse={chantier?.localisation?.adresse ?? undefined}
