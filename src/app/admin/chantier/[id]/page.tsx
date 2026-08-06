@@ -30,6 +30,7 @@ import AlbumChantierAdmin from "@/components/admin/AlbumChantierAdmin";
 import PaiementsSection from "./PaiementsSection";
 import DocumentsSection from "./DocumentsSection";
 import { ContratFormModal } from "./ContratFormModal";
+import { DevisFormModal } from "./DevisFormModal";
 import { getFirebaseServices } from "@/lib/firebase";
 import { ref, onValue, push, update, remove, Unsubscribe } from 'firebase/database';
 import { getContratTemplate } from "@/lib/documents-templates";
@@ -628,6 +629,7 @@ export default function ChantierDetailPage() {
 
   const [activeTab, setActiveTab] = useState<"info" | "avancement" | "suivi" | "messages">("info");
   const [showContratForm, setShowContratForm] = useState(false);
+  const [showDevisForm, setShowDevisForm] = useState(false);
   const [etapeLoading, setEtapeLoading] = useState(false);
 
   const handleContactClient = () => {
@@ -1334,8 +1336,17 @@ export default function ChantierDetailPage() {
         >
           📝 Générer un contrat
         </button>
+        <button
+          onClick={() => setShowDevisForm(true)}
+          className="w-full mb-3 rounded-[12px] bg-[#22C55E] py-3 text-sm font-black text-white"
+        >
+          📋 Générer un devis
+        </button>
         {showContratForm && (
           <ContratFormModal chantier={chantier} chantierId={chantierId} clientInfo={clientInfo} onClose={() => setShowContratForm(false)} />
+        )}
+        {showDevisForm && (
+          <DevisFormModal chantier={chantier} chantierId={chantierId} clientInfo={clientInfo} onClose={() => setShowDevisForm(false)} />
         )}
         <DocumentsSection chantierId={chantierId} />
 
