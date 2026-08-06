@@ -159,24 +159,24 @@ export default function DocumentsSection({ chantierId }: DocumentsSectionProps) 
       ) : (
         <div className="space-y-3">
           {documents.map((doc) => (
-            <div key={doc.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">
+            <div key={doc.id} className="flex flex-col gap-3 p-4 bg-gray-50 rounded-xl border border-gray-200 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="text-2xl shrink-0">
                   {getTypeIcon(doc.type)}
                 </span>
-                <div>
-                  <p className="font-bold text-[var(--navy)]">{doc.nom}</p>
+                <div className="min-w-0">
+                  <p className="font-bold text-[var(--navy)] truncate">{doc.nom}</p>
                   <p className="text-xs text-gray-500">
                     {(doc.taille / 1024).toFixed(1)} KB • {new Date(doc.dateUpload).toLocaleDateString('fr-FR')}
                   </p>
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 shrink-0">
                 <a
                   href={doc.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-4 py-2 bg-blue-500 text-white rounded-xl text-sm font-bold hover:bg-blue-600 transition"
+                  className="flex-1 text-center px-4 py-2 bg-blue-500 text-white rounded-xl text-sm font-bold hover:bg-blue-600 transition sm:flex-none"
                 >
                   ⬇️ Télécharger
                 </a>
