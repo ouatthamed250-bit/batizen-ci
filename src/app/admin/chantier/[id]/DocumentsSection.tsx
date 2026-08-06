@@ -12,7 +12,7 @@ type Document = {
   id: string;
   chantierId: string;
   nom: string;
-  type: "devis" | "facture" | "plan" | "autre";
+  type: "devis" | "contrat" | "recu" | "facture" | "plan" | "autre";
   url: string;
   taille: number;
   dateUpload: number;

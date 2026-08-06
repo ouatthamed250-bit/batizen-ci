@@ -4,7 +4,7 @@ import { uploadToCloudinary } from "@/lib/cloudinary";
 
 export async function saveGeneratedDocument(
   pdfBlob: Blob,
-  opts: { chantierId: string; nom: string; type: "devis" | "facture" | "plan" | "autre"; creePar?: string }
+  opts: { chantierId: string; nom: string; type: "devis" | "contrat" | "recu" | "facture" | "plan" | "autre"; creePar?: string }
 ): Promise<string> {
   const file = new File([pdfBlob], opts.nom, { type: "application/pdf" });
   const url = await uploadToCloudinary(file);

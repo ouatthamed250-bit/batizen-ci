@@ -24,17 +24,29 @@ export function ChantierDocuments({ clientDocuments, isTabLocked }: ChantierDocu
       ) : (
         <div className="space-y-3">
           {clientDocuments.map((doc: any) => (
-            <div key={doc.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200 hover:border-[#FF7A00] transition">
+        <div key={doc.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200 hover:border-[#FF7A00] transition">
               <div className="flex items-center gap-3">
                 <span className="text-2xl">
                   {doc.type === "devis" && "📋"}
+                  {doc.type === "contrat" && "📝"}
+                  {doc.type === "recu" && "🧾"}
                   {doc.type === "facture" && "💰"}
                   {doc.type === "plan" && "📐"}
                   {doc.type === "autre" && "📁"}
                 </span>
                 <div>
                   <p className="font-bold text-[var(--navy)]">{doc.nom}</p>
-                  <p className="text-xs text-gray-500">{(doc.taille / 1024).toFixed(1)} KB • {new Date(doc.dateUpload).toLocaleDateString('fr-FR')}</p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="rounded-full bg-[#FF7A00]/10 px-2 py-0.5 text-[10px] font-black uppercase text-[#FF7A00]">
+                      {doc.type === "devis" && "Devis"}
+                      {doc.type === "contrat" && "Contrat"}
+                      {doc.type === "recu" && "Reçu"}
+                      {doc.type === "facture" && "Facture"}
+                      {doc.type === "plan" && "Plan"}
+                      {doc.type === "autre" && "Autre"}
+                    </span>
+                    <p className="text-xs text-gray-500">{(doc.taille / 1024).toFixed(1)} KB • {new Date(doc.dateUpload).toLocaleDateString('fr-FR')}</p>
+                  </div>
                 </div>
               </div>
               <a 
