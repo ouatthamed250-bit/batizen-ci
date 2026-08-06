@@ -18,7 +18,7 @@ const PRESTATIONS = [
   { key: "autre", label: "Autre" },
 ];
 
-export function ContratFormModal({ chantier, chantierId, onClose }: { chantier: any; chantierId: string; onClose: () => void }) {
+export function ContratFormModal({ chantier, chantierId, clientInfo, onClose }: { chantier: any; chantierId: string; clientInfo?: any; onClose: () => void }) {
   const [loading, setLoading] = useState(false);
   const [description, setDescription] = useState(chantier?.description || "");
   const [prestations, setPrestations] = useState<string[]>([]);
@@ -49,9 +49,9 @@ export function ContratFormModal({ chantier, chantierId, onClose }: { chantier: 
       const blob = await generateContractPDF({
         contractNumber: generateContractNumber(),
         contractDate: formatDateContract(),
-        clientName: chantier?.client_nom || chantier?.nom_projet || "Client",
-        clientPhone: chantier?.client_telephone,
-        clientEmail: chantier?.client_email,
+        clientName: clientInfo?.displayName || clientInfo?.email || "Client",
+        clientPhone: clientInfo?.telephone || clientInfo?.phone,
+        clientEmail: clientInfo?.email,
         clientAdresse: chantier?.localisation?.adresse,
         clientVille: chantier?.localisation?.ville,
         chantierLieu: chantier?.localisation?.commune,

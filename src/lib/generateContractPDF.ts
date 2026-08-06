@@ -56,27 +56,27 @@ function blankArea(pdf: any, x: number, y: number, w: number, h: number) {
 }
 
 const TYPE_POS: Record<string, { x: number; y: number }> = {
-  villa: { x: 114.8, y: 82.6 },
-  maison: { x: 114.8, y: 82.6 },
-  duplex: { x: 134.3, y: 82.6 },
-  immeuble: { x: 154.8, y: 82.6 },
-  commerce: { x: 176.0, y: 82.6 },
-  entrepot: { x: 114.8, y: 89.0 },
-  renovation: { x: 134.3, y: 89.0 },
-  autre: { x: 134.3, y: 89.0 },
+  villa: { x: 114.8, y: 86.1 },
+  maison: { x: 114.8, y: 86.1 },
+  duplex: { x: 134.3, y: 86.1 },
+  immeuble: { x: 154.8, y: 86.1 },
+  commerce: { x: 176.0, y: 86.1 },
+  entrepot: { x: 114.8, y: 92.5 },
+  renovation: { x: 134.3, y: 92.5 },
+  autre: { x: 134.3, y: 92.5 },
 };
 
 const PRESTATION_POS: Record<string, { x: number; y: number }> = {
-  etude: { x: 116.5, y: 115.4 },
-  plans: { x: 116.5, y: 119.9 },
-  devis: { x: 116.5, y: 124.2 },
-  gros_oeuvre: { x: 116.5, y: 128.2 },
-  second_oeuvre: { x: 116.5, y: 132.5 },
-  finitions: { x: 156.3, y: 115.4 },
-  suivi: { x: 156.3, y: 119.9 },
-  livraison: { x: 156.3, y: 124.2 },
-  assistance: { x: 156.3, y: 128.2 },
-  autre: { x: 156.3, y: 132.5 },
+  etude: { x: 113.5, y: 115.4 },
+  plans: { x: 113.5, y: 119.9 },
+  devis: { x: 113.5, y: 124.2 },
+  gros_oeuvre: { x: 113.5, y: 128.2 },
+  second_oeuvre: { x: 113.5, y: 132.5 },
+  finitions: { x: 153.3, y: 115.4 },
+  suivi: { x: 153.3, y: 119.9 },
+  livraison: { x: 153.3, y: 124.2 },
+  assistance: { x: 153.3, y: 128.2 },
+  autre: { x: 153.3, y: 132.5 },
 };
 
 export async function generateContractPDF(data: ContractData): Promise<Blob> {
@@ -89,7 +89,7 @@ export async function generateContractPDF(data: ContractData): Promise<Blob> {
   pdf.setFontSize(10);
 
   pdf.text(data.contractNumber, 60.5, 56.1);
-  blankArea(pdf, 152, 51, 45, 6);
+  blankArea(pdf, 152, 57, 45, 5);
   pdf.text(data.contractDate, 152.8, 56.1);
 
   pdf.text(data.clientName, 41.0, 75.4);
@@ -120,9 +120,9 @@ export async function generateContractPDF(data: ContractData): Promise<Blob> {
   }
 
   pdf.setFontSize(10);
-  blankArea(pdf, 39, 148, 55, 6);
+  blankArea(pdf, 39, 153, 55, 4);
   pdf.text(fmtDateFr(data.dateDebut), 40.0, 152.2);
-  blankArea(pdf, 38, 153, 55, 6);
+  blankArea(pdf, 38, 158, 55, 4);
   pdf.text(fmtDateFr(data.dateFin), 39.0, 157.0);
   pdf.text(data.dureeEstimee, 41.0, 161.9);
 
@@ -139,7 +139,7 @@ export async function generateContractPDF(data: ContractData): Promise<Blob> {
   data.echeancier.slice(0, 4).forEach((row, i) => {
     pdf.text(row.description.slice(0, 18), 20.5, echRows[i]);
     pdf.text(fmtDateFr(row.date), 69.7, echRows[i]);
-    pdf.text(fmtFcfa(row.montant), 113, echRows[i], { align: "right" });
+    pdf.text(fmtFcfa(row.montant), 96, echRows[i], { align: "right" });
   });
 
   if (data.notes) {

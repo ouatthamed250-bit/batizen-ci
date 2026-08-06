@@ -1335,7 +1335,7 @@ export default function ChantierDetailPage() {
           📝 Générer un contrat
         </button>
         {showContratForm && (
-          <ContratFormModal chantier={chantier} chantierId={chantierId} onClose={() => setShowContratForm(false)} />
+          <ContratFormModal chantier={chantier} chantierId={chantierId} clientInfo={clientInfo} onClose={() => setShowContratForm(false)} />
         )}
         <DocumentsSection chantierId={chantierId} />
 
