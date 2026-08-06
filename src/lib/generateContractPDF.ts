@@ -43,6 +43,18 @@ function fmtFcfa(n: number): string {
   return n.toLocaleString("fr-FR").replace(/[\u202f\u00a0]/g, " ");
 }
 
+function fmtDateFr(iso: string): string {
+  if (!iso) return "";
+  const [y, m, d] = iso.split("-");
+  if (!y || !m || !d) return iso;
+  return `${d}/${m}/${y}`;
+}
+
+function blankArea(pdf: any, x: number, y: number, w: number, h: number) {
+  pdf.setFillColor(255, 255, 255);
+  pdf.rect(x, y - h + 1, w, h, "F");
+}
+
 const TYPE_POS: Record<string, { x: number; y: number }> = {
   villa: { x: 114.8, y: 82.6 },
   maison: { x: 114.8, y: 82.6 },
@@ -77,6 +89,7 @@ export async function generateContractPDF(data: ContractData): Promise<Blob> {
   pdf.setFontSize(10);
 
   pdf.text(data.contractNumber, 60.5, 56.1);
+  blankArea(pdf, 152, 51, 45, 6);
   pdf.text(data.contractDate, 152.8, 56.1);
 
   pdf.text(data.clientName, 41.0, 75.4);
@@ -107,8 +120,10 @@ export async function generateContractPDF(data: ContractData): Promise<Blob> {
   }
 
   pdf.setFontSize(10);
-  pdf.text(data.dateDebut, 40.0, 152.2);
-  pdf.text(data.dateFin, 39.0, 157.0);
+  blankArea(pdf, 39, 148, 55, 6);
+  pdf.text(fmtDateFr(data.dateDebut), 40.0, 152.2);
+  blankArea(pdf, 38, 153, 55, 6);
+  pdf.text(fmtDateFr(data.dateFin), 39.0, 157.0);
   pdf.text(data.dureeEstimee, 41.0, 161.9);
 
   pdf.text(fmtFcfa(data.montantTotal), 178, 152.2, { align: "right" });
@@ -119,12 +134,12 @@ export async function generateContractPDF(data: ContractData): Promise<Blob> {
   pdf.text(fmtFcfa(montantAcompte), 178, 157.0, { align: "right" });
   pdf.text(fmtFcfa(data.montantTotal - montantAcompte), 178, 161.9, { align: "right" });
 
-  pdf.setFontSize(8.5);
+  pdf.setFontSize(8);
   const echRows = [203.0, 207.3, 211.6, 215.9];
   data.echeancier.slice(0, 4).forEach((row, i) => {
-    pdf.text(row.description.slice(0, 22), 20.5, echRows[i]);
-    pdf.text(row.date, 69.7, echRows[i]);
-    pdf.text(fmtFcfa(row.montant), 100.5, echRows[i]);
+    pdf.text(row.description.slice(0, 18), 20.5, echRows[i]);
+    pdf.text(fmtDateFr(row.date), 69.7, echRows[i]);
+    pdf.text(fmtFcfa(row.montant), 113, echRows[i], { align: "right" });
   });
 
   if (data.notes) {
