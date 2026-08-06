@@ -142,7 +142,7 @@ export default function PaiementsSection({ chantierId, chantier, clientInfo }: {
         chantierLieu: chantier?.localisation?.commune,
         chantierType: chantier?.type,
         items: [{
-          description: (paiement.description && paiement.description !== "null" && paiement.description !== "undefined") ? paiement.description : "Paiement chantier",
+          description: (paiement.description && !["null", "undefined", ""].includes(String(paiement.description).trim().toLowerCase())) ? paiement.description : "Paiement chantier",
           quantity: 1,
           unitPrice: paiement.montant || 0,
           total: paiement.montant || 0,

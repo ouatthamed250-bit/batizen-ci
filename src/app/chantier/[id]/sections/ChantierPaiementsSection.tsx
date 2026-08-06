@@ -82,7 +82,7 @@ export function ChantierPaiementsSection({ chantierId, chantier }: { chantierId:
                 chantierLieu={chantier?.localisation?.commune ?? undefined}
                 chantierType={chantier?.type ?? undefined}
                 projectName={chantier?.nom_projet || chantier?.nom}
-                items={[{ description: (p.description && p.description !== "null" && p.description !== "undefined") ? p.description : "Paiement chantier", quantity: 1, unitPrice: p.montant, total: p.montant }]}
+                items={[{ description: (p.description && !["null", "undefined", ""].includes(String(p.description).trim().toLowerCase())) ? p.description : "Paiement chantier", quantity: 1, unitPrice: p.montant, total: p.montant }]}
                 totalAmount={p.montant}
                 paymentMethod={modeLabel(p.mode)}
               />
