@@ -56,27 +56,27 @@ function blankArea(pdf: any, x: number, y: number, w: number, h: number) {
 }
 
 const TYPE_POS: Record<string, { x: number; y: number }> = {
-  villa: { x: 114.8, y: 86.1 },
-  maison: { x: 114.8, y: 86.1 },
-  duplex: { x: 134.3, y: 86.1 },
-  immeuble: { x: 154.8, y: 86.1 },
-  commerce: { x: 176.0, y: 86.1 },
-  entrepot: { x: 114.8, y: 92.5 },
-  renovation: { x: 134.3, y: 92.5 },
-  autre: { x: 134.3, y: 92.5 },
+  villa: { x: 112.5, y: 86.1 },
+  maison: { x: 112.5, y: 86.1 },
+  duplex: { x: 132.0, y: 86.1 },
+  immeuble: { x: 152.5, y: 86.1 },
+  commerce: { x: 173.5, y: 86.1 },
+  entrepot: { x: 112.5, y: 92.5 },
+  renovation: { x: 132.0, y: 92.5 },
+  autre: { x: 132.0, y: 92.5 },
 };
 
 const PRESTATION_POS: Record<string, { x: number; y: number }> = {
-  etude: { x: 113.5, y: 115.4 },
-  plans: { x: 113.5, y: 119.9 },
-  devis: { x: 113.5, y: 124.2 },
-  gros_oeuvre: { x: 113.5, y: 128.2 },
-  second_oeuvre: { x: 113.5, y: 132.5 },
-  finitions: { x: 153.3, y: 115.4 },
-  suivi: { x: 153.3, y: 119.9 },
-  livraison: { x: 153.3, y: 124.2 },
-  assistance: { x: 153.3, y: 128.2 },
-  autre: { x: 153.3, y: 132.5 },
+  etude: { x: 111.0, y: 115.4 },
+  plans: { x: 111.0, y: 119.9 },
+  devis: { x: 111.0, y: 124.2 },
+  gros_oeuvre: { x: 111.0, y: 128.2 },
+  second_oeuvre: { x: 111.0, y: 132.5 },
+  finitions: { x: 150.8, y: 115.4 },
+  suivi: { x: 150.8, y: 119.9 },
+  livraison: { x: 150.8, y: 124.2 },
+  assistance: { x: 150.8, y: 128.2 },
+  autre: { x: 150.8, y: 132.5 },
 };
 
 export async function generateContractPDF(data: ContractData): Promise<Blob> {
@@ -134,12 +134,12 @@ export async function generateContractPDF(data: ContractData): Promise<Blob> {
   pdf.text(fmtFcfa(montantAcompte), 178, 157.0, { align: "right" });
   pdf.text(fmtFcfa(data.montantTotal - montantAcompte), 178, 161.9, { align: "right" });
 
-  pdf.setFontSize(8);
+  pdf.setFontSize(7);
   const echRows = [203.0, 207.3, 211.6, 215.9];
   data.echeancier.slice(0, 4).forEach((row, i) => {
     pdf.text(row.description.slice(0, 18), 20.5, echRows[i]);
     pdf.text(fmtDateFr(row.date), 69.7, echRows[i]);
-    pdf.text(fmtFcfa(row.montant), 96, echRows[i], { align: "right" });
+    pdf.text(fmtFcfa(row.montant), 102, echRows[i], { align: "right" });
   });
 
   if (data.notes) {
