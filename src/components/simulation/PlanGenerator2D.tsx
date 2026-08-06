@@ -12,6 +12,7 @@ interface Plan2DProps {
   garage: boolean;
   piscine: boolean;
   style: string;
+  plan?: { rooms: Array<{ id: string; label: string; x: number; y: number; width: number; height: number; areaLabel?: string; fill?: string }> } | null;
 }
 
 const COLORS = {
@@ -57,6 +58,7 @@ export default function PlanGenerator2D({
   garage,
   piscine,
   style = "Moderne",
+  plan,
 }: Plan2DProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -83,6 +85,46 @@ export default function PlanGenerator2D({
     if (!ctx) return;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Si un plan calculé par PlanEngine est disponible, on le dessine directement (source unique de vérité)
+    if (plan && plan.rooms && plan.rooms.length > 0) {
+      const roomsData = plan.rooms;
+      const maxX = Math.max(...roomsData.map(r => r.x + r.width));
+      const maxY = Math.max(...roomsData.map(r => r.y + r.height));
+      const pad = 40;
+      const sc = Math.min((canvas.width - pad * 2) / maxX, (canvas.height - pad * 2) / maxY);
+      const offX = (canvas.width - maxX * sc) / 2;
+      const offY = (canvas.height - maxY * sc) / 2;
+      ctx.fillStyle = "white";
+      ctx.fillRect(offX, offY, maxX * sc, maxY * sc);
+      ctx.strokeStyle = "#0D2B6B";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(offX, offY, maxX * sc, maxY * sc);
+      roomsData.forEach((room) => {
+        const rx = offX + room.x * sc;
+        const ry = offY + room.y * sc;
+        const rw = room.width * sc;
+        const rh = room.height * sc;
+        ctx.fillStyle = room.fill || "#EAF2FF";
+        ctx.fillRect(rx, ry, rw, rh);
+        ctx.strokeStyle = "#0D2B6B";
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(rx, ry, rw, rh);
+        ctx.fillStyle = "#0D2B6B";
+        ctx.font = "bold 10px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(room.label, rx + rw / 2, ry + rh / 2 - 4);
+        if (room.areaLabel) {
+          ctx.font = "9px sans-serif";
+          ctx.fillText(room.areaLabel, rx + rw / 2, ry + rh / 2 + 10);
+        }
+      });
+      ctx.fillStyle = "#0D2B6B";
+      ctx.font = "10px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("── 5m", offX + (maxX * sc) / 2, offY + maxY * sc + 25);
+      return;
+    }
 
     const padding = 40;
     const scale = Math.min(
@@ -244,7 +286,7 @@ export default function PlanGenerator2D({
     ctx.font = "10px sans-serif";
     ctx.textAlign = "center";
     ctx.fillText("─── 5m", offsetX + houseWidth / 2, offsetY + houseLength + 25);
-  }, [surface, largeur, longueur, nbChambres, nbSdb, totalRooms, etages, garage, piscine, style, isLoading]);
+  }, [surface, largeur, longueur, nbChambres, nbSdb, totalRooms, etages, garage, piscine, style, isLoading, plan]);
 
   /** Sanitize une chaîne SVG en supprimant tout contenu dangereux (scripts, event handlers, etc.). */
   const sanitizeSvg = useCallback((svgString: string): string => {

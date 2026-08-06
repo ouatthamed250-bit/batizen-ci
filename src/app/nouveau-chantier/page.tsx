@@ -11,6 +11,8 @@ import { PremiumButton } from "@/components/ui/PremiumButton";
 import { formatFcfa } from "@/utils/currency";
 import PlanGenerator2D from "@/components/simulation/PlanGenerator2D";
 import PlanGenerator3D from "@/components/simulation/PlanGenerator3D";
+import { PlanEngine } from "@/services/PlanEngine";
+import type { GeneratedPlan } from "@/types/batizen";
 import SuperCalculateur from "@/components/btp/SuperCalculateur";
 import ChatBot from "@/components/ChatBot";
 import { Suspense } from "react";
@@ -61,6 +63,7 @@ function NouveauChantierContent() {
   const [prefilledData, setPrefilledData] = useState<FormData | null>(null);
   const [formData, setFormData] = useState<FormData>({});
   const [viewMode, setViewMode] = useState<"2d" | "3d">("2d");
+  const [generatedPlan, setGeneratedPlan] = useState<GeneratedPlan | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [showRdvForm, setShowRdvForm] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -338,7 +341,7 @@ function NouveauChantierContent() {
               {step === 5 && <Step5 formData={formData} setFormData={setFormData} />}
               {step === 6 && <Step6 formData={formData} setFormData={setFormData} />}
               {step === 7 && <Step7 formData={formData} setFormData={setFormData} />}
-              {step === 8 && <Step8 formData={formData} selectedPlan={selectedPlan} onPlanSelect={handlePlanSelect} showRdvForm={showRdvForm} rdvData={rdvData} setRdvData={setRdvData} prefilledData={prefilledData} viewMode={viewMode} setViewMode={setViewMode} onHandleSubmit={handleSubmit} />}
+              {step === 8 && <Step8 formData={formData} selectedPlan={selectedPlan} onPlanSelect={handlePlanSelect} showRdvForm={showRdvForm} rdvData={rdvData} setRdvData={setRdvData} prefilledData={prefilledData} viewMode={viewMode} setViewMode={setViewMode} generatedPlan={generatedPlan} setGeneratedPlan={setGeneratedPlan} onHandleSubmit={handleSubmit} />}
             </AnimatePresence>
 
             {!loading && (
@@ -482,7 +485,7 @@ function Step7({ formData, setFormData }: { formData: FormData; setFormData: (da
   );
 }
 
-function Step8({ formData, selectedPlan, onPlanSelect, showRdvForm, rdvData, setRdvData, prefilledData, viewMode, setViewMode, onHandleSubmit }: { formData: FormData; selectedPlan: string | null; onPlanSelect: (plan: string) => void; showRdvForm: boolean; rdvData: any; setRdvData: (data: any) => void; prefilledData: any; viewMode: "2d" | "3d"; setViewMode: (mode: "2d" | "3d") => void; onHandleSubmit: () => void }) {
+function Step8({ formData, selectedPlan, onPlanSelect, showRdvForm, rdvData, setRdvData, prefilledData, viewMode, setViewMode, generatedPlan, setGeneratedPlan, onHandleSubmit }: { formData: FormData; selectedPlan: string | null; onPlanSelect: (plan: string) => void; showRdvForm: boolean; rdvData: any; setRdvData: (data: any) => void; prefilledData: any; viewMode: "2d" | "3d"; setViewMode: (mode: "2d" | "3d") => void; generatedPlan: GeneratedPlan | null; setGeneratedPlan: (plan: GeneratedPlan) => void; onHandleSubmit: () => void }) {
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
       {/* Calculateur BTP - Estimation */}
@@ -538,7 +541,7 @@ function Step8({ formData, selectedPlan, onPlanSelect, showRdvForm, rdvData, set
                </button>
              </div>
              
-             <div className="bg-white/10 rounded-xl p-4 border border-white/20">
+              <div className="bg-white/10 rounded-xl p-4 border border-white/20">
                 {(() => {
                   const pref = prefilledData as any;
                   const surface = formData.surfaceConstruite || pref?.terrain?.surface || 150;
@@ -552,6 +555,31 @@ function Step8({ formData, selectedPlan, onPlanSelect, showRdvForm, rdvData, set
                   const garageVal = pref?.preferences?.garage || false;
                   const piscineVal = pref?.preferences?.piscine || false;
                   const styleVal = pref?.preferences?.style || "Moderne";
+
+                  if (!generatedPlan) {
+                    const plan = PlanEngine.generateFreePlan({
+                      landWidth: largeurVal,
+                      landLength: longueurVal,
+                      location: "Abidjan",
+                      hasAdminPapers: false,
+                      landShape: "rectangulaire",
+                      orientation: "nord",
+                      type: "standard",
+                      hasEtage: etagesVal > 1,
+                      quality: "standard",
+                      bedrooms: chambresVal,
+                      bathrooms: sdbVal,
+                      livingRooms: 1,
+                      hasDining: true,
+                      kitchenType: "semi-ouverte",
+                      hasOffice: false,
+                      hasGarage: garageVal,
+                      hasTerrace: false,
+                      hasGuestRoom: false,
+                    });
+                    setGeneratedPlan(plan);
+                  }
+
                   return viewMode === "2d" ? (
                     <PlanGenerator2D
                       surface={surface}
@@ -563,6 +591,7 @@ function Step8({ formData, selectedPlan, onPlanSelect, showRdvForm, rdvData, set
                       garage={garageVal}
                       piscine={piscineVal}
                       style={styleVal}
+                      plan={generatedPlan}
                     />
                   ) : (
                     <PlanGenerator3D
@@ -575,6 +604,7 @@ function Step8({ formData, selectedPlan, onPlanSelect, showRdvForm, rdvData, set
                       garage={garageVal}
                       piscine={piscineVal}
                       style={styleVal}
+                      plan={generatedPlan}
                     />
                   );
                 })()}

@@ -438,6 +438,7 @@ export default function SimulationPage() {
                        garage={preferences.batiment.garage}
                        piscine={preferences.batiment.piscine}
                        style={preferences.style.architectural}
+                       plan={generatedPlan}
                      />
                    ) : (
                       <PlanGenerator3D
