@@ -29,6 +29,7 @@ import GestionEquipe from "@/components/admin/GestionEquipeHierarchique";
 import AlbumChantierAdmin from "@/components/admin/AlbumChantierAdmin";
 import PaiementsSection from "./PaiementsSection";
 import DocumentsSection from "./DocumentsSection";
+import { ContratFormModal } from "./ContratFormModal";
 import { getFirebaseServices } from "@/lib/firebase";
 import { ref, onValue, push, update, remove, Unsubscribe } from 'firebase/database';
 import { getContratTemplate } from "@/lib/documents-templates";
@@ -626,6 +627,7 @@ export default function ChantierDetailPage() {
   };
 
   const [activeTab, setActiveTab] = useState<"info" | "avancement" | "suivi" | "messages">("info");
+  const [showContratForm, setShowContratForm] = useState(false);
   const [etapeLoading, setEtapeLoading] = useState(false);
 
   const handleContactClient = () => {
@@ -1326,6 +1328,15 @@ export default function ChantierDetailPage() {
         <PaiementsSection chantierId={chantierId} chantier={chantier} />
 
         {/* SECTION 14: Documents du chantier */}
+        <button
+          onClick={() => setShowContratForm(true)}
+          className="w-full mb-3 rounded-[12px] bg-[#0B5FFF] py-3 text-sm font-black text-white"
+        >
+          📝 Générer un contrat
+        </button>
+        {showContratForm && (
+          <ContratFormModal chantier={chantier} chantierId={chantierId} onClose={() => setShowContratForm(false)} />
+        )}
         <DocumentsSection chantierId={chantierId} />
 
         </>)}
