@@ -146,23 +146,23 @@ export default function DashboardClientPage() {
           <section className="grid grid-cols-2 gap-3 w-full">
             <div className="w-full rounded-[28px] border border-white/30 bg-white/20 backdrop-blur-xl p-5 flex flex-col items-center text-center gap-3 shadow-xl">
               <div className="grid size-14 place-items-center rounded-[20px] text-white bg-gradient-to-br from-[#0B5FFF] to-[#0D2B6B] shadow-lg"><HardHat size={26} /></div>
-              <p className="text-[10px] font-bold text-white/80 uppercase">Chantiers actifs</p>
-              <p className="text-base font-black text-white">{chantiersActifs}</p>
+              <p className="text-[10px] font-bold text-gray-600 dark:text-white/80 uppercase">Chantiers actifs</p>
+              <p className="text-base font-black text-gray-900 dark:text-white">{chantiersActifs}</p>
             </div>
             <div className="w-full rounded-[28px] border border-white/30 bg-white/20 backdrop-blur-xl p-5 flex flex-col items-center text-center gap-3 shadow-xl">
               <div className="grid size-14 place-items-center rounded-[20px] text-white bg-gradient-to-br from-[#0B5FFF] to-[#0D2B6B] shadow-lg"><Wallet size={26} /></div>
-              <p className="text-[10px] font-bold text-white/80 uppercase">Dépensé ce mois</p>
-              <p className="text-base font-black text-white">{formatFcfa(0)}</p>
+              <p className="text-[10px] font-bold text-gray-600 dark:text-white/80 uppercase">Dépensé ce mois</p>
+              <p className="text-base font-black text-gray-900 dark:text-white">{formatFcfa(0)}</p>
             </div>
             <div className="w-full rounded-[28px] border border-white/30 bg-white/20 backdrop-blur-xl p-5 flex flex-col items-center text-center gap-3 shadow-xl">
               <div className="grid size-14 place-items-center rounded-[20px] text-white bg-gradient-to-br from-[#0B5FFF] to-[#0D2B6B] shadow-lg"><CalendarClock size={26} /></div>
-              <p className="text-[10px] font-bold text-white/80 uppercase">Prochain RDV</p>
-              <p className="text-base font-black text-white">{prochainRdv ? formatDateCourte(prochainRdv.rdv_date) : "Aucun"}</p>
+              <p className="text-[10px] font-bold text-gray-600 dark:text-white/80 uppercase">Prochain RDV</p>
+              <p className="text-base font-black text-gray-900 dark:text-white">{prochainRdv ? formatDateCourte(prochainRdv.rdv_date) : "Aucun"}</p>
             </div>
             <div className="w-full rounded-[28px] border border-white/30 bg-white/20 backdrop-blur-xl p-5 flex flex-col items-center text-center gap-3 shadow-xl">
               <div className="grid size-14 place-items-center rounded-[20px] text-white bg-gradient-to-br from-[#0B5FFF] to-[#0D2B6B] shadow-lg"><Bell size={26} /></div>
-              <p className="text-[10px] font-bold text-white/80 uppercase">Notifications</p>
-              <p className="text-base font-black text-white">0</p>
+              <p className="text-[10px] font-bold text-gray-600 dark:text-white/80 uppercase">Notifications</p>
+              <p className="text-base font-black text-gray-900 dark:text-white">0</p>
             </div>
           </section>
         )}
@@ -171,7 +171,7 @@ export default function DashboardClientPage() {
 
         {/* Mes rénovations */}
         <div className="w-full">
-          <h2 className="text-xl font-bold text-white mt-2 mb-4">Mes rénovations</h2>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mt-2 mb-4">Mes rénovations</h2>
           {renovations && renovations.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {renovations.map(r => {
@@ -182,9 +182,9 @@ export default function DashboardClientPage() {
                   "bg-gray-500/30 text-gray-200";
                 return (
                   <Link key={r.id} href={`/renovation-en-cours/${r.id}`} className="rounded-[28px] border border-white/30 bg-white/20 backdrop-blur-xl p-5 shadow-xl hover:bg-white/30 transition flex flex-col gap-2">
-                    <p className="font-black text-white text-lg">{r.typeRenovation || r.lieu || "Rénovation"}</p>
+                    <p className="font-black text-gray-900 dark:text-white text-lg">{r.typeRenovation || r.lieu || "Rénovation"}</p>
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm font-bold text-white">{formatFcfa(r.prixVisite || r.montantEstime || 0)}</span>
+                      <span className="text-sm font-bold text-gray-900 dark:text-white">{formatFcfa(r.prixVisite || r.montantEstime || 0)}</span>
                       <span className={`px-3 py-0.5 rounded-full text-[10px] font-bold ${badgeColor}`}>
                         {r.statut === "en_attente" ? "En attente" :
                          r.statut === "visite_payante" ? "Visite programmée" :
@@ -194,7 +194,7 @@ export default function DashboardClientPage() {
                       </span>
                     </div>
                     {r.createdAt && (
-                      <p className="text-[11px] text-white/60">Créé le {formatDateCourte(new Date(r.createdAt).toISOString())}</p>
+                      <p className="text-[11px] text-gray-500 dark:text-white/60">Créé le {formatDateCourte(new Date(r.createdAt).toISOString())}</p>
                     )}
                   </Link>
                 );
@@ -210,15 +210,15 @@ export default function DashboardClientPage() {
 
         {/* Engagements BTP CI */}
         <div className="w-full">
-          <h3 className="font-black text-xl text-white mb-4">🤝 Nos Engagements BTP CI</h3>
+          <h3 className="font-black text-xl text-gray-900 dark:text-white mb-4">🤝 Nos Engagements BTP CI</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {ENGAGEMENTS_BTP.map((e, i) => (
               <div key={i} className="rounded-[24px] bg-white/20 border border-white/30 backdrop-blur-xl p-5 shadow-xl flex flex-col gap-3">
                 <div className="grid size-10 place-items-center rounded-[14px] bg-gradient-to-br from-[#FF7A00] to-[#FF8C00] shadow-lg">
                   <e.icon size={20} className="text-white" />
                 </div>
-                <h4 className="font-bold text-white text-sm">{e.title}</h4>
-                <p className="text-sm text-white/80 leading-relaxed">{e.text}</p>
+                <h4 className="font-bold text-gray-900 dark:text-white text-sm">{e.title}</h4>
+                <p className="text-sm text-gray-600 dark:text-white/80 leading-relaxed">{e.text}</p>
               </div>
             ))}
           </div>
@@ -228,7 +228,7 @@ export default function DashboardClientPage() {
 
         {/* Partenaires */}
         <div className="mt-8 w-full">
-          <h3 className="font-black text-xl text-white mb-4">🤝 Nos Partenaires de Confiance</h3>
+          <h3 className="font-black text-xl text-gray-900 dark:text-white mb-4">🤝 Nos Partenaires de Confiance</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {afficherPartenaires.map((p: any, i) => {
               const IconPartenaire = p.icon || Building2;
@@ -242,8 +242,8 @@ export default function DashboardClientPage() {
                       <IconPartenaire size={24} className="text-white" />
                     </div>
                   )}
-                  <h4 className="font-bold text-white text-sm">{p.nom}</h4>
-                  <p className="text-xs text-white/70">{p.description || p.role || "Partenaire certifié"}</p>
+                  <h4 className="font-bold text-gray-900 dark:text-white text-sm">{p.nom}</h4>
+                  <p className="text-xs text-gray-500 dark:text-white/70">{p.description || p.role || "Partenaire certifié"}</p>
                 </div>
               );
             })}
