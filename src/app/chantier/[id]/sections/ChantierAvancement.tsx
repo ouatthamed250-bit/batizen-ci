@@ -20,11 +20,11 @@ export function ChantierAvancement({ etapes }: ChantierAvancementProps) {
             {etapeIcon(e.statut)}
             <div className="flex-1">
               <div className="flex items-center justify-between gap-2">
-                <h3 className="font-black text-[#0D2B6B]">{e.nom || e.titre || `Étape ${i + 1}`}</h3>
+                <h3 className="font-black text-[#0D2B6B] dark:text-white">{e.nom || e.titre || `Étape ${i + 1}`}</h3>
                 <span className="rounded-full px-2 py-0.5 text-[10px] font-black text-white" style={{ backgroundColor: etapeColor(e.statut) }}>{etapeLabel(e.statut)}</span>
               </div>
-              {e.date && <p className="mt-0.5 text-xs text-[#6B7280]">📅 {formatDateFr(e.date)}</p>}
-              {e.description && <p className="mt-2 text-sm text-[#374151]">{e.description}</p>}
+              {e.date && <p className="mt-0.5 text-xs text-[#6B7280] dark:text-white/60">📅 {formatDateFr(e.date)}</p>}
+              {e.description && <p className="mt-2 text-sm text-[#374151] dark:text-white/80">{e.description}</p>}
               <div className="mt-3"><ProgressBar value={Number(e.pourcentage ?? 0)} label="Avancement" /></div>
             </div>
           </div>

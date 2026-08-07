@@ -20,15 +20,15 @@ export function ChantierRapports({ rapports, isTabLocked }: ChantierRapportsProp
         <div key={r.id} className="rounded-[28px] border border-white/30 bg-white/20 backdrop-blur-xl p-5 shadow-xl">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <p className="text-xs text-[#6B7280] font-bold">
+              <p className="text-xs text-[#6B7280] dark:text-white/60 font-bold">
                 {r.semaine} ({r.dateDebut} → {r.dateFin})
               </p>
-              <p className="text-sm font-bold text-[#0D2B6B] mt-1">
+              <p className="text-sm font-bold text-[#0D2B6B] dark:text-white mt-1">
                 Étape : {r.etape ? r.etape.charAt(0).toUpperCase() + r.etape.slice(1) : "—"}
               </p>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-black text-[#0D2B6B]">{r.avancement || 0}%</p>
+              <p className="text-2xl font-black text-[#0D2B6B] dark:text-white">{r.avancement || 0}%</p>
               <span className={`text-xs px-2 py-1 rounded-full font-bold ${
                 r.statut === "dans_delais" ? "bg-green-100 text-green-700" :
                 r.statut === "retard" ? "bg-orange-100 text-orange-700" :
@@ -40,24 +40,24 @@ export function ChantierRapports({ rapports, isTabLocked }: ChantierRapportsProp
             </div>
           </div>
           <div className="mb-3">
-            <p className="text-xs text-[#6B7280] font-bold mb-1">Commentaires :</p>
-            <p className="text-sm text-[#374151] whitespace-pre-line">{r.commentaires}</p>
+            <p className="text-xs text-[#6B7280] dark:text-white/60 font-bold mb-1">Commentaires :</p>
+            <p className="text-sm text-[#374151] dark:text-white/80 whitespace-pre-line">{r.commentaires}</p>
           </div>
           {r.problemes && (
             <div className="mb-3">
-              <p className="text-xs text-[#6B7280] font-bold mb-1">Problèmes :</p>
-              <p className="text-sm text-[#374151]">{r.problemes}</p>
+              <p className="text-xs text-[#6B7280] dark:text-white/60 font-bold mb-1">Problèmes :</p>
+              <p className="text-sm text-[#374151] dark:text-white/80">{r.problemes}</p>
             </div>
           )}
           {r.prochaine_etape && (
             <div className="mb-3">
-              <p className="text-xs text-[#6B7280] font-bold mb-1">Prochaine étape :</p>
-              <p className="text-sm text-[#374151]">{r.prochaine_etape}</p>
+              <p className="text-xs text-[#6B7280] dark:text-white/60 font-bold mb-1">Prochaine étape :</p>
+              <p className="text-sm text-[#374151] dark:text-white/80">{r.prochaine_etape}</p>
             </div>
           )}
           {r.medias && r.medias.length > 0 && (
             <div className="mt-3">
-              <p className="text-xs text-[#6B7280] font-bold mb-2">📸 Médias ({r.medias.length})</p>
+              <p className="text-xs text-[#6B7280] dark:text-white/60 font-bold mb-2">📸 Médias ({r.medias.length})</p>
               <div className="grid grid-cols-3 gap-2">
                 {r.medias.map((media: any) => (
                   <div key={media.id} className="relative aspect-square rounded-lg overflow-hidden border border-[#E7EBF5]">
