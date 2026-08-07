@@ -842,3 +842,8 @@ html, body {
 html, body {
   overscroll-behavior-y: contain;
 }
+
+/* Texte qui s'adapte automatiquement au thème (clair/sombre) via la variable --text déjà définie */
+.text-adaptive {
+  color: var(--text);
+}
