@@ -124,13 +124,13 @@ export default function LoginPage() {
         </div>
 
         <div className="animate-fadeInUp stagger-1 mt-2 text-center">
-          <h2 className="text-xl font-black dark:text-white text-gray-900">Bienvenue !</h2>
-          <p className="mt-1 max-w-[260px] text-sm dark:text-white/60 text-gray-500">Connectez-vous pour accéder à tous vos projets.</p>
+          <h2 className="text-xl font-black text-white">Bienvenue !</h2>
+          <p className="mt-1 max-w-[260px] text-sm text-white/70">Connectez-vous pour accéder à tous vos projets.</p>
         </div>
 
         <form className="animate-fadeInUp stagger-3 mt-4 w-full max-w-sm space-y-4" onSubmit={handleLogin}>
           <label className="block">
-            <span className="mb-2 block text-sm font-semibold dark:text-white text-gray-700">Numéro de téléphone</span>
+            <span className="mb-2 block text-sm font-semibold text-white">Numéro de téléphone</span>
             <div className="flex h-[58px] items-center gap-3 rounded-[18px] bg-white/90 backdrop-blur-sm px-4 shadow-[0_4px_16px_rgba(16,24,40,0.08)] transition-all focus-within:ring-2 focus-within:ring-[#0B5FFF]/30 focus-within:shadow-[0_8px_24px_rgba(11,95,255,0.15)] border border-[#E7EBF5]">
               <Phone size={20} className="shrink-0 text-[#0B5FFF]" aria-hidden />
               <input 
@@ -146,7 +146,7 @@ export default function LoginPage() {
           </label>
 
           <label className="block">
-            <span className="mb-2 block text-sm font-semibold dark:text-white text-gray-700">Mot de passe</span>
+            <span className="mb-2 block text-sm font-semibold text-white">Mot de passe</span>
             <div className="flex h-[58px] items-center gap-3 rounded-[18px] bg-white/90 backdrop-blur-sm px-4 shadow-[0_4px_16px_rgba(16,24,40,0.08)] transition-all focus-within:ring-2 focus-within:ring-[#0B5FFF]/30 focus-within:shadow-[0_8px_24px_rgba(11,95,255,0.15)] border border-[#E7EBF5]">
               <Lock size={20} className="shrink-0 text-[#0B5FFF]" aria-hidden />
               <input 
@@ -162,7 +162,7 @@ export default function LoginPage() {
           </label>
 
           <div className="flex items-center justify-end text-xs">
-            <Link href="/forgot-password" className="font-bold dark:text-white text-gray-700 hover:underline">Mot de passe oublié ?</Link>
+            <Link href="/forgot-password" className="font-bold text-white hover:underline">Mot de passe oublié ?</Link>
           </div>
 
           {error && (
@@ -202,8 +202,8 @@ export default function LoginPage() {
         </form>
 
         <div className="animate-fadeInUp stagger-4 mt-4 text-center text-sm">
-          <span className="dark:text-white/80 text-gray-600">Pas de compte ? </span>
-          <Link href="/register" className="font-black dark:text-white text-gray-900 hover:underline">S'inscrire</Link>
+          <span className="text-white/80">Pas de compte ? </span>
+          <Link href="/register" className="font-black text-white hover:underline">S'inscrire</Link>
         </div>
 
         <div className="animate-fadeInUp stagger-5 mt-6 flex w-full max-w-sm justify-between gap-3">
@@ -213,9 +213,9 @@ export default function LoginPage() {
             { icon: Headphones, title: "Support 7j/7", sub: "Toujours là" },
           ].map((t) => (
             <div key={t.title} className="flex flex-1 flex-col items-center gap-1 text-center">
-              <t.icon size={16} className="dark:text-white text-gray-700" aria-hidden />
-              <span className="text-[9px] font-black dark:text-white text-gray-700">{t.title}</span>
-              <span className="text-[8px] dark:text-white/80 text-gray-500">{t.sub}</span>
+              <t.icon size={16} className="text-white" aria-hidden />
+              <span className="text-[9px] font-black text-white">{t.title}</span>
+              <span className="text-[8px] text-white/80">{t.sub}</span>
             </div>
           ))}
         </div>
