@@ -12,7 +12,7 @@ export function ChantierDocuments({ clientDocuments, isTabLocked }: ChantierDocu
 
   return (
     <div className="w-full rounded-[28px] border border-white/30 bg-white/20 backdrop-blur-xl p-5 shadow-xl">
-      <h3 className="font-black text-[var(--navy)] text-lg mb-4 flex items-center gap-2">
+      <h3 className="font-black text-[var(--navy)] dark:text-white text-lg mb-4 flex items-center gap-2">
         📄 Documents du chantier
       </h3>
 
@@ -35,7 +35,7 @@ export function ChantierDocuments({ clientDocuments, isTabLocked }: ChantierDocu
                   {doc.type === "autre" && "📁"}
                 </span>
                 <div>
-                  <p className="font-bold text-[var(--navy)]">{doc.nom}</p>
+                  <p className="font-bold text-[var(--navy)] dark:text-white">{doc.nom}</p>
                   <div className="flex items-center gap-2 mt-0.5">
                     <span className="rounded-full bg-[#FF7A00]/10 px-2 py-0.5 text-[10px] font-black uppercase text-[#FF7A00]">
                       {doc.type === "devis" && "Devis"}
