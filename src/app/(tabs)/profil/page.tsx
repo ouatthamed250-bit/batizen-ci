@@ -102,9 +102,9 @@ export default function ProfilePage() {
                 borderColor: "rgba(255,122,0,0.2)",
                 background: "linear-gradient(135deg,rgba(255,122,0,0.06),rgba(11,95,255,0.04))"
               }}>
-                <p className="text-center text-sm font-black text-white drop-shadow-md">
+                <p className="text-center text-sm font-black text-gray-900 dark:text-white drop-shadow-md">
                   🏗️ <span className="text-gradient-orange">Bâtissez votre maison</span>{" "}
-                  <span className="text-white">sans stress —</span>{" "}
+                  <span className="text-gray-900 dark:text-white">sans stress —</span>{" "}
                   <span className="text-gradient-blue">du sol au toit.</span>
                 </p>
               </div>
@@ -116,8 +116,8 @@ export default function ProfilePage() {
                     <ShieldCheck size={20} />
                   </div>
                   <div>
-                    <h2 className="font-black text-white drop-shadow-md">Sécurité & préférences</h2>
-                    <p className="text-xs text-white/70 drop-shadow-md">Gérez votre compte, vos accès et vos données personnelles</p>
+                    <h2 className="font-black text-gray-900 dark:text-white drop-shadow-md">Sécurité & préférences</h2>
+                    <p className="text-xs text-gray-600 dark:text-white/70 drop-shadow-md">Gérez votre compte, vos accès et vos données personnelles</p>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-3 p-4">
@@ -142,10 +142,10 @@ export default function ProfilePage() {
                       <item.icon size={20} className="text-[#0B5FFF]" aria-hidden />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="font-black text-white drop-shadow-md">{item.label}</p>
-                      <p className="mt-0.5 text-xs leading-relaxed text-white/70 drop-shadow-md">{item.desc}</p>
+                      <p className="font-black text-gray-900 dark:text-white drop-shadow-md">{item.label}</p>
+                      <p className="mt-0.5 text-xs leading-relaxed text-gray-600 dark:text-white/70 drop-shadow-md">{item.desc}</p>
                     </div>
-                    <ChevronRight size={18} className="shrink-0 text-white/60" aria-hidden />
+                    <ChevronRight size={18} className="shrink-0 text-gray-400 dark:text-white/60" aria-hidden />
                   </a>
                 ))}
               </div>
@@ -159,7 +159,7 @@ export default function ProfilePage() {
               </button>
 
               {/* ── Footer slogan ── */}
-              <p className="pb-2 text-center text-[10px] font-bold tracking-[0.15em] uppercase text-white/60 drop-shadow-md">
+              <p className="pb-2 text-center text-[10px] font-bold tracking-[0.15em] uppercase text-gray-500 dark:text-white/60 drop-shadow-md">
                 BÂTIZEN CI · Qualité · Innovation · Confiance
               </p>
             </div>
