@@ -1,5 +1,4 @@
 "use client";
-
 import { formatFcfa } from "@/utils/currency";
 import { formatDateFr } from "@/utils/formatDate";
 import dynamic from "next/dynamic";
@@ -25,27 +24,41 @@ function formatLocalisation(loc: any, fallbackAdresse?: string): string {
   return base || fallbackAdresse || "—";
 }
 
+function InfoCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="p-3 bg-gray-50 dark:bg-white/10 rounded-xl">
+      <p className="text-xs font-bold text-gray-500 dark:text-white/60">{label}</p>
+      <p className="text-sm font-black text-gray-900 dark:text-white mt-0.5">{value}</p>
+    </div>
+  );
+}
 
 export function ChantierResume({ chantier, nom, pct, totalPaye }: ChantierResumeProps) {
   return (
-    <section aria-label="Résumé">
-      <div className="space-y-4 w-full rounded-[28px] border border-white/30 bg-white/20 backdrop-blur-xl p-5 shadow-xl">
-        <h2 className="text-lg font-black text-[#0D2B6B]">Résumé du projet</h2>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div><p className="text-xs font-bold text-[#6B7280]">Nom du projet</p><p className="text-sm font-black text-[#0D2B6B]">{chantier?.nom_projet || chantier?.nom || "—"}</p></div>
-          <div><p className="text-xs font-bold text-[#6B7280]">Type</p><p className="text-sm font-black text-[#0D2B6B]">{chantier?.type || "—"}</p></div>
-          <div><p className="text-xs font-bold text-[#6B7280]">Localisation</p><p className="text-sm font-black text-[#0D2B6B]">{formatLocalisation(chantier?.localisation, chantier?.adresse)}</p></div>
-          <div><p className="text-xs font-bold text-[#6B7280]">Budget total</p><p className="text-sm font-black text-[#0D2B6B]">{chantier?.budget ? formatFcfa(chantier.budget) : "—"}</p></div>
-          <div><p className="text-xs font-bold text-[#6B7280]">Plan choisi</p><p className="text-sm font-black text-[#0D2B6B]">{chantier?.planChoisi || chantier?.plan_choisi || "—"}</p></div>
-          <div><p className="text-xs font-bold text-[#6B7280]">Délai</p><p className="text-sm font-black text-[#0D2B6B]">{chantier?.delai || "—"}</p></div>
-          <div><p className="text-xs font-bold text-[#6B7280]">Date de création</p><p className="text-sm font-black text-[#0D2B6B]">{formatDateFr(chantier?.date_creation || (chantier?.dateCreation ? new Date(chantier.dateCreation).toISOString() : undefined))}</p></div>
-          {chantier?.dateActivation && <div><p className="text-xs font-bold text-[#6B7280]">Date d activation</p><p className="text-sm font-black text-[#0D2B6B]">{formatDateFr(new Date(chantier.dateActivation).toISOString())}</p></div>}
-          {chantier?.statut === "termine" && <div><p className="text-xs font-bold text-[#6B7280]">Date de fin</p><p className="text-sm font-black text-[#0D2B6B]">{formatDateFr(chantier?.date_fin)}</p></div>}
-          <div><p className="text-xs font-bold text-[#6B7280]">Progression globale</p><p className="text-sm font-black text-[#0D2B6B]">{pct}%</p></div>
-        </div>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 mt-4">
-          {(chantier?.date_debut || chantier?.dateDebut) && <div className="p-3 bg-gray-50 rounded-xl"><p className="text-xs font-bold text-[#6B7280]">Date de début prévue</p><p className="text-sm font-black text-[var(--navy)]">{formatDateFr(chantier.date_debut || chantier.dateDebut)}</p></div>}
-          {chantier?.date_fin && <div className="p-3 bg-gray-50 rounded-xl"><p className="text-xs font-bold text-[#6B7280]">Date de fin prévue</p><p className="text-sm font-black text-[var(--navy)]">{formatDateFr(chantier.date_fin)}</p></div>}
+    <section aria-label="Résumé" className="space-y-4">
+      <div className="w-full rounded-[28px] border border-white/30 bg-white/20 backdrop-blur-xl p-5 shadow-xl">
+        <h2 className="text-lg font-black text-gray-900 dark:text-white mb-4">Résumé du projet</h2>
+        <div className="grid grid-cols-2 gap-3">
+          <InfoCard label="Nom du projet" value={chantier?.nom_projet || chantier?.nom || "—"} />
+          <InfoCard label="Type" value={chantier?.type || "—"} />
+          <InfoCard label="Localisation" value={formatLocalisation(chantier?.localisation, chantier?.adresse)} />
+          <InfoCard label="Budget total" value={chantier?.budget ? formatFcfa(chantier.budget) : "—"} />
+          <InfoCard label="Plan choisi" value={chantier?.planChoisi || chantier?.plan_choisi || "—"} />
+          <InfoCard label="Délai" value={chantier?.delai || "—"} />
+          <InfoCard label="Date de création" value={formatDateFr(chantier?.date_creation || (chantier?.dateCreation ? new Date(chantier.dateCreation).toISOString() : undefined))} />
+          {chantier?.dateActivation && (
+            <InfoCard label="Date d'activation" value={formatDateFr(new Date(chantier.dateActivation).toISOString())} />
+          )}
+          {chantier?.statut === "termine" && (
+            <InfoCard label="Date de fin" value={formatDateFr(chantier?.date_fin)} />
+          )}
+          <InfoCard label="Progression globale" value={`${pct}%`} />
+          {(chantier?.date_debut || chantier?.dateDebut) && (
+            <InfoCard label="Date de début prévue" value={formatDateFr(chantier.date_debut || chantier.dateDebut)} />
+          )}
+          {chantier?.date_fin && (
+            <InfoCard label="Date de fin prévue" value={formatDateFr(chantier.date_fin)} />
+          )}
         </div>
       </div>
       {chantier?.budget && (
