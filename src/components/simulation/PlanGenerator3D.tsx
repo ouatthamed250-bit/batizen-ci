@@ -1,5 +1,4 @@
 "use client";
-
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Text } from "@react-three/drei";
 import { useMemo } from "react";
@@ -16,7 +15,6 @@ interface Plan3DProps {
   garage: boolean;
   piscine: boolean;
   style: string;
-  /** Optionnel : données du plan généré par PlanEngine (si fourni, rend les pièces dynamiquement) */
   plan?: GeneratedPlan | null;
 }
 
@@ -48,7 +46,6 @@ function ThreeDErrorFallback() {
   );
 }
 
-/** Palette de couleurs par type de pièce */
 function getRoomColor(label: string): string {
   const l = label.toLowerCase();
   if (l.includes("salon") || l.includes("séjour")) return "#FFF3E0";
@@ -66,7 +63,6 @@ function getRoomColor(label: string): string {
   return "#FAFAFA";
 }
 
-/** Couleur de contour par type de pièce */
 function getRoomStroke(label: string): string {
   const l = label.toLowerCase();
   if (l.includes("salon") || l.includes("séjour")) return "#FFB74D";
@@ -84,11 +80,8 @@ function getRoomStroke(label: string): string {
   return "#E0E0E0";
 }
 
-/**
- * Calcule la bounding box des pièces pour centrer la caméra.
- */
 function computeBounds(rooms: PlanRoom[]) {
-  if (!rooms.length) return { center: [0, 0, 0] as [number, number, number], size: 16 };
+  if (!rooms.length) return { center: [0, 0, 0] as [number, number, number], size: 16, minX: 0, maxX: 16, minZ: 0, maxZ: 16 };
   let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
   for (const r of rooms) {
     if (r.x < minX) minX = r.x;
@@ -99,71 +92,96 @@ function computeBounds(rooms: PlanRoom[]) {
   const cx = (minX + maxX) / 2;
   const cz = (minZ + maxZ) / 2;
   const size = Math.max(maxX - minX, maxZ - minZ, 10);
-  return { center: [cx, 0, cz] as [number, number, number], size };
+  return { center: [cx, 0, cz] as [number, number, number], size, minX, maxX, minZ, maxZ };
+}
+
+function ExteriorShell({ minX, maxX, minZ, maxZ }: { minX: number; maxX: number; minZ: number; maxZ: number }) {
+  const WALL_HEIGHT = 2.85;
+  const THICKNESS = 0.15;
+  const width = maxX - minX;
+  const depth = maxZ - minZ;
+  const cx = (minX + maxX) / 2;
+  const cz = (minZ + maxZ) / 2;
+  const color = "#F5F0E8";
+
+  return (
+    <group>
+      <mesh position={[cx, WALL_HEIGHT / 2, maxZ]} castShadow>
+        <boxGeometry args={[width + THICKNESS, WALL_HEIGHT, THICKNESS]} />
+        <meshStandardMaterial color={color} />
+      </mesh>
+      <mesh position={[cx, WALL_HEIGHT / 2, minZ]} castShadow>
+        <boxGeometry args={[width + THICKNESS, WALL_HEIGHT, THICKNESS]} />
+        <meshStandardMaterial color={color} />
+      </mesh>
+      <mesh position={[minX, WALL_HEIGHT / 2, cz]} castShadow>
+        <boxGeometry args={[THICKNESS, WALL_HEIGHT, depth + THICKNESS]} />
+        <meshStandardMaterial color={color} />
+      </mesh>
+      <mesh position={[maxX, WALL_HEIGHT / 2, cz]} castShadow>
+        <boxGeometry args={[THICKNESS, WALL_HEIGHT, depth + THICKNESS]} />
+        <meshStandardMaterial color={color} />
+      </mesh>
+    </group>
+  );
 }
 
 function Rooms3D({ rooms }: { rooms: PlanRoom[] }) {
   const WALL_HEIGHT = 2.7;
-
   const sorted = useMemo(
     () => [...rooms].sort((a, b) => (a.x + a.y) - (b.x + b.y)),
     [rooms]
   );
-
   const bounds = useMemo(() => computeBounds(rooms), [rooms]);
 
   return (
     <>
-      {/* Sol */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[bounds.center[0], -0.01, bounds.center[2]]} receiveShadow>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[bounds.center[0], -0.02, bounds.center[2]]} receiveShadow>
         <planeGeometry args={[bounds.size * 1.5, bounds.size * 1.5]} />
         <meshStandardMaterial color="#E8EDF5" />
       </mesh>
 
-      {/* Grille */}
       <gridHelper
         args={[bounds.size * 1.2, 12, "#C5D0E8", "#E8EDF5"]}
-        position={[bounds.center[0], 0, bounds.center[2]]}
+        position={[bounds.center[0], -0.005, bounds.center[2]]}
       />
 
-      {/* Pièces */}
+      <mesh position={[bounds.center[0], 0, bounds.center[2]]} receiveShadow>
+        <boxGeometry args={[bounds.maxX - bounds.minX, 0.05, bounds.maxZ - bounds.minZ]} />
+        <meshStandardMaterial color="#DCE3F0" />
+      </mesh>
+
+      <ExteriorShell minX={bounds.minX} maxX={bounds.maxX} minZ={bounds.minZ} maxZ={bounds.maxZ} />
+
       {sorted.map((room, idx) => {
         const cx = room.x + room.width / 2;
         const cz = room.y + room.height / 2;
         const fill = room.fill || getRoomColor(room.label);
         const stroke = getRoomStroke(room.label);
-
         return (
           <group key={room.id || `room-${idx}`}>
-            {/* Sol de la pièce */}
-            <mesh position={[cx, 0.01, cz]} receiveShadow>
-              <boxGeometry args={[room.width, 0.02, room.height]} />
+            <mesh position={[cx, 0.06, cz]} receiveShadow>
+              <boxGeometry args={[room.width - 0.05, 0.02, room.height - 0.05]} />
               <meshStandardMaterial color={fill} />
             </mesh>
 
-            {/* Murs (4 faces) */}
-            {/* Mur avant */}
             <mesh position={[cx, WALL_HEIGHT / 2, cz + room.height / 2]} castShadow>
               <boxGeometry args={[room.width, WALL_HEIGHT, 0.05]} />
-              <meshStandardMaterial color={stroke} />
+              <meshStandardMaterial color={stroke} transparent opacity={0.85} />
             </mesh>
-            {/* Mur arrière */}
             <mesh position={[cx, WALL_HEIGHT / 2, cz - room.height / 2]} castShadow>
               <boxGeometry args={[room.width, WALL_HEIGHT, 0.05]} />
-              <meshStandardMaterial color={stroke} />
+              <meshStandardMaterial color={stroke} transparent opacity={0.85} />
             </mesh>
-            {/* Mur gauche */}
             <mesh position={[cx - room.width / 2, WALL_HEIGHT / 2, cz]} castShadow>
               <boxGeometry args={[0.05, WALL_HEIGHT, room.height]} />
-              <meshStandardMaterial color={stroke} />
+              <meshStandardMaterial color={stroke} transparent opacity={0.85} />
             </mesh>
-            {/* Mur droit */}
             <mesh position={[cx + room.width / 2, WALL_HEIGHT / 2, cz]} castShadow>
               <boxGeometry args={[0.05, WALL_HEIGHT, room.height]} />
-              <meshStandardMaterial color={stroke} />
+              <meshStandardMaterial color={stroke} transparent opacity={0.85} />
             </mesh>
 
-            {/* Label de la pièce */}
             <Text
               position={[cx, WALL_HEIGHT + 0.3, cz]}
               fontSize={0.35}
@@ -194,8 +212,6 @@ export default function PlanGenerator3D({
   plan,
 }: Plan3DProps) {
   const rawRooms = plan?.rooms;
-  // PlanEngine calcule les pièces dans un système "pixels" (échelle du canvas 2D),
-  // pas en mètres réels — on convertit à l'échelle en utilisant la surface réelle connue.
   const ZONE_W = 720;
   const ZONE_H = 390;
   const rooms = rawRooms && plan?.totalBuiltAreaM2
@@ -210,7 +226,7 @@ export default function PlanGenerator3D({
         }));
       })()
     : rawRooms;
-  // Si plan fourni avec des pièces, on utilise les données dynamiques
+
   if (plan && rooms && rooms.length > 0) {
     const bounds = computeBounds(rooms);
     const camDist = Math.max(bounds.size * 1.1, 12);
@@ -231,9 +247,7 @@ export default function PlanGenerator3D({
                 shadow-mapSize-height={1024}
               />
               <hemisphereLight args={["#EAF2FF", "#FFF2E8", 0.4]} />
-
               <Rooms3D rooms={rooms} />
-
               <OrbitControls
                 enableZoom={true}
                 enablePan={true}
@@ -244,7 +258,6 @@ export default function PlanGenerator3D({
             </Canvas>
           </ErrorBoundary>
         </div>
-
         <div className="text-center text-sm text-white/60 mt-3">
           <p>Surface: {surface}m² | {plan.estimatedRooms} pièces | {etages} étage{etages > 1 ? 's' : ''}</p>
           <p>{chambres} chambre{chambres > 1 ? 's' : ''} • {sallesDeBain} salle{sallesDeBain > 1 ? 's' : ''} de bain</p>
@@ -252,7 +265,5 @@ export default function PlanGenerator3D({
       </div>
     );
   }
-
-  // Fallback : aucune donnée plan → état vide
   return <PlanEmptyState />;
 }
