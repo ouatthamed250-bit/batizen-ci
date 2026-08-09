@@ -127,8 +127,11 @@ export default function ChantierDetailClient() {
   };
 
   return (
-    <main className="pt-20 pb-16 px-4 min-h-screen bg-transparent">
-      <ChantierHeader chantier={chantier} nom={nom} pct={pct} loading={loading} />
+    <>
+      <div className="-mx-2">
+        <ChantierHeader chantier={chantier} nom={nom} pct={pct} loading={loading} />
+      </div>
+      <main className="pt-4 pb-16 px-4 min-h-screen bg-transparent">
       <ChantierTabs tabs={TABS as any} affichableTabs={affichableTabs} activeTab={activeTab} onTabChange={(key) => setActiveTab(key as TabKey)} />
       {chantier && renderStatusBanner()}
       <div className="w-full pt-5">
@@ -159,6 +162,7 @@ export default function ChantierDetailClient() {
       </div>
       <ChantierLightbox lightbox={lightbox} setLightbox={setLightbox} albumIndex={albumIndex} setAlbumIndex={setAlbumIndex} medias={medias} />
       <LazyChatBot />
-    </main>
+      </main>
+    </>
   );
 }
