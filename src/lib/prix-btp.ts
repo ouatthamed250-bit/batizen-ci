@@ -1,6 +1,6 @@
 export const PRIX_REFERENCE: Record<string, any> = {
-  fondation: { dalle_radier: { unite: "m²", prix: 45000 }, semelle_filante: { unite: "ml", prix: 35000 } },
-  elevation: { mur_parpaing: { unite: "m²", prix: 12000 }, enduit: { unite: "m²", prix: 3500 } },
+  fondation: { dalle_radier: { unite: "m²", prix: 25000 }, semelle_filante: { unite: "ml", prix: 38000 } },
+  elevation: { mur_parpaing: { unite: "m²", prix: 12000 }, enduit: { unite: "m²", prix: 3750 } },
   toiture: { tole_bac: { unite: "m²", prix: 8500 }, tuile: { unite: "m²", prix: 12000 } },
   standing: { base: 1, moyen: 1.2, haut_standing: 1.5, luxe: 2 },
   style_coefficient: { moderne: 1, classique: 0.95, africain: 0.9, colonial: 1.05, contemporain: 1 },
@@ -18,15 +18,15 @@ export function formatEuros(montant: number): string {
 
 export const PRIX_BTP = {
   fondation: {
-    "dalle_radier": { unite: "m²", prix: 45000 },
-    "semelle_filante": { unite: "ml", prix: 35000 },
+    "dalle_radier": { unite: "m²", prix: 25000 },
+    "semelle_filante": { unite: "ml", prix: 38000 },
     "longrine": { unite: "ml", prix: 25000 },
   },
   elevation: {
     "mur_brique": { unite: "m²", prix: 15000 },
     "mur_parpaing": { unite: "m²", prix: 12000 },
     "poteau_ba": { unite: "ml", prix: 18000 },
-    "enduit": { unite: "m²", prix: 3500 },
+    "enduit": { unite: "m²", prix: 3750 },
   },
   toiture: {
     "tole_bac": { unite: "m²", prix: 8500 },
@@ -35,24 +35,24 @@ export const PRIX_BTP = {
     "terrasse_etanche": { unite: "m²", prix: 18000 },
   },
   menuiserie: {
-    "porte_bois": { unite: "u", prix: 75000 },
+    "porte_bois": { unite: "u", prix: 45000 },
     "porte_metal": { unite: "u", prix: 45000 },
     "fenetre_alu": { unite: "u", prix: 65000 },
     "fenetre_bois": { unite: "u", prix: 50000 },
   },
   electricite: {
     "installation_complete": { unite: "m²", prix: 8500 },
-    "tableau": { unite: "u", prix: 35000 },
+    "tableau": { unite: "u", prix: 35000 }, // vérifié conforme base 303 matériaux
     "disjoncteur": { unite: "u", prix: 5000 },
   },
   plomberie: {
     "installation_complete": { unite: "m²", prix: 6500 },
     "cuve_eau": { unite: "u", prix: 150000 },
-    "chauffe_eau": { unite: "u", prix: 120000 },
+    "chauffe_eau": { unite: "u", prix: 65000 },
   },
   carrelage: {
-    "carrelage_sol": { unite: "m²", prix: 8500 },
-    "carrelage_mural": { unite: "m²", prix: 7500 },
+    "carrelage_sol": { unite: "m²", prix: 8000 },
+    "carrelage_mural": { unite: "m²", prix: 6500 },
     "faience": { unite: "m²", prix: 6500 },
   },
   peinture: {
