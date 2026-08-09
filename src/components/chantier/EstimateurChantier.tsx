@@ -19,27 +19,27 @@ export function EstimateurChantier({ surface, type, materiaux }: EstimateurChant
   if (!estimation) {
     return (
       <div className="rounded-[20px] bg-white/5 border border-white/10 p-6 text-center">
-        <p className="text-white/50">Complétez les informations du chantier pour obtenir un devis estimatif.</p>
+        <p className="text-gray-500 dark:text-white/50">Complétez les informations du chantier pour obtenir un devis estimatif.</p>
       </div>
     );
   }
 
   return (
     <div className="rounded-[20px] bg-white/5 border border-white/10 p-6">
-      <h3 className="font-black text-white mb-4 text-lg">📋 Devis estimatif</h3>
+      <h3 className="font-black text-gray-900 dark:text-white mb-4 text-lg">📋 Devis estimatif</h3>
       <div className="space-y-2">
-        <div className="grid grid-cols-4 gap-2 text-xs font-bold text-white/60 pb-2 border-b border-white/10">
+        <div className="grid grid-cols-4 gap-2 text-xs font-bold text-gray-500 dark:text-white/60 pb-2 border-b border-white/10">
           <span>Poste</span>
           <span className="text-right">Qté</span>
           <span className="text-right">Prix unit.</span>
           <span className="text-right">Total</span>
         </div>
         {estimation.details.map((d, i) => (
-          <div key={i} className="grid grid-cols-4 gap-2 text-sm text-white py-1 border-b border-white/5">
-            <span className="truncate">{d.poste}</span>
-            <span className="text-right text-white/60">{d.quantite} {d.unite}</span>
-            <span className="text-right text-white/60">{formatFcfa(d.prixUnitaire)}</span>
-            <span className="text-right font-bold">{formatFcfa(d.total)}</span>
+          <div key={i} className="grid grid-cols-4 gap-2 text-sm text-gray-900 dark:text-white py-1 border-b border-white/5">
+            <span className="truncate text-gray-900 dark:text-white">{d.poste}</span>
+            <span className="text-right text-gray-500 dark:text-white/60">{d.quantite} {d.unite}</span>
+            <span className="text-right text-gray-500 dark:text-white/60">{formatFcfa(d.prixUnitaire)}</span>
+            <span className="text-right font-bold text-gray-900 dark:text-white">{formatFcfa(d.total)}</span>
           </div>
         ))}
         <div className="grid grid-cols-4 gap-2 text-sm pt-3 border-t border-white/20">
@@ -49,7 +49,7 @@ export function EstimateurChantier({ surface, type, materiaux }: EstimateurChant
           <span className="text-right font-black text-[#FF7A00] text-lg">{formatFcfa(estimation.total)}</span>
         </div>
       </div>
-      <p className="mt-4 text-[10px] text-white/40">Montant indicatif basé sur les prix BTP Côte d'Ivoire. Le montant final sera précisé après visite technique.</p>
+      <p className="mt-4 text-[10px] text-gray-400 dark:text-white/40">Montant indicatif basé sur les prix BTP Côte d'Ivoire. Le montant final sera précisé après visite technique.</p>
     </div>
   );
 }
