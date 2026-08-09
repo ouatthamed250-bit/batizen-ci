@@ -79,15 +79,15 @@ export default function SuperCalculateur({
       <div className="rounded-[24px] bg-white/10 backdrop-blur-xl p-6 border border-white/20">
         <div className="flex items-center gap-2 mb-3">
           <span className="text-lg">🧮</span>
-          <h3 className="text-sm font-bold text-white">Estimation rapide</h3>
+          <h3 className="text-sm font-bold text-gray-900 dark:text-white">Estimation rapide</h3>
         </div>
-        <p className="text-xs text-white/60 mb-2">⚠️ Estimation à 60% de précision</p>
+        <p className="text-xs text-gray-500 dark:text-white/60 mb-2">⚠️ Estimation à 60% de précision</p>
         <div className="mb-3">
-          <span className="text-2xl font-black text-white">{formatFcfa(total)}</span>
+          <span className="text-2xl font-black text-gray-900 dark:text-white">{formatFcfa(total)}</span>
         </div>
         <div className="flex flex-col gap-1 text-xs">
-          <span className="text-white/80">🔨 Gros œuvre : {formatFcfa(Math.round(grosOeuvre / 1000))}k</span>
-          <span className="text-white/80">🎨 Finitions : {formatFcfa(Math.round(finitions / 1000))}k</span>
+          <span className="text-gray-600 dark:text-white/80">🔨 Gros œuvre : {formatFcfa(Math.round(grosOeuvre / 1000))}k</span>
+          <span className="text-gray-600 dark:text-white/80">🎨 Finitions : {formatFcfa(Math.round(finitions / 1000))}k</span>
         </div>
         <button
           onClick={() => window.location.href = '/simulation'}
@@ -104,22 +104,22 @@ export default function SuperCalculateur({
       <div className="rounded-[24px] bg-white/10 backdrop-blur-xl p-6 border border-white/20">
         <div className="flex items-center gap-2 mb-4">
           <span className="text-lg">💰</span>
-          <h3 className="text-sm font-bold text-white">Suivi du budget</h3>
+          <h3 className="text-sm font-bold text-gray-900 dark:text-white">Suivi du budget</h3>
         </div>
-        <p className="text-xs text-white/60 mb-3">⚠️ Estimation à 60% de précision</p>
+        <p className="text-xs text-gray-500 dark:text-white/60 mb-3">⚠️ Estimation à 60% de précision</p>
         
         <div className="space-y-2 mb-4">
           <div className="flex justify-between">
-            <span className="text-white/60">Budget estimé</span>
-            <span className="font-bold text-white">{formatFcfa(total)}</span>
+            <span className="text-gray-500 dark:text-white/60">Budget estimé</span>
+            <span className="font-bold text-gray-900 dark:text-white">{formatFcfa(total)}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-white/60">Dépensé</span>
-            <span className="font-bold text-white">{formatFcfa(budgetDepense)}</span>
+            <span className="text-gray-500 dark:text-white/60">Dépensé</span>
+            <span className="font-bold text-gray-900 dark:text-white">{formatFcfa(budgetDepense)}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-white/60">Restant</span>
-            <span className="font-bold text-white">{formatFcfa(total - budgetDepense)}</span>
+            <span className="text-gray-500 dark:text-white/60">Restant</span>
+            <span className="font-bold text-gray-900 dark:text-white">{formatFcfa(total - budgetDepense)}</span>
           </div>
         </div>
 
@@ -132,25 +132,25 @@ export default function SuperCalculateur({
 
         <div className="space-y-2 text-xs">
           <div className="flex items-center gap-2">
-            <span className="text-white/60 w-20">🔨 Gros œuvre</span>
+            <span className="text-gray-500 dark:text-white/60 w-20">🔨 Gros œuvre</span>
             <div className="flex-1 h-1.5 bg-white/20 rounded-full">
               <div className="h-full bg-[#FF6B00] rounded-full w-[55%]" />
             </div>
-            <span className="text-white/80 w-12 text-right">55%</span>
+            <span className="text-gray-600 dark:text-white/80 w-12 text-right">55%</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-white/60 w-20">🎨 Finitions</span>
+            <span className="text-gray-500 dark:text-white/60 w-20">🎨 Finitions</span>
             <div className="flex-1 h-1.5 bg-white/20 rounded-full">
               <div className="h-full bg-[#4B8FFF] rounded-full w-[25%]" />
             </div>
-            <span className="text-white/80 w-12 text-right">25%</span>
+            <span className="text-gray-600 dark:text-white/80 w-12 text-right">25%</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-white/60 w-20">👷 Main d'œuvre</span>
+            <span className="text-gray-500 dark:text-white/60 w-20">👷 Main d'œuvre</span>
             <div className="flex-1 h-1.5 bg-white/20 rounded-full">
               <div className="h-full bg-[#34D399] rounded-full w-[15%]" />
             </div>
-            <span className="text-white/80 w-12 text-right">15%</span>
+            <span className="text-gray-600 dark:text-white/80 w-12 text-right">15%</span>
           </div>
         </div>
       </div>
@@ -163,25 +163,25 @@ export default function SuperCalculateur({
       <div className="rounded-[24px] bg-white/10 backdrop-blur-xl p-6 border border-white/20">
         <div className="flex items-center gap-3 mb-3">
           <span className="text-2xl">🧮</span>
-          <h2 className="text-xl font-black text-white">SUPER CALCULATEUR BTP</h2>
+          <h2 className="text-xl font-black text-gray-900 dark:text-white">SUPER CALCULATEUR BTP</h2>
         </div>
-        <p className="text-xs text-white/60">⚠️ Estimation à 60% de précision</p>
+        <p className="text-xs text-gray-500 dark:text-white/60">⚠️ Estimation à 60% de précision</p>
 
         {/* Estimation globale */}
         <div className="mt-4 mb-4 p-4 rounded-xl bg-gradient-to-r from-[#FF8C00]/20 to-[#CC5500]/20 border border-white/20">
-          <p className="text-sm font-bold text-white/80 mb-2">💰 ESTIMATION GLOBALE</p>
-          <p className="text-3xl font-black text-white">{formatFcfa(total)}</p>
-          <p className="text-sm text-white/60">({formatEuros(total)})</p>
+          <p className="text-sm font-bold text-gray-700 dark:text-white/80 mb-2">💰 ESTIMATION GLOBALE</p>
+          <p className="text-3xl font-black text-gray-900 dark:text-white">{formatFcfa(total)}</p>
+          <p className="text-sm text-gray-500 dark:text-white/60">({formatEuros(total)})</p>
         </div>
 
         {/* Répartition du budget */}
         <div className="mb-4">
-          <p className="text-sm font-bold text-white/80 mb-3">📊 RÉPARTITION DU BUDGET</p>
+          <p className="text-sm font-bold text-gray-700 dark:text-white/80 mb-3">📊 RÉPARTITION DU BUDGET</p>
           <div className="space-y-3">
             <div>
               <div className="flex justify-between text-sm mb-1">
-                <span className="text-white/80">🔨 Gros œuvre</span>
-                <span className="font-bold text-white">{formatFcfa(Math.round(grosOeuvre))}</span>
+                <span className="text-gray-600 dark:text-white/80">🔨 Gros œuvre</span>
+                <span className="font-bold text-gray-900 dark:text-white">{formatFcfa(Math.round(grosOeuvre))}</span>
               </div>
               <div className="h-2 bg-white/20 rounded-full">
                 <div className="h-full bg-gradient-to-r from-[#FF6B00] to-[#FF8C00] rounded-full transition-all" style={{ width: '55%' }} />
@@ -189,8 +189,8 @@ export default function SuperCalculateur({
             </div>
             <div>
               <div className="flex justify-between text-sm mb-1">
-                <span className="text-white/80">🎨 Finitions</span>
-                <span className="font-bold text-white">{formatFcfa(Math.round(finitions))}</span>
+                <span className="text-gray-600 dark:text-white/80">🎨 Finitions</span>
+                <span className="font-bold text-gray-900 dark:text-white">{formatFcfa(Math.round(finitions))}</span>
               </div>
               <div className="h-2 bg-white/20 rounded-full">
                 <div className="h-full bg-gradient-to-r from-[#4B8FFF] to-[#22C55E] rounded-full transition-all" style={{ width: '25%' }} />
@@ -198,8 +198,8 @@ export default function SuperCalculateur({
             </div>
             <div>
               <div className="flex justify-between text-sm mb-1">
-                <span className="text-white/80">👷 Main d'œuvre</span>
-                <span className="font-bold text-white">{formatFcfa(Math.round(mainOeuvre))}</span>
+                <span className="text-gray-600 dark:text-white/80">👷 Main d'œuvre</span>
+                <span className="font-bold text-gray-900 dark:text-white">{formatFcfa(Math.round(mainOeuvre))}</span>
               </div>
               <div className="h-2 bg-white/20 rounded-full">
                 <div className="h-full bg-gradient-to-r from-[#34D399] to-[#059669] rounded-full transition-all" style={{ width: '15%' }} />
@@ -207,8 +207,8 @@ export default function SuperCalculateur({
             </div>
             <div>
               <div className="flex justify-between text-sm mb-1">
-                <span className="text-white/80">📦 Divers/Imprévus</span>
-                <span className="font-bold text-white">{formatFcfa(Math.round(divers))}</span>
+                <span className="text-gray-600 dark:text-white/80">📦 Divers/Imprévus</span>
+                <span className="font-bold text-gray-900 dark:text-white">{formatFcfa(Math.round(divers))}</span>
               </div>
               <div className="h-2 bg-white/20 rounded-full">
                 <div className="h-full bg-gradient-to-r from-[#F59E0B] to-[#FCD34D] rounded-full transition-all" style={{ width: '5%' }} />
@@ -219,48 +219,48 @@ export default function SuperCalculateur({
 
         {/* Détails */}
         <div className="mb-4">
-          <p className="text-sm font-bold text-white/80 mb-3">📝 DÉTAILS</p>
+          <p className="text-sm font-bold text-gray-700 dark:text-white/80 mb-3">📝 DÉTAILS</p>
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div className="bg-white/10 p-3 rounded-xl">
-              <span className="text-white/60">Surface :</span>
-              <span className="font-bold text-white ml-2">{surface} m²</span>
+              <span className="text-gray-500 dark:text-white/60">Surface :</span>
+              <span className="font-bold text-gray-900 dark:text-white ml-2">{surface} m²</span>
             </div>
             <div className="bg-white/10 p-3 rounded-xl">
-              <span className="text-white/60">Standing :</span>
-              <span className="font-bold text-white ml-2 capitalize">{standing}</span>
+              <span className="text-gray-500 dark:text-white/60">Standing :</span>
+              <span className="font-bold text-gray-900 dark:text-white ml-2 capitalize">{standing}</span>
             </div>
             <div className="bg-white/10 p-3 rounded-xl">
-              <span className="text-white/60">Étages :</span>
-              <span className="font-bold text-white ml-2">{etages}</span>
+              <span className="text-gray-500 dark:text-white/60">Étages :</span>
+              <span className="font-bold text-gray-900 dark:text-white ml-2">{etages}</span>
             </div>
             <div className="bg-white/10 p-3 rounded-xl">
-              <span className="text-white/60">Chambres :</span>
-              <span className="font-bold text-white ml-2">{chambres}</span>
+              <span className="text-gray-500 dark:text-white/60">Chambres :</span>
+              <span className="font-bold text-gray-900 dark:text-white ml-2">{chambres}</span>
             </div>
             <div className="bg-white/10 p-3 rounded-xl">
-              <span className="text-white/60">SdB :</span>
-              <span className="font-bold text-white ml-2">{sallesDeBain}</span>
+              <span className="text-gray-500 dark:text-white/60">SdB :</span>
+              <span className="font-bold text-gray-900 dark:text-white ml-2">{sallesDeBain}</span>
             </div>
             <div className="bg-white/10 p-3 rounded-xl">
-              <span className="text-white/60">Style :</span>
-              <span className="font-bold text-white ml-2 capitalize">{style}</span>
+              <span className="text-gray-500 dark:text-white/60">Style :</span>
+              <span className="font-bold text-gray-900 dark:text-white ml-2 capitalize">{style}</span>
             </div>
             {garage && (
               <div className="bg-white/10 p-3 rounded-xl">
-                <span className="text-white/60">Garage :</span>
-                <span className="font-bold text-white ml-2">{placesGarage} place(s)</span>
+                <span className="text-gray-500 dark:text-white/60">Garage :</span>
+                <span className="font-bold text-gray-900 dark:text-white ml-2">{placesGarage} place(s)</span>
               </div>
             )}
             {piscine && (
               <div className="bg-white/10 p-3 rounded-xl">
-                <span className="text-white/60">Piscine :</span>
-                <span className="font-bold text-white ml-2">Oui</span>
+                <span className="text-gray-500 dark:text-white/60">Piscine :</span>
+                <span className="font-bold text-gray-900 dark:text-white ml-2">Oui</span>
               </div>
             )}
           </div>
         </div>
 
-        <p className="text-xs text-center text-white/60">
+        <p className="text-xs text-center text-gray-500 dark:text-white/60">
           ⚠️ Cette estimation est indicative.<br />
           Un devis précis sera établi par nos experts.
         </p>
