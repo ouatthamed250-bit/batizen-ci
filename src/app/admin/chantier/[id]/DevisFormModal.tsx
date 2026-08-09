@@ -74,7 +74,7 @@ export function DevisFormModal({ chantier, chantierId, clientInfo, onClose }: { 
                   <button onClick={() => removeItem(i)} className="rounded-[6px] bg-red-500/20 px-2 text-red-400"><Trash2 size={14} /></button>
                 )}
               </div>
-              <div className="grid grid-cols-3 gap-1">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-1">
                 <input type="number" value={item.quantite} onChange={(e) => updateItem(i, "quantite", e.target.value)} placeholder="Qté" className="rounded-[6px] bg-white/10 p-1.5 text-xs outline-none" />
                 <input value={item.unite} onChange={(e) => updateItem(i, "unite", e.target.value)} placeholder="Unité" className="rounded-[6px] bg-white/10 p-1.5 text-xs outline-none" />
                 <input type="number" value={item.prixUnitaire} onChange={(e) => updateItem(i, "prixUnitaire", e.target.value)} placeholder="Prix U." className="rounded-[6px] bg-white/10 p-1.5 text-xs outline-none" />

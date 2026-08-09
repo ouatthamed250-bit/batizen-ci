@@ -139,7 +139,7 @@ export function ContratFormModal({ chantier, chantierId, clientInfo, onClose }: 
           <div>
             <label className="mb-2 block text-xs font-bold">Échéancier de paiement</label>
             {echeancier.map((row, i) => (
-              <div key={i} className="mb-2 grid grid-cols-3 gap-1">
+          <div key={i} className="mb-2 grid grid-cols-1 sm:grid-cols-3 gap-1">
                 <input value={row.description} onChange={(e) => updateEcheancier(i, "description", e.target.value)} placeholder={`Tranche ${i + 1}`} className="rounded-[8px] bg-white/5 p-1.5 text-xs outline-none ring-1 ring-white/10" />
                 <input type="date" value={row.date} onChange={(e) => updateEcheancier(i, "date", e.target.value)} className="rounded-[8px] bg-white/5 p-1.5 text-xs outline-none ring-1 ring-white/10" />
                 <input type="number" value={row.montant || ""} onChange={(e) => updateEcheancier(i, "montant", e.target.value)} placeholder="FCFA" className="rounded-[8px] bg-white/5 p-1.5 text-xs outline-none ring-1 ring-white/10" />

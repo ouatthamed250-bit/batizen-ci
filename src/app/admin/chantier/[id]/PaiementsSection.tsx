@@ -167,7 +167,7 @@ export default function PaiementsSection({ chantierId, chantier, clientInfo }: {
         💰 Paiements & Finances
       </h3>
 
-      <div className="grid grid-cols-3 gap-3 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
         <div className="p-4 bg-green-500/10 rounded-xl border border-green-500/30">
           <p className="text-xs text-green-400 mb-1">Total payé</p>
           <p className="text-2xl font-black text-green-400">{totalPaye.toLocaleString('fr-FR')} F</p>
