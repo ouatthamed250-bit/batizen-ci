@@ -7,7 +7,7 @@ import { Bell, Wallet, CalendarClock, Menu, X, Home, MessageCircle, Headphones, 
 import { useAuthContext } from "@/contexts/AuthContext";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { WeatherWidget } from "@/components/btp/WeatherWidget";
-import { getDatabase, ref as dbRef, onValue, update } from "firebase/database";
+import { getDatabase, ref as dbRef, onValue, update, query, orderByChild, equalTo, get } from "firebase/database";
 import dynamic from "next/dynamic";
 import AdminSecretModal from "@/components/auth/AdminSecretModal";
 import AnnonceTicker from "@/components/ui/AnnonceTicker";
@@ -41,6 +41,9 @@ export default function DashboardClientPage() {
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [partenaires, setPartenaires] = useState<any[]>([]);
+  const [notifCount, setNotifCount] = useState(0);
+  const [totalDepenseMois, setTotalDepenseMois] = useState(0);
+  const [prochainRdvGlobal, setProchainRdvGlobal] = useState<{ date: string; heure?: string } | null>(null);
   const { data: chantiers, isLoading: chantiersLoading } = useChantiersQuery(user?.uid);
   const { data: renovations } = useRenovationsQuery(user?.uid);
   const chantiersList = chantiers ?? [];
@@ -66,8 +69,68 @@ export default function DashboardClientPage() {
     return () => unsub();
   }, []);
 
+  // Notifications non lues du client
+  useEffect(() => {
+    if (!user?.uid) { setNotifCount(0); return; }
+    const db = getDatabase();
+    const unsub = onValue(dbRef(db, `notifications/${user.uid}`), (snap) => {
+      const d = snap.val();
+      if (!d) { setNotifCount(0); return; }
+      setNotifCount(Object.values(d).filter((n: any) => n?.lu !== true).length);
+    });
+    return () => unsub();
+  }, [user?.uid]);
+
+  // Dépensé ce mois + prochain RDV, agrégés sur tous les chantiers du client
+  useEffect(() => {
+    if (!chantiersList.length) { setTotalDepenseMois(0); setProchainRdvGlobal(null); return; }
+    const db = getDatabase();
+    const now = new Date();
+    const moisActuel = now.getMonth();
+    const anneeActuelle = now.getFullYear();
+    const aujourdhui = new Date(now.toDateString());
+
+    (async () => {
+      let totalPaye = 0;
+      let prochain: { date: string; heure?: string } | null = null;
+
+      await Promise.all(chantiersList.map(async (c: any) => {
+        const qPaiements = query(dbRef(db, 'paiements'), orderByChild('chantierId'), equalTo(c.id));
+        const snapPaiements = await get(qPaiements);
+        const dataPaiements = snapPaiements.val();
+        if (dataPaiements) {
+          Object.values(dataPaiements).forEach((p: any) => {
+            if (p.statut === 'valide' && p.datePaiement) {
+              const d = new Date(p.datePaiement);
+              if (d.getMonth() === moisActuel && d.getFullYear() === anneeActuelle) {
+                totalPaye += Number(p.montant) || 0;
+              }
+            }
+          });
+        }
+
+        const qRdv = query(dbRef(db, 'rendezvous'), orderByChild('chantierId'), equalTo(c.id));
+        const snapRdv = await get(qRdv);
+        const dataRdv = snapRdv.val();
+        if (dataRdv) {
+          Object.values(dataRdv).forEach((r: any) => {
+            if (["propose", "confirme_admin", "confirme_client"].includes(r.statut) && r.date) {
+              const rdvDate = new Date(r.date);
+              if (rdvDate >= aujourdhui && (!prochain || rdvDate < new Date(prochain.date))) {
+                prochain = { date: r.date, heure: r.heure };
+              }
+            }
+          });
+        }
+      }));
+
+      setTotalDepenseMois(totalPaye);
+      setProchainRdvGlobal(prochain);
+    })();
+  }, [chantiersList]);
+
   const userName = user?.displayName || user?.email?.split("@")[0] || "Client";
-  const chantiersActifs = chantiersList.filter(c => c.statut === "en_cours").length;
+  const chantiersActifs = chantiersList.filter(c => c.statut === "en_cours").length + renovationsActives.length;
   const prochainRdv = chantiersList.filter(c => (c.statut === "en_attente" || c.statut === "en_attente_rdv") && c.rdv_date)
     .sort((a, b) => new Date(a.rdv_date!).getTime() - new Date(b.rdv_date!).getTime())[0];
 
@@ -152,17 +215,17 @@ export default function DashboardClientPage() {
             <div className="w-full rounded-[28px] border border-white/30 bg-white/20 backdrop-blur-xl p-5 flex flex-col items-center text-center gap-3 shadow-xl">
               <div className="grid size-14 place-items-center rounded-[20px] text-white bg-gradient-to-br from-[#0B5FFF] to-[#0D2B6B] shadow-lg"><Wallet size={26} /></div>
               <p className="text-[10px] font-bold text-gray-600 dark:text-white/80 uppercase">Dépensé ce mois</p>
-              <p className="text-base font-black text-gray-900 dark:text-white">{formatFcfa(0)}</p>
+              <p className="text-base font-black text-gray-900 dark:text-white">{formatFcfa(totalDepenseMois)}</p>
             </div>
             <div className="w-full rounded-[28px] border border-white/30 bg-white/20 backdrop-blur-xl p-5 flex flex-col items-center text-center gap-3 shadow-xl">
               <div className="grid size-14 place-items-center rounded-[20px] text-white bg-gradient-to-br from-[#0B5FFF] to-[#0D2B6B] shadow-lg"><CalendarClock size={26} /></div>
               <p className="text-[10px] font-bold text-gray-600 dark:text-white/80 uppercase">Prochain RDV</p>
-              <p className="text-base font-black text-gray-900 dark:text-white">{prochainRdv ? formatDateCourte(prochainRdv.rdv_date) : "Aucun"}</p>
+              <p className="text-base font-black text-gray-900 dark:text-white">{prochainRdvGlobal ? formatDateCourte(prochainRdvGlobal.date) : "Aucun"}</p>
             </div>
             <div className="w-full rounded-[28px] border border-white/30 bg-white/20 backdrop-blur-xl p-5 flex flex-col items-center text-center gap-3 shadow-xl">
               <div className="grid size-14 place-items-center rounded-[20px] text-white bg-gradient-to-br from-[#0B5FFF] to-[#0D2B6B] shadow-lg"><Bell size={26} /></div>
               <p className="text-[10px] font-bold text-gray-600 dark:text-white/80 uppercase">Notifications</p>
-              <p className="text-base font-black text-gray-900 dark:text-white">0</p>
+              <p className="text-base font-black text-gray-900 dark:text-white">{notifCount}</p>
             </div>
           </section>
         )}
