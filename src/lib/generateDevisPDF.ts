@@ -63,7 +63,6 @@ export async function generateDevisPDF(data: DevisData): Promise<Blob> {
 
   const sousTotal = totalMateriel + data.mainOeuvre;
   const totalHT = sousTotal - data.remise;
-  const totalTTC = totalHT;
 
   pdf.setFontSize(10);
   pdf.text(fmtFcfa(totalMateriel), 184.7, 212.2, { align: "right" });
@@ -71,11 +70,12 @@ export async function generateDevisPDF(data: DevisData): Promise<Blob> {
   pdf.text(fmtFcfa(sousTotal), 184.7, 225.3, { align: "right" });
   pdf.text(fmtFcfa(data.remise), 184.7, 231.7, { align: "right" });
   pdf.text(fmtFcfa(totalHT), 184.7, 238.1, { align: "right" });
-  pdf.text("0", 184.7, 244.4, { align: "right" });
+  const fraisSuivi = Math.round(totalHT * 0.05);
+  pdf.text(fmtFcfa(fraisSuivi), 184.7, 244.4, { align: "right" });
 
   pdf.setTextColor(255, 255, 255);
   pdf.setFontSize(12);
-  pdf.text(fmtFcfa(totalTTC), 184.7, 253.3, { align: "right" });
+  pdf.text(fmtFcfa(totalHT + fraisSuivi), 184.7, 253.3, { align: "right" });
 
   return pdf.output("blob");
 }

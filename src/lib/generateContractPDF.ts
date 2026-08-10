@@ -126,13 +126,17 @@ export async function generateContractPDF(data: ContractData): Promise<Blob> {
   pdf.text(fmtDateFr(data.dateFin), 39.0, 157.0);
   pdf.text(data.dureeEstimee, 41.0, 161.9);
 
-  pdf.text(fmtFcfa(data.montantTotal), 178, 152.2, { align: "right" });
+  const fraisSuivi = Math.round(data.montantTotal * 0.05);
+  const montantTotalTTC = data.montantTotal + fraisSuivi;
+  pdf.text(fmtFcfa(montantTotalTTC), 178, 152.2, { align: "right" });
   pdf.setFontSize(9);
   pdf.text(String(data.acomptePourcent), 126.1, 157.0);
   pdf.setFontSize(10);
   const montantAcompte = Math.round((data.montantTotal * data.acomptePourcent) / 100);
   pdf.text(fmtFcfa(montantAcompte), 178, 157.0, { align: "right" });
-  pdf.text(fmtFcfa(data.montantTotal - montantAcompte), 178, 161.9, { align: "right" });
+  const resteAPayer = montantTotalTTC - montantAcompte;
+  pdf.text(fmtFcfa(resteAPayer), 178, 161.9, { align: "right" });
+  pdf.text(fmtFcfa(fraisSuivi), 178, 164.4, { align: "right" });
 
   pdf.setFontSize(7);
   const echRows = [203.0, 207.3, 211.6, 215.9];
