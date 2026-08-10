@@ -114,9 +114,9 @@ export async function generateContractPDF(data: ContractData): Promise<Blob> {
   }
 
   pdf.setFontSize(10);
-  pdf.text(fmtDateFr(data.dateDebut), 135.4, 117.5);
-  pdf.text(fmtDateFr(data.dateFin), 135.4, 125.1);
-  pdf.text(data.dureeEstimee, 135.4, 132.7);
+  pdf.text(fmtDateFr(data.dateDebut), 135.4, 122.0);
+  pdf.text(fmtDateFr(data.dateFin), 135.4, 129.6);
+  pdf.text(data.dureeEstimee, 135.4, 137.2);
 
   const fraisSuivi = Math.round(data.montantTotal * 0.05);
   const montantTotalTTC = data.montantTotal + fraisSuivi;
