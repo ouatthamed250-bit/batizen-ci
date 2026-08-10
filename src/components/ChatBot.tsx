@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from 'react';
 interface ChatMessage {
   role: string;
   text: string;
+  showWhatsapp?: boolean;
+  whatsappNumber?: string;
 }
 
 const CHAT_STORAGE_KEY = "rhinozen_chat";
@@ -97,9 +99,9 @@ export default function ChatBot() {
       if (response.status === 429) {
         setMessages(prev => [...prev, { role: 'assistant', text: '⏳ Quota dépassé. Vous pouvez envoyer 5 messages par jour. Réessayez demain.' }]);
       } else if (data.success) {
-        setMessages(prev => [...prev, { role: 'assistant', text: data.reply }]);
+        setMessages(prev => [...prev, { role: 'assistant', text: data.reply, showWhatsapp: data.showWhatsapp, whatsappNumber: data.whatsappNumber }]);
       } else {
-        setMessages(prev => [...prev, { role: 'assistant', text: 'Désolé, je rencontre un problème. Contactez-nous au +225 0749883981' }]);
+        setMessages(prev => [...prev, { role: 'assistant', text: 'Désolé, je rencontre un problème.', showWhatsapp: true, whatsappNumber: '2250554233234' }]);
       }
     } catch {
       setMessages(prev => [...prev, { role: 'assistant', text: 'Erreur de connexion. Veuillez réessayer.' }]);
@@ -126,7 +128,7 @@ export default function ChatBot() {
       )}
 
       {isOpen && (
-        <div ref={chatRef} className="fixed bottom-5 right-5 z-[9999] flex flex-col w-[440px] max-w-[calc(100vw-40px)] h-[660px] max-h-[calc(100vh-40px)] rounded-[28px] border border-white/30 bg-transparent backdrop-blur-xl shadow-xl animate-slideUp">
+        <div ref={chatRef} className="fixed bottom-24 right-4 z-[9999] flex flex-col w-[380px] max-w-[calc(100vw-32px)] h-[70vh] max-h-[560px] rounded-[28px] border border-white/30 bg-transparent backdrop-blur-xl shadow-xl animate-slideUp">
           <div className="rounded-[28px_28px_0_0] bg-transparent text-white px-6 py-5 flex items-center justify-between">
             <div>
               <h3 className="m-0 text-lg font-black">🦏 RHINOZEN — Assistant BATIZEN</h3>
@@ -137,12 +139,22 @@ export default function ChatBot() {
 
           <div className="flex-1 overflow-y-auto p-5 bg-transparent backdrop-blur-sm space-y-4">
             {messages.map((msg, idx) => (
-              <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} mb-4`}>
+              <div key={idx} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} mb-4`}>
                 <div className={`max-w-[80%] px-4 py-3 text-sm font-semibold shadow-lg ${
                   msg.role === 'user'
                     ? 'rounded-[18px_18px_0_18px] bg-gradient-to-br from-[#0B5FFF] to-[#0D2B6B] text-white'
                     : 'rounded-[18px_18px_18px_0] bg-white/90 backdrop-blur-md text-[#1A1A1A] border border-white/50'
                 }`}>{msg.text}</div>
+                {msg.showWhatsapp && (
+                  <a
+                    href={`https://wa.me/${msg.whatsappNumber || '2250554233234'}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 inline-flex items-center gap-2 rounded-[14px] bg-[#25D366] px-4 py-2.5 text-xs font-bold text-white shadow-lg transition hover:bg-[#20bd59] active:scale-95"
+                  >
+                    💬 Contacter sur WhatsApp
+                  </a>
+                )}
               </div>
             ))}
             {isLoading && (
