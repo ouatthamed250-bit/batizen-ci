@@ -50,33 +50,28 @@ function fmtDateFr(iso: string): string {
   return `${d}/${m}/${y}`;
 }
 
-function blankArea(pdf: any, x: number, y: number, w: number, h: number) {
-  pdf.setFillColor(255, 255, 255);
-  pdf.rect(x, y - h + 1, w, h, "F");
-}
-
 const TYPE_POS: Record<string, { x: number; y: number }> = {
-  villa: { x: 112.5, y: 86.1 },
-  maison: { x: 112.5, y: 86.1 },
-  duplex: { x: 132.0, y: 86.1 },
-  immeuble: { x: 152.5, y: 86.1 },
-  commerce: { x: 173.5, y: 86.1 },
-  entrepot: { x: 112.5, y: 92.5 },
-  renovation: { x: 132.0, y: 92.5 },
-  autre: { x: 132.0, y: 92.5 },
+  villa: { x: 108.7, y: 65.0 },
+  maison: { x: 108.7, y: 65.0 },
+  duplex: { x: 108.7, y: 69.3 },
+  immeuble: { x: 108.7, y: 73.8 },
+  commerce: { x: 149.7, y: 65.0 },
+  entrepot: { x: 149.7, y: 69.3 },
+  renovation: { x: 149.7, y: 73.8 },
+  autre: { x: 149.7, y: 73.8 },
 };
 
 const PRESTATION_POS: Record<string, { x: number; y: number }> = {
-  etude: { x: 111.0, y: 115.4 },
-  plans: { x: 111.0, y: 119.9 },
-  devis: { x: 111.0, y: 124.2 },
-  gros_oeuvre: { x: 111.0, y: 128.2 },
-  second_oeuvre: { x: 111.0, y: 132.5 },
-  finitions: { x: 150.8, y: 115.4 },
-  suivi: { x: 150.8, y: 119.9 },
-  livraison: { x: 150.8, y: 124.2 },
-  assistance: { x: 150.8, y: 128.2 },
-  autre: { x: 150.8, y: 132.5 },
+  etude: { x: 8.2, y: 115.3 },
+  plans: { x: 8.2, y: 120.0 },
+  devis: { x: 8.2, y: 124.7 },
+  gros_oeuvre: { x: 8.2, y: 129.2 },
+  second_oeuvre: { x: 8.2, y: 133.7 },
+  finitions: { x: 69.7, y: 115.3 },
+  suivi: { x: 69.7, y: 120.0 },
+  livraison: { x: 69.7, y: 124.7 },
+  assistance: { x: 69.7, y: 129.2 },
+  autre: { x: 69.7, y: 133.7 },
 };
 
 export async function generateContractPDF(data: ContractData): Promise<Blob> {
@@ -88,25 +83,24 @@ export async function generateContractPDF(data: ContractData): Promise<Blob> {
   pdf.setTextColor(13, 43, 107);
   pdf.setFontSize(10);
 
-  pdf.text(data.contractNumber, 60.5, 56.1);
-  blankArea(pdf, 152, 57, 45, 5);
-  pdf.text(data.contractDate, 152.8, 56.1);
+  pdf.text(data.contractNumber, 39.0, 43.7);
+  pdf.text(data.contractDate, 143.6, 43.7);
 
-  pdf.text(data.clientName, 41.0, 75.4);
-  if (data.clientPhone) pdf.text(data.clientPhone, 36.9, 81.2);
-  if (data.clientEmail) pdf.text(data.clientEmail, 29.7, 87.0);
-  if (data.clientAdresse) pdf.text(data.clientAdresse, 32.8, 92.8);
-  if (data.clientVille) pdf.text(data.clientVille, 26.7, 97.7);
+  pdf.text(data.clientName, 40.0, 55.4);
+  if (data.clientPhone) pdf.text(data.clientPhone, 40.0, 60.1);
+  if (data.clientEmail) pdf.text(data.clientEmail, 35.9, 64.8);
+  if (data.clientAdresse) pdf.text(data.clientAdresse, 40.0, 69.3);
+  if (data.clientVille) pdf.text(data.clientVille, 31.8, 73.8);
 
-  if (data.chantierLieu) pdf.text(data.chantierLieu, 143.6, 75.4);
+  if (data.chantierLieu) pdf.text(data.chantierLieu, 133.3, 55.4);
   const typePos = TYPE_POS[(data.chantierType || "").toLowerCase()];
   if (typePos) { pdf.setFontSize(9); pdf.text("X", typePos.x, typePos.y); pdf.setFontSize(10); }
-  if (data.surfaceEstimee) pdf.text(String(data.surfaceEstimee), 153.8, 96.1);
+  if (data.surfaceEstimee) pdf.text(String(data.surfaceEstimee), 133.3, 79.6);
 
   pdf.setFontSize(8.5);
   const descLines = pdf.splitTextToSize(data.descriptionTravaux || "", 110);
-  descLines.slice(0, 5).forEach((line: string, i: number) => {
-    pdf.text(line, 13.3, 115.4 + i * 3.9);
+  descLines.slice(0, 4).forEach((line: string, i: number) => {
+    pdf.text(line, 8.2, 84.1 + i * 5.2);
   });
 
   pdf.setFontSize(9);
@@ -116,41 +110,39 @@ export async function generateContractPDF(data: ContractData): Promise<Blob> {
   });
   if (data.prestations.includes("autre") && data.prestationAutre) {
     pdf.setFontSize(7.5);
-    pdf.text(data.prestationAutre.slice(0, 20), 164.1, 132.5);
+    pdf.text(data.prestationAutre.slice(0, 18), 82, 133.7);
   }
 
   pdf.setFontSize(10);
-  blankArea(pdf, 39, 153, 55, 4);
-  pdf.text(fmtDateFr(data.dateDebut), 40.0, 152.2);
-  blankArea(pdf, 38, 158, 55, 4);
-  pdf.text(fmtDateFr(data.dateFin), 39.0, 157.0);
-  pdf.text(data.dureeEstimee, 41.0, 161.9);
+  pdf.text(fmtDateFr(data.dateDebut), 135.4, 117.5);
+  pdf.text(fmtDateFr(data.dateFin), 135.4, 125.1);
+  pdf.text(data.dureeEstimee, 135.4, 132.7);
 
   const fraisSuivi = Math.round(data.montantTotal * 0.05);
   const montantTotalTTC = data.montantTotal + fraisSuivi;
-  pdf.text(fmtFcfa(montantTotalTTC), 178, 152.2, { align: "right" });
+  pdf.text(fmtFcfa(montantTotalTTC), 193.8, 149.3, { align: "right" });
   pdf.setFontSize(9);
-  pdf.text(String(data.acomptePourcent), 126.1, 157.0);
+  pdf.text(String(data.acomptePourcent), 57.4, 154.4);
   pdf.setFontSize(10);
   const montantAcompte = Math.round((data.montantTotal * data.acomptePourcent) / 100);
-  pdf.text(fmtFcfa(montantAcompte), 178, 157.0, { align: "right" });
+  pdf.text(fmtFcfa(montantAcompte), 193.8, 154.4, { align: "right" });
   const resteAPayer = montantTotalTTC - montantAcompte;
-  pdf.text(fmtFcfa(resteAPayer), 178, 161.9, { align: "right" });
-  pdf.text(fmtFcfa(fraisSuivi), 178, 164.4, { align: "right" });
+  pdf.text(fmtFcfa(resteAPayer), 193.8, 164.7, { align: "right" });
+  pdf.text(fmtFcfa(fraisSuivi), 193.8, 159.6, { align: "right" });
 
-  pdf.setFontSize(7);
-  const echRows = [203.0, 207.3, 211.6, 215.9];
+  pdf.setFontSize(8.5);
+  const echRows = [200.6, 205.9, 211.2, 216.6];
   data.echeancier.slice(0, 4).forEach((row, i) => {
-    pdf.text(row.description.slice(0, 18), 20.5, echRows[i]);
-    pdf.text(fmtDateFr(row.date), 69.7, echRows[i]);
-    pdf.text(fmtFcfa(row.montant), 102, echRows[i], { align: "right" });
+    pdf.text(row.description.slice(0, 20), 47.2, echRows[i]);
+    pdf.text(fmtDateFr(row.date), 123.0, echRows[i]);
+    pdf.text(fmtFcfa(row.montant), 196.9, echRows[i], { align: "right" });
   });
 
   if (data.notes) {
     pdf.setFontSize(8.5);
-    const notesLines = pdf.splitTextToSize(data.notes, 175);
-    notesLines.slice(0, 2).forEach((line: string, i: number) => {
-      pdf.text(line, 13.3, 225.0 + i * 3.8);
+    const notesLines = pdf.splitTextToSize(data.notes, 80);
+    notesLines.slice(0, 3).forEach((line: string, i: number) => {
+      pdf.text(line, 123.0, 229.7 + i * 5.2);
     });
   }
 
