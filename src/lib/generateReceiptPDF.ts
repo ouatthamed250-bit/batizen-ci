@@ -51,24 +51,24 @@ function matchDesignationRow(description: string): "acompte" | "gros_oeuvre" | "
 function typeCheckboxPosition(type?: string): { x: number; y: number } | null {
   const t = (type || "").toLowerCase();
   const positions: Record<string, { x: number; y: number }> = {
-    villa: { x: 99.5, y: 81.0 },
-    maison: { x: 99.5, y: 81.0 },
-    duplex: { x: 99.5, y: 87.8 },
-    immeuble: { x: 99.5, y: 94.7 },
-    commerce: { x: 133.3, y: 81.0 },
-    entrepot: { x: 133.3, y: 87.8 },
-    renovation: { x: 133.3, y: 94.7 },
-    autre: { x: 133.3, y: 94.7 },
+    villa: { x: 99.5, y: 85.5 },
+    maison: { x: 99.5, y: 85.5 },
+    duplex: { x: 99.5, y: 92.3 },
+    immeuble: { x: 99.5, y: 99.2 },
+    commerce: { x: 133.3, y: 85.5 },
+    entrepot: { x: 133.3, y: 92.3 },
+    renovation: { x: 133.3, y: 99.2 },
+    autre: { x: 133.3, y: 99.2 },
   };
   return positions[t] || null;
 }
 
 const ROWS_Y: Record<string, number> = {
-  acompte: 151.4,
-  gros_oeuvre: 159.6,
-  second_oeuvre: 167.8,
-  finitions: 176.0,
-  autre: 184.2,
+  acompte: 154.8,
+  gros_oeuvre: 165.0,
+  second_oeuvre: 177.7,
+  finitions: 190.0,
+  autre: 200.5,
 };
 
 export async function generateReceiptPDF(data: ReceiptData): Promise<void> {
@@ -80,18 +80,18 @@ export async function generateReceiptPDF(data: ReceiptData): Promise<void> {
   pdf.setTextColor(13, 43, 107);
   pdf.setFontSize(10);
 
-  pdf.text(data.receiptNumber.replace(/^RCV-/, ""), 143.6, 13.9);
-  pdf.text(data.date, 143.6, 20.5);
-  pdf.text(data.paymentMethod, 143.6, 27.1);
-  if (data.projectName) pdf.text(data.projectName, 143.6, 33.6);
-  pdf.text(data.receiptNumber.replace(/^RCV-/, ""), 143.6, 40.2);
+  pdf.text(data.receiptNumber.replace(/^RCV-/, ""), 143.6, 7.8);
+  pdf.text(data.date, 143.6, 14.4);
+  pdf.text(data.paymentMethod, 143.6, 21.0);
+  if (data.projectName) pdf.text(data.projectName, 143.6, 27.5);
+  pdf.text(data.receiptNumber.replace(/^RCV-/, ""), 143.6, 34.1);
 
-  pdf.text(data.clientName, 31.8, 61.5);
-  if (data.clientContact) pdf.text(data.clientContact, 28.7, 74.2);
-  if (data.clientEmail) pdf.text(data.clientEmail, 28.7, 81.0);
-  if (data.clientAdresse) pdf.text(data.clientAdresse, 31.8, 87.8);
-  if (data.clientVille) pdf.text(data.clientVille, 28.7, 94.7);
-  if (data.chantierLieu) pdf.text(data.chantierLieu, 113.8, 61.5);
+  pdf.text(data.clientName, 31.8, 66.0);
+  if (data.clientContact) pdf.text(data.clientContact, 28.7, 78.7);
+  if (data.clientEmail) pdf.text(data.clientEmail, 28.7, 85.5);
+  if (data.clientAdresse) pdf.text(data.clientAdresse, 31.8, 92.3);
+  if (data.clientVille) pdf.text(data.clientVille, 28.7, 99.2);
+  if (data.chantierLieu) pdf.text(data.chantierLieu, 113.8, 66.0);
 
   const checkPos = typeCheckboxPosition(data.chantierType);
   if (checkPos) {
@@ -104,10 +104,10 @@ export async function generateReceiptPDF(data: ReceiptData): Promise<void> {
   data.items.forEach((item) => {
     const row = matchDesignationRow(item.description);
     checkedRows.add(row);
-    pdf.text(fmtFcfa(item.total), 77.9, ROWS_Y[row], { align: "right" });
+    pdf.text(fmtFcfa(item.total), 100.0, ROWS_Y[row], { align: "right" });
     if (row === "autre") {
       pdf.setFontSize(8);
-      pdf.text(item.description.slice(0, 24), 41.0, ROWS_Y.autre);
+      pdf.text(item.description.slice(0, 24), 48.0, ROWS_Y.autre);
       pdf.setFontSize(9);
     }
   });
@@ -117,10 +117,10 @@ export async function generateReceiptPDF(data: ReceiptData): Promise<void> {
   });
 
   pdf.setFontSize(10);
-  pdf.text(fmtFcfa(data.totalAmount), 173.3, 150.8, { align: "right" });
+  pdf.text(fmtFcfa(data.totalAmount), 173.3, 153.8, { align: "right" });
 
   pdf.setFontSize(10);
-  pdf.text(data.agentName, 20.5, 227.2);
+  pdf.text(data.agentName, 20.5, 231.2);
 
   pdf.save(`Recu_${data.receiptNumber}_${data.clientName.replace(/\s+/g, "_")}.pdf`);
 }
