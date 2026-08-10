@@ -54,8 +54,8 @@ export async function generateDevisPDF(data: DevisData): Promise<Blob> {
     totalMateriel += montant;
     const y = ROW_Y[i];
     pdf.text(item.designation.slice(0, 32), 22.6, y);
-    pdf.text(String(item.quantite), 124.1, y, { align: "center" });
-    pdf.text(item.unite.slice(0, 10), 140.5, y);
+    pdf.text(String(item.quantite), 95.0, y, { align: "center" });
+    pdf.text(item.unite.slice(0, 10), 113.0, y);
     pdf.text(fmtFcfa(item.prixUnitaire), 168.2, y, { align: "right" });
     pdf.text(fmtFcfa(montant), 202.0, y, { align: "right" });
   });
@@ -66,16 +66,16 @@ export async function generateDevisPDF(data: DevisData): Promise<Blob> {
   const totalTTC = totalHT + fraisSuivi;
 
   pdf.setFontSize(10);
-  pdf.text(fmtFcfa(totalMateriel), 192.8, 165.1, { align: "right" });
-  pdf.text(fmtFcfa(data.mainOeuvre), 192.8, 171.9, { align: "right" });
-  pdf.text(fmtFcfa(sousTotal), 192.8, 178.9, { align: "right" });
-  pdf.text(fmtFcfa(data.remise), 192.8, 185.8, { align: "right" });
-  pdf.text(fmtFcfa(totalHT), 192.8, 192.8, { align: "right" });
-  pdf.text(fmtFcfa(fraisSuivi), 192.8, 199.7, { align: "right" });
+  pdf.text(fmtFcfa(totalMateriel), 192.8, 172.0, { align: "right" });
+  pdf.text(fmtFcfa(data.mainOeuvre), 192.8, 178.9, { align: "right" });
+  pdf.text(fmtFcfa(sousTotal), 192.8, 185.8, { align: "right" });
+  pdf.text(fmtFcfa(data.remise), 192.8, 192.7, { align: "right" });
+  pdf.text(fmtFcfa(totalHT), 192.8, 199.6, { align: "right" });
+  pdf.text(fmtFcfa(fraisSuivi), 192.8, 206.5, { align: "right" });
 
   pdf.setTextColor(255, 255, 255);
   pdf.setFontSize(12);
-  pdf.text(fmtFcfa(totalTTC), 192.8, 207.7, { align: "right" });
+  pdf.text(fmtFcfa(totalTTC), 192.8, 214.6, { align: "right" });
 
   return pdf.output("blob");
 }
