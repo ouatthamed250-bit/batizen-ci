@@ -1,27 +1,18 @@
-const CACHE_NAME = 'batizen-v2';
-const urlsToCache = ['/manifest.json'];
-
-self.addEventListener('install', (event) => {
+// Service worker désactivé — nettoie tout chez les clients bloqués sur une ancienne version
+self.addEventListener('install', () => {
   self.skipWaiting();
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(urlsToCache)));
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-    ).then(() => self.clients.claim())
+    (async () => {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((k) => caches.delete(k)));
+      await self.registration.unregister();
+      const clientsList = await self.clients.matchAll({ type: 'window' });
+      clientsList.forEach((client) => client.navigate(client.url));
+    })()
   );
 });
 
-self.addEventListener('fetch', (event) => {
-  const req = event.request;
-  if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) {
-    return;
-  }
-  if (req.mode === 'navigate') {
-    event.respondWith(fetch(req).catch(() => caches.match(req)));
-    return;
-  }
-  event.respondWith(caches.match(req).then((response) => response || fetch(req)));
-});
+// Aucune interception — tout passe directement au réseau normal
