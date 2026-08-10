@@ -1,5 +1,4 @@
 import jsPDF from "jspdf";
-import { montantEnLettresFcfa } from "@/lib/nombreEnLettres";
 
 export interface ReceiptItem {
   description: string;
@@ -52,17 +51,25 @@ function matchDesignationRow(description: string): "acompte" | "gros_oeuvre" | "
 function typeCheckboxPosition(type?: string): { x: number; y: number } | null {
   const t = (type || "").toLowerCase();
   const positions: Record<string, { x: number; y: number }> = {
-    villa: { x: 114.8, y: 96.1 },
-    maison: { x: 114.8, y: 96.1 },
-    duplex: { x: 134.3, y: 96.1 },
-    immeuble: { x: 154.8, y: 96.1 },
-    commerce: { x: 176.0, y: 96.1 },
-    entrepot: { x: 114.8, y: 102.5 },
-    renovation: { x: 134.3, y: 102.5 },
-    autre: { x: 134.3, y: 102.5 },
+    villa: { x: 99.5, y: 81.0 },
+    maison: { x: 99.5, y: 81.0 },
+    duplex: { x: 99.5, y: 87.8 },
+    immeuble: { x: 99.5, y: 94.7 },
+    commerce: { x: 133.3, y: 81.0 },
+    entrepot: { x: 133.3, y: 87.8 },
+    renovation: { x: 133.3, y: 94.7 },
+    autre: { x: 133.3, y: 94.7 },
   };
   return positions[t] || null;
 }
+
+const ROWS_Y: Record<string, number> = {
+  acompte: 151.4,
+  gros_oeuvre: 159.6,
+  second_oeuvre: 167.8,
+  finitions: 176.0,
+  autre: 184.2,
+};
 
 export async function generateReceiptPDF(data: ReceiptData): Promise<void> {
   const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
@@ -73,16 +80,18 @@ export async function generateReceiptPDF(data: ReceiptData): Promise<void> {
   pdf.setTextColor(13, 43, 107);
   pdf.setFontSize(10);
 
-  pdf.text(data.receiptNumber.replace(/^RCV-/, ""), 157.9, 48.7);
-  pdf.text(data.date, 13.9, 68.5);
-  pdf.text(data.paymentMethod, 73.8, 68.5);
-  if (data.projectName) pdf.text(data.projectName, 152.8, 63.4);
-  pdf.text(data.clientName, 41.0, 89.5);
-  if (data.clientContact) pdf.text(data.clientContact, 33.8, 96.3);
-  if (data.clientEmail) pdf.text(data.clientEmail, 33.8, 103.1);
-  if (data.clientAdresse) pdf.text(data.clientAdresse, 33.8, 109.8);
-  if (data.clientVille) pdf.text(data.clientVille, 33.8, 116.6);
-  if (data.chantierLieu) pdf.text(data.chantierLieu, 143.6, 89.5);
+  pdf.text(data.receiptNumber.replace(/^RCV-/, ""), 143.6, 13.9);
+  pdf.text(data.date, 143.6, 20.5);
+  pdf.text(data.paymentMethod, 143.6, 27.1);
+  if (data.projectName) pdf.text(data.projectName, 143.6, 33.6);
+  pdf.text(data.receiptNumber.replace(/^RCV-/, ""), 143.6, 40.2);
+
+  pdf.text(data.clientName, 31.8, 61.5);
+  if (data.clientContact) pdf.text(data.clientContact, 28.7, 74.2);
+  if (data.clientEmail) pdf.text(data.clientEmail, 28.7, 81.0);
+  if (data.clientAdresse) pdf.text(data.clientAdresse, 31.8, 87.8);
+  if (data.clientVille) pdf.text(data.clientVille, 28.7, 94.7);
+  if (data.chantierLieu) pdf.text(data.chantierLieu, 113.8, 61.5);
 
   const checkPos = typeCheckboxPosition(data.chantierType);
   if (checkPos) {
@@ -90,40 +99,28 @@ export async function generateReceiptPDF(data: ReceiptData): Promise<void> {
     pdf.text("X", checkPos.x, checkPos.y);
   }
 
-  const rowsY: Record<string, number> = {
-    acompte: 141.1,
-    gros_oeuvre: 145.4,
-    second_oeuvre: 149.7,
-    finitions: 153.9,
-    autre: 158.2,
-  };
+  pdf.setFontSize(9);
   const checkedRows = new Set<string>();
   data.items.forEach((item) => {
     const row = matchDesignationRow(item.description);
     checkedRows.add(row);
-    pdf.setFontSize(9);
-    pdf.text(fmtFcfa(item.total), 140, rowsY[row], { align: "right" });
+    pdf.text(fmtFcfa(item.total), 77.9, ROWS_Y[row], { align: "right" });
     if (row === "autre") {
       pdf.setFontSize(8);
-      pdf.text(item.description.slice(0, 28), 92, rowsY.autre);
+      pdf.text(item.description.slice(0, 24), 41.0, ROWS_Y.autre);
+      pdf.setFontSize(9);
     }
   });
-  pdf.setFontSize(11);
+  pdf.setFontSize(10);
   checkedRows.forEach((row) => {
-    pdf.text("X", 45.5, rowsY[row]);
+    pdf.text("X", 65.5, ROWS_Y[row]);
   });
 
   pdf.setFontSize(10);
-  pdf.text(fmtFcfa(data.totalAmount), 168, 169.2, { align: "right" });
-
-  const lettres = montantEnLettresFcfa(data.totalAmount);
-  pdf.setFontSize(8.5);
-  const lettresLines = pdf.splitTextToSize(lettres, 175);
-  pdf.text(lettresLines[0] || "", 46.1, 184.7);
-  if (lettresLines[1]) pdf.text(lettresLines[1], 13.3, 190.1);
+  pdf.text(fmtFcfa(data.totalAmount), 173.3, 150.8, { align: "right" });
 
   pdf.setFontSize(10);
-  pdf.text(data.agentName, 42.0, 204.4);
+  pdf.text(data.agentName, 20.5, 227.2);
 
   pdf.save(`Recu_${data.receiptNumber}_${data.clientName.replace(/\s+/g, "_")}.pdf`);
 }
