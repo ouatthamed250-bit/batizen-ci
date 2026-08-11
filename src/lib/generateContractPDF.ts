@@ -86,11 +86,11 @@ export async function generateContractPDF(data: ContractData): Promise<Blob> {
   pdf.text(data.contractNumber, 130.2, 30.4);
   pdf.text(data.contractDate, 130.2, 36.6);
 
-  pdf.text(data.clientName, 26.7, 52.8);
-  if (data.clientPhone) pdf.text(data.clientPhone, 26.7, 57.6);
-  if (data.clientEmail) pdf.text(data.clientEmail, 26.7, 62.7);
-  if (data.clientAdresse) pdf.text(data.clientAdresse, 26.7, 67.7);
-  if (data.clientVille) pdf.text(data.clientVille, 26.7, 72.7);
+  pdf.text(data.clientName, 26.7, 51.6);
+  if (data.clientPhone) pdf.text(data.clientPhone, 26.7, 56.1);
+  if (data.clientEmail) pdf.text(data.clientEmail, 26.7, 60.3);
+  if (data.clientAdresse) pdf.text(data.clientAdresse, 26.7, 64.8);
+  if (data.clientVille) pdf.text(data.clientVille, 26.7, 69.2);
 
   if (data.chantierLieu) pdf.text(data.chantierLieu, 137.4, 52.8);
   const typePos = TYPE_POS[(data.chantierType || "").toLowerCase()];
@@ -120,15 +120,15 @@ export async function generateContractPDF(data: ContractData): Promise<Blob> {
 
   const fraisSuivi = Math.round(data.montantTotal * 0.05);
   const montantTotalTTC = data.montantTotal + fraisSuivi;
-  pdf.text(fmtFcfa(montantTotalTTC), 189.7, 149.5, { align: "right" });
+  pdf.text(fmtFcfa(montantTotalTTC), 189.7, 146.0, { align: "right" });
   pdf.setFontSize(9);
-  pdf.text(String(data.acomptePourcent), 46.1, 155.3);
+  pdf.text(String(data.acomptePourcent), 46.1, 150.8);
   pdf.setFontSize(10);
   const montantAcompte = Math.round((data.montantTotal * data.acomptePourcent) / 100);
-  pdf.text(fmtFcfa(montantAcompte), 189.7, 155.3, { align: "right" });
+  pdf.text(fmtFcfa(montantAcompte), 189.7, 150.8, { align: "right" });
   const resteAPayer = montantTotalTTC - montantAcompte;
-  pdf.text(fmtFcfa(resteAPayer), 189.7, 166.1, { align: "right" });
-  pdf.text(fmtFcfa(fraisSuivi), 189.7, 160.7, { align: "right" });
+  pdf.text(fmtFcfa(resteAPayer), 189.7, 160.1, { align: "right" });
+  pdf.text(fmtFcfa(fraisSuivi), 189.7, 155.7, { align: "right" });
 
   pdf.setFontSize(8.5);
   const echRows = [201.7, 206.4, 210.9, 215.1];
