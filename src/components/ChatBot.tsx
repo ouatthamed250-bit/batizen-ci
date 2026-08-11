@@ -83,10 +83,14 @@ export default function ChatBot() {
     setIsLoading(true);
 
     try {
-      const history = messages.map(m => ({
+      const rawHistory = messages.map(m => ({
         role: m.role === 'user' ? 'user' : 'model',
         parts: [{ text: m.text }]
       }));
+      // Gemini exige que l'historique commence par un message 'user' —
+      // on retire le message d'accueil automatique (toujours en premier, role 'model')
+      const firstUserIndex = rawHistory.findIndex(h => h.role === 'user');
+      const history = firstUserIndex === -1 ? [] : rawHistory.slice(firstUserIndex);
 
       const response = await fetch('/api/chat', {
         method: 'POST',
