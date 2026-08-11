@@ -53,7 +53,7 @@ export default function AnnonceTicker() {
         .animate-marquee-annonce { animation: marqueeAnnonce 16s linear infinite; }
         @keyframes marqueeAnnonce { 0% { transform: translateX(0%); } 100% { transform: translateX(-33.333%); } }
       `}</style>
-      <div className="flex animate-marquee-annonce whitespace-nowrap gap-12 px-3">
+      <div className="flex w-max animate-marquee-annonce whitespace-nowrap gap-12 px-3">
         {[...messages, ...messages, ...messages].map((msg, i) => (
           <span
             key={i}
