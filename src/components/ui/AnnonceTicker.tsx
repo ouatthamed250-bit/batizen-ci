@@ -50,11 +50,11 @@ export default function AnnonceTicker() {
   return (
     <div className="w-full overflow-hidden bg-green-500/10 backdrop-blur-md rounded-[24px] border border-green-500/30 py-3 shadow-lg mb-4">
       <style>{`
-        .animate-marquee-annonce { animation: marqueeAnnonce 25s linear infinite; }
-        @keyframes marqueeAnnonce { 0% { transform: translateX(0%); } 100% { transform: translateX(-50%); } }
+        .animate-marquee-annonce { animation: marqueeAnnonce 16s linear infinite; }
+        @keyframes marqueeAnnonce { 0% { transform: translateX(0%); } 100% { transform: translateX(-33.333%); } }
       `}</style>
       <div className="flex animate-marquee-annonce whitespace-nowrap gap-12 px-3">
-        {[...messages, ...messages].map((msg, i) => (
+        {[...messages, ...messages, ...messages].map((msg, i) => (
           <span
             key={i}
             className="text-sm font-bold text-green-400 drop-shadow-md flex items-center gap-2"
