@@ -120,15 +120,15 @@ export async function generateContractPDF(data: ContractData): Promise<Blob> {
 
   const fraisSuivi = Math.round(data.montantTotal * 0.05);
   const montantTotalTTC = data.montantTotal + fraisSuivi;
-  pdf.text(fmtFcfa(montantTotalTTC), 189.7, 143.7, { align: "right" });
+  pdf.text(fmtFcfa(montantTotalTTC), 189.7, 149.5, { align: "right" });
   pdf.setFontSize(9);
-  pdf.text(String(data.acomptePourcent), 46.1, 149.5);
+  pdf.text(String(data.acomptePourcent), 46.1, 155.3);
   pdf.setFontSize(10);
   const montantAcompte = Math.round((data.montantTotal * data.acomptePourcent) / 100);
-  pdf.text(fmtFcfa(montantAcompte), 189.7, 149.5, { align: "right" });
+  pdf.text(fmtFcfa(montantAcompte), 189.7, 155.3, { align: "right" });
   const resteAPayer = montantTotalTTC - montantAcompte;
-  pdf.text(fmtFcfa(resteAPayer), 189.7, 160.3, { align: "right" });
-  pdf.text(fmtFcfa(fraisSuivi), 189.7, 154.9, { align: "right" });
+  pdf.text(fmtFcfa(resteAPayer), 189.7, 166.1, { align: "right" });
+  pdf.text(fmtFcfa(fraisSuivi), 189.7, 160.7, { align: "right" });
 
   pdf.setFontSize(8.5);
   const echRows = [201.7, 206.4, 210.9, 215.1];
