@@ -16,7 +16,7 @@ export default function SupportPage() {
         <h3 className="text-xl font-black text-white mb-2">Besoin d'aide ?</h3>
         <p className="text-sm text-white/80 mb-6">Notre équipe vous répond sur WhatsApp</p>
         <a
-          href="https://wa.me/2250749883981"
+          href="https://wa.me/2250554233234"
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-2 rounded-[14px] bg-[#25D366] px-6 py-3.5 text-sm font-bold text-white shadow-lg transition hover:bg-[#20bd59] active:scale-95"
