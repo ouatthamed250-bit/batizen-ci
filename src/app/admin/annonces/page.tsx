@@ -21,6 +21,7 @@ export default function AdminAnnoncesPage() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [vitesseDefilement, setVitesseDefilement] = useState(16);
 
   const [form, setForm] = useState({
     titre: "",
@@ -49,6 +50,22 @@ export default function AdminAnnoncesPage() {
 
     return () => unsub();
   }, []);
+
+  useEffect(() => {
+    const { db } = getFirebaseServices();
+    const vitesseRef = ref(db, "parametres/vitesseAnnonces");
+    const unsub = onValue(vitesseRef, (snapshot) => {
+      const v = snapshot.val();
+      if (typeof v === "number" && v > 0) setVitesseDefilement(v);
+    });
+    return () => unsub();
+  }, []);
+
+  async function handleVitesseChange(nouvelleVitesse: number) {
+    setVitesseDefilement(nouvelleVitesse);
+    const { db } = getFirebaseServices();
+    await set(ref(db, "parametres/vitesseAnnonces"), nouvelleVitesse);
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -125,6 +142,25 @@ export default function AdminAnnoncesPage() {
       <h1 className="text-xl font-black text-[#FF7A00] flex items-center gap-2">
         <Megaphone size={22} /> Annonces
       </h1>
+
+      <div className="rounded-[16px] border border-white/10 bg-white/5 p-4">
+        <label className="block text-sm font-bold text-white mb-2">
+          ⚡ Vitesse de défilement du bandeau : {vitesseDefilement}s
+        </label>
+        <input
+          type="range"
+          min={6}
+          max={30}
+          step={1}
+          value={vitesseDefilement}
+          onChange={(e) => handleVitesseChange(Number(e.target.value))}
+          className="w-full accent-[#FF7A00]"
+        />
+        <div className="flex justify-between text-[10px] text-white/40 mt-1">
+          <span>Rapide (6s)</span>
+          <span>Lent (30s)</span>
+        </div>
+      </div>
 
       {message && (
         <div
@@ -217,7 +253,7 @@ export default function AdminAnnoncesPage() {
             .map((annonce) => (
               <div
                 key={annonce.id}
-                className="rounded-[16px] border border-white/10 bg-white/5 p-4 flex items-center justify-between gap-4"
+                className="rounded-[16px] border border-white/10 bg-white/5 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
               >
                 <div className="flex-1 min-w-0">
                   <h4 className="font-bold text-white truncate">
@@ -231,7 +267,7 @@ export default function AdminAnnoncesPage() {
                     {annonce.dateFin && ` au ${annonce.dateFin}`}
                   </p>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-2 shrink-0 flex-wrap">
                   <button
                     onClick={() => handleEdit(annonce)}
                     className="rounded-[10px] bg-blue-500/20 p-2 text-blue-400 hover:bg-blue-500/30 transition"

@@ -18,10 +18,12 @@ export type Annonce = {
 /**
  * Bande défilante d'annonces — s'affiche en haut des pages connectées.
  * Lit les annonces actives depuis /annonces dans la Realtime Database.
+ * La vitesse est réglable (parametres/vitesseAnnonces) depuis l'admin.
  */
 export default function AnnonceTicker() {
   const [annonces, setAnnonces] = useState<Annonce[]>([]);
   const [loading, setLoading] = useState(true);
+  const [vitesse, setVitesse] = useState(16);
 
   useEffect(() => {
     const db = getDatabase();
@@ -39,8 +41,12 @@ export default function AnnonceTicker() {
       }
       setLoading(false);
     });
-
-    return () => unsub();
+    const vitesseRef = ref(db, "parametres/vitesseAnnonces");
+    const unsubVitesse = onValue(vitesseRef, (snapshot) => {
+      const v = snapshot.val();
+      if (typeof v === "number" && v > 0) setVitesse(v);
+    });
+    return () => { unsub(); unsubVitesse(); };
   }, []);
 
   if (loading || annonces.length === 0) return null;
@@ -50,10 +56,12 @@ export default function AnnonceTicker() {
   return (
     <div className="w-full overflow-hidden bg-green-500/10 backdrop-blur-md rounded-[24px] border border-green-500/30 py-3 shadow-lg mb-4">
       <style>{`
-        .animate-marquee-annonce { animation: marqueeAnnonce 16s linear infinite; }
         @keyframes marqueeAnnonce { 0% { transform: translateX(0%); } 100% { transform: translateX(-33.333%); } }
       `}</style>
-      <div className="flex w-max animate-marquee-annonce whitespace-nowrap gap-12 px-3">
+      <div
+        className="flex w-max whitespace-nowrap gap-12 px-3"
+        style={{ animation: `marqueeAnnonce ${vitesse}s linear infinite` }}
+      >
         {[...messages, ...messages, ...messages].map((msg, i) => (
           <span
             key={i}
