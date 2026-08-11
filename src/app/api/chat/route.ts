@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
     history = body.history || [];
 
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.6-flash',
       systemInstruction: `Tu es l'assistant virtuel de BATIZEN.CI, une entreprise de BTP en Côte d'Ivoire.
 
       VRAIS PRIX DE RÉFÉRENCE (utilise ces chiffres, jamais d'autres valeurs inventées) :
