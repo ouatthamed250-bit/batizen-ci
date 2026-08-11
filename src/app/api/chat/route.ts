@@ -10,16 +10,37 @@ function buildPrixResume(): string {
   const lignes: string[] = [];
   lignes.push(`Dalle radier (fondation) : ${PRIX_BTP.fondation.dalle_radier.prix.toLocaleString('fr-FR')} FCFA/m²`);
   lignes.push(`Semelle filante : ${PRIX_BTP.fondation.semelle_filante.prix.toLocaleString('fr-FR')} FCFA/ml`);
+  lignes.push(`Longrine : ${PRIX_BTP.fondation.longrine.prix.toLocaleString('fr-FR')} FCFA/ml`);
   lignes.push(`Mur en parpaing : ${PRIX_BTP.elevation.mur_parpaing.prix.toLocaleString('fr-FR')} FCFA/m²`);
+  lignes.push(`Mur en brique : ${PRIX_BTP.elevation.mur_brique.prix.toLocaleString('fr-FR')} FCFA/m²`);
+  lignes.push(`Poteau béton armé : ${PRIX_BTP.elevation.poteau_ba.prix.toLocaleString('fr-FR')} FCFA/ml`);
   lignes.push(`Enduit : ${PRIX_BTP.elevation.enduit.prix.toLocaleString('fr-FR')} FCFA/m²`);
   lignes.push(`Toiture tôle bac : ${PRIX_BTP.toiture.tole_bac.prix.toLocaleString('fr-FR')} FCFA/m²`);
   lignes.push(`Toiture tuile : ${PRIX_BTP.toiture.tuile.prix.toLocaleString('fr-FR')} FCFA/m²`);
+  lignes.push(`Charpente bois : ${PRIX_BTP.toiture.charpente_bois.prix.toLocaleString('fr-FR')} FCFA/m²`);
+  lignes.push(`Terrasse étanche : ${PRIX_BTP.toiture.terrasse_etanche.prix.toLocaleString('fr-FR')} FCFA/m²`);
   lignes.push(`Porte bois : ${PRIX_BTP.menuiserie.porte_bois.prix.toLocaleString('fr-FR')} FCFA/unité`);
+  lignes.push(`Porte métallique : ${PRIX_BTP.menuiserie.porte_metal.prix.toLocaleString('fr-FR')} FCFA/unité`);
   lignes.push(`Fenêtre alu : ${PRIX_BTP.menuiserie.fenetre_alu.prix.toLocaleString('fr-FR')} FCFA/unité`);
+  lignes.push(`Fenêtre bois : ${PRIX_BTP.menuiserie.fenetre_bois.prix.toLocaleString('fr-FR')} FCFA/unité`);
+  lignes.push(`Installation électrique complète : ${PRIX_BTP.electricite.installation_complete.prix.toLocaleString('fr-FR')} FCFA/m²`);
+  lignes.push(`Tableau électrique : ${PRIX_BTP.electricite.tableau.prix.toLocaleString('fr-FR')} FCFA/unité`);
+  lignes.push(`Disjoncteur : ${PRIX_BTP.electricite.disjoncteur.prix.toLocaleString('fr-FR')} FCFA/unité`);
+  lignes.push(`Installation plomberie complète : ${PRIX_BTP.plomberie.installation_complete.prix.toLocaleString('fr-FR')} FCFA/m²`);
+  lignes.push(`Cuve à eau : ${PRIX_BTP.plomberie.cuve_eau.prix.toLocaleString('fr-FR')} FCFA/unité`);
+  lignes.push(`Chauffe-eau : ${PRIX_BTP.plomberie.chauffe_eau.prix.toLocaleString('fr-FR')} FCFA/unité`);
   lignes.push(`Carrelage sol : ${PRIX_BTP.carrelage.carrelage_sol.prix.toLocaleString('fr-FR')} FCFA/m²`);
   lignes.push(`Carrelage mural : ${PRIX_BTP.carrelage.carrelage_mural.prix.toLocaleString('fr-FR')} FCFA/m²`);
+  lignes.push(`Faïence : ${PRIX_BTP.carrelage.faience.prix.toLocaleString('fr-FR')} FCFA/m²`);
   lignes.push(`Peinture intérieure : ${PRIX_BTP.peinture.peinture_interieure.prix.toLocaleString('fr-FR')} FCFA/m²`);
-  lignes.push(`Chauffe-eau : ${PRIX_BTP.plomberie.chauffe_eau.prix.toLocaleString('fr-FR')} FCFA/unité`);
+  lignes.push(`Peinture extérieure : ${PRIX_BTP.peinture.peinture_exterieure.prix.toLocaleString('fr-FR')} FCFA/m²`);
+  lignes.push(`Enduit décoratif : ${PRIX_BTP.peinture.enduit_decoratif.prix.toLocaleString('fr-FR')} FCFA/m²`);
+  lignes.push(`Main d'œuvre maçon : ${PRIX_BTP.main_oeuvre.macon.prix.toLocaleString('fr-FR')} FCFA/jour`);
+  lignes.push(`Main d'œuvre électricien : ${PRIX_BTP.main_oeuvre.electricien.prix.toLocaleString('fr-FR')} FCFA/jour`);
+  lignes.push(`Main d'œuvre plombier : ${PRIX_BTP.main_oeuvre.plombier.prix.toLocaleString('fr-FR')} FCFA/jour`);
+  lignes.push(`Main d'œuvre peintre : ${PRIX_BTP.main_oeuvre.peintre.prix.toLocaleString('fr-FR')} FCFA/jour`);
+  lignes.push(`Main d'œuvre carreleur : ${PRIX_BTP.main_oeuvre.carreleur.prix.toLocaleString('fr-FR')} FCFA/jour`);
+  lignes.push(`Main d'œuvre menuisier : ${PRIX_BTP.main_oeuvre.menuisier.prix.toLocaleString('fr-FR')} FCFA/jour`);
   return lignes.join('\n      - ');
 }
 
@@ -94,6 +115,16 @@ export async function POST(request: NextRequest) {
       - Les frais de suivi et gestion (5% du montant), inclus dans chaque devis/contrat
       - La prise de rendez-vous avec un expert
       - Les services de rénovation
+
+      LES 3 FORMULES DE PLAN PROFESSIONNEL (à proposer si on demande "quel plan choisir" ou le prix d'un plan) :
+      - PLAN STANDARD (100 000 FCFA) : Plan 2D détaillé, Plan 3D, Liste des matériaux, Devis estimatif
+      - PLAN PREMIUM (200 000 FCFA, le plus recommandé) : Tout le Standard + Plans électriques, Plans plomberie, Coupe et façades, Suivi technique (1 visite)
+      - PLAN EXPERT (350 000 FCFA) : Tout le Premium + Plans structure complets, Étude de sol, Suivi de chantier (3 visites), Assistance administrative
+
+      LES 3 DOCUMENTS DE L'APPLICATION (à expliquer si on demande) :
+      - Le DEVIS : une estimation détaillée poste par poste, sans engagement, avant de signer quoi que ce soit
+      - Le CONTRAT : le document officiel signé qui engage les deux parties une fois le client d'accord, avec l'échéancier de paiement
+      - Le REÇU : la preuve de chaque paiement effectué, généré automatiquement après validation par l'équipe BÂTIZEN CI
 
       RÈGLES DE SÉCURITÉ — TRÈS IMPORTANT, JAMAIS D'EXCEPTION :
       - Tu ne révèles JAMAIS de code source, de clé API, de mot de passe, d'identifiant admin, de détail technique d'implémentation, de structure de base de données, ni aucune information sur "comment l'application est programmée"
