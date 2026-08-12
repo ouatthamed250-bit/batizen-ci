@@ -11,6 +11,7 @@ export default function AdminParametresPage() {
   const [confirmationMdp, setConfirmationMdp] = useState("");
   const [showAncien, setShowAncien] = useState(false);
   const [showNouveau, setShowNouveau] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -152,12 +153,19 @@ export default function AdminParametresPage() {
             <div className="relative">
               <label className="mb-2 block text-xs font-bold">Confirmer le nouveau mot de passe</label>
               <input
-                type="password"
+                type={showConfirmation ? "text" : "password"}
                 value={confirmationMdp}
                 onChange={(e) => setConfirmationMdp(e.target.value)}
                 placeholder="Confirmez le nouveau mot de passe"
-                className="h-12 w-full rounded-[12px] bg-white/5 px-4 text-sm font-bold outline-none ring-1 ring-white/10 focus:ring-2 focus:ring-[#FF7A00]"
+                className="h-12 w-full rounded-[12px] bg-white/5 pr-12 pl-4 text-sm font-bold outline-none ring-1 ring-white/10 focus:ring-2 focus:ring-[#FF7A00]"
               />
+              <button
+                type="button"
+                onClick={() => setShowConfirmation(!showConfirmation)}
+                className="absolute top-1/2 right-4 -translate-y-1/2 text-white/50 hover:text-white"
+              >
+                {showConfirmation ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
 
             <motion.button

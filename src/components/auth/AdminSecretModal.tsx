@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, Lock } from "lucide-react";
+import { X, Lock, Eye, EyeOff } from "lucide-react";
 import { getAuth } from "firebase/auth";
 import { useAuthContext } from "@/contexts/AuthContext";
 
@@ -12,6 +12,7 @@ interface AdminSecretModalProps {
 
 export default function AdminSecretModal({ isOpen, onClose }: AdminSecretModalProps) {
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { user } = useAuthContext();
@@ -106,17 +107,26 @@ export default function AdminSecretModal({ isOpen, onClose }: AdminSecretModalPr
             <label className="mb-2 block text-sm font-semibold text-[#111827]">
               Mot de passe secret administrateur
             </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                setError(""); // Efface l'erreur dès que l'utilisateur tape
-              }}
-              placeholder="Entrez le code secret"
-              className="w-full h-[50px] rounded-[16px] border border-[#E7EBF5] bg-[#F7F9FC] px-4 text-sm font-semibold text-[#111827] outline-none focus:border-[#0B5FFF] focus:ring-2 focus:ring-[#0B5FFF]/20 transition-all"
-              autoFocus
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setError(""); // Efface l'erreur dès que l'utilisateur tape
+                }}
+                placeholder="Entrez le code secret"
+                className="w-full h-[50px] rounded-[16px] border border-[#E7EBF5] bg-[#F7F9FC] pr-12 pl-4 text-sm font-semibold text-[#111827] outline-none focus:border-[#0B5FFF] focus:ring-2 focus:ring-[#0B5FFF]/20 transition-all"
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute top-1/2 right-4 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
 
           {error && (

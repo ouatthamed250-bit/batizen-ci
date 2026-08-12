@@ -3,11 +3,13 @@
 import { useState, useEffect } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { getFirebaseServices } from "@/lib/firebase";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function MakeMeAdminPage() {
   const [uid, setUid] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [code, setCode] = useState("");
+  const [showCode, setShowCode] = useState(false);
   const [status, setStatus] = useState<{ type: "success" | "error" | "info"; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -122,17 +124,26 @@ export default function MakeMeAdminPage() {
             <label className="mb-2 block text-sm font-semibold text-white/80">
               Code secret
             </label>
-            <input
-              type="password"
-              value={code}
-              onChange={(e) => {
-                setCode(e.target.value);
-                setStatus(null);
-              }}
-              placeholder="Entrez le code"
-              className="w-full h-[50px] rounded-[16px] border border-white/10 bg-white/5 px-4 text-sm font-semibold text-white outline-none focus:border-[#FF7A00] focus:ring-2 focus:ring-[#FF7A00]/20 transition-all"
-              autoFocus
-            />
+            <div className="relative">
+              <input
+                type={showCode ? "text" : "password"}
+                value={code}
+                onChange={(e) => {
+                  setCode(e.target.value);
+                  setStatus(null);
+                }}
+                placeholder="Entrez le code"
+                className="w-full h-[50px] rounded-[16px] border border-white/10 bg-white/5 pr-12 pl-4 text-sm font-semibold text-white outline-none focus:border-[#FF7A00] focus:ring-2 focus:ring-[#FF7A00]/20 transition-all"
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={() => setShowCode(!showCode)}
+                className="absolute top-1/2 right-4 -translate-y-1/2 text-white/50 hover:text-white"
+              >
+                {showCode ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
 
           {status && (

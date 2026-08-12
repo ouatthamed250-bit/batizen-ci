@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { ArrowRight, Cloud, Headphones, Lock, Phone, ShieldCheck } from "lucide-react";
+import { ArrowRight, Cloud, Headphones, Lock, Phone, ShieldCheck, Eye, EyeOff } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { validateAndFormatPhone } from "@/utils/validators"; // ✅ NOUVEAU
 import { GoogleIcon } from "@/components/ui/GoogleIcon";     // ✅ NOUVEAU
@@ -18,6 +18,7 @@ export default function LoginPage() {
 
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -153,11 +154,18 @@ export default function LoginPage() {
                 value={password} 
                 onChange={e => setPassword(e.target.value)} 
                 placeholder="••••••••" 
-                type="password" 
+                type={showPassword ? "text" : "password"} 
                 autoComplete="current-password" 
                 required 
                 className="flex-1 bg-transparent text-sm font-semibold text-[#111827] outline-none placeholder:text-[#6B7280]" 
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="shrink-0 text-[#6B7280] hover:text-[#111827]"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
           </label>
 
