@@ -31,7 +31,7 @@ function fmtFcfa(n: number): string {
   return n.toLocaleString("fr-FR").replace(/[\u202f\u00a0]/g, " ");
 }
 
-const ROW_Y = [76.9, 85.1, 93.3, 101.5, 109.7, 117.9, 126.1, 134.3];
+const ROW_Y = [98.8, 107.0, 115.3, 123.5, 131.7, 139.9, 148.1, 156.3];
 
 export async function generateDevisPDF(data: DevisData): Promise<Blob> {
   const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
@@ -42,10 +42,10 @@ export async function generateDevisPDF(data: DevisData): Promise<Blob> {
   pdf.setTextColor(13, 43, 107);
   pdf.setFontSize(10);
 
-  pdf.text(data.devisNumber, 147.7, 20.5);
-  pdf.text(data.devisDate, 147.7, 25.8);
-  pdf.text(data.clientName, 46.1, 39.4);
-  if (data.clientAdresse) pdf.text(data.clientAdresse, 46.1, 46.7);
+  pdf.text(data.devisNumber, 124.1, 34.5);
+  pdf.text(data.devisDate, 124.1, 43.7);
+  pdf.text(data.clientName, 48.2, 65.2);
+  if (data.clientAdresse) pdf.text(data.clientAdresse, 48.2, 73.4);
 
   pdf.setFontSize(8.5);
   let totalMateriel = 0;
@@ -53,11 +53,11 @@ export async function generateDevisPDF(data: DevisData): Promise<Blob> {
     const montant = item.quantite * item.prixUnitaire;
     totalMateriel += montant;
     const y = ROW_Y[i];
-    pdf.text(item.designation.slice(0, 32), 22.6, y);
-    pdf.text(String(item.quantite), 95.0, y, { align: "center" });
-    pdf.text(item.unite.slice(0, 10), 113.0, y);
-    pdf.text(fmtFcfa(item.prixUnitaire), 168.2, y, { align: "right" });
-    pdf.text(fmtFcfa(montant), 202.0, y, { align: "right" });
+    pdf.text(item.designation.slice(0, 32), 21.5, y);
+    pdf.text(String(item.quantite), 102.9, y, { align: "center" });
+    pdf.text(item.unite.slice(0, 10), 121.0, y);
+    pdf.text(fmtFcfa(item.prixUnitaire), 171.2, y, { align: "right" });
+    pdf.text(fmtFcfa(montant), 204.0, y, { align: "right" });
   });
 
   const sousTotal = totalMateriel + data.mainOeuvre;
@@ -66,16 +66,16 @@ export async function generateDevisPDF(data: DevisData): Promise<Blob> {
   const totalTTC = totalHT + fraisSuivi;
 
   pdf.setFontSize(10);
-  pdf.text(fmtFcfa(totalMateriel), 192.8, 172.0, { align: "right" });
-  pdf.text(fmtFcfa(data.mainOeuvre), 192.8, 178.9, { align: "right" });
-  pdf.text(fmtFcfa(sousTotal), 192.8, 185.8, { align: "right" });
-  pdf.text(fmtFcfa(data.remise), 192.8, 192.7, { align: "right" });
-  pdf.text(fmtFcfa(totalHT), 192.8, 199.6, { align: "right" });
-  pdf.text(fmtFcfa(fraisSuivi), 192.8, 206.5, { align: "right" });
+  pdf.text(fmtFcfa(totalMateriel), 192.8, 180.7, { align: "right" });
+  pdf.text(fmtFcfa(data.mainOeuvre), 192.8, 188.9, { align: "right" });
+  pdf.text(fmtFcfa(sousTotal), 192.8, 197.1, { align: "right" });
+  pdf.text(fmtFcfa(data.remise), 192.8, 205.3, { align: "right" });
+  pdf.text(fmtFcfa(totalHT), 192.8, 213.5, { align: "right" });
+  pdf.text(fmtFcfa(fraisSuivi), 192.8, 221.5, { align: "right" });
 
   pdf.setTextColor(255, 255, 255);
   pdf.setFontSize(12);
-  pdf.text(fmtFcfa(totalTTC), 192.8, 214.6, { align: "right" });
+  pdf.text(fmtFcfa(totalTTC), 192.8, 229.3, { align: "right" });
 
   return pdf.output("blob");
 }
