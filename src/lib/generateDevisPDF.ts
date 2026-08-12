@@ -73,7 +73,7 @@ export async function generateDevisPDF(data: DevisData): Promise<Blob> {
   pdf.text(fmtFcfa(totalHT), 192.8, 202.3, { align: "right" });
   pdf.text(fmtFcfa(fraisSuivi), 192.8, 210.0, { align: "right" });
 
-  pdf.setTextColor(255, 255, 255);
+  pdf.setTextColor(13, 43, 107);
   pdf.setFontSize(12);
   pdf.text(fmtFcfa(totalTTC), 185.0, 217.0, { align: "right" });
 
