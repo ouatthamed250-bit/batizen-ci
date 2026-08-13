@@ -206,6 +206,67 @@ function FrontDoor({ minX, maxX, maxZ }: { minX: number; maxX: number; maxZ: num
   );
 }
 
+function RoomFurniture({ room, cx, cz }: { room: PlanRoom; cx: number; cz: number }) {
+  const l = room.label.toLowerCase();
+  const w = room.width;
+  const h = room.height;
+  if (w < 1.2 || h < 1.2) return null;
+
+  if (l.includes("chambre") || l.includes("suite") || l.includes("parentale")) {
+    const bedW = Math.min(1.4, w * 0.5);
+    const bedH = Math.min(1.9, h * 0.5);
+    return (
+      <mesh position={[cx - w / 4, 0.25, cz - h / 4]} castShadow>
+        <boxGeometry args={[bedW, 0.5, bedH]} />
+        <meshStandardMaterial color="#90A4C0" />
+      </mesh>
+    );
+  }
+  if (l.includes("salon") || l.includes("séjour")) {
+    const sofaW = Math.min(2.0, w * 0.6);
+    return (
+      <mesh position={[cx, 0.22, cz - h / 2 + 0.5]} castShadow>
+        <boxGeometry args={[sofaW, 0.45, 0.7]} />
+        <meshStandardMaterial color="#C97B4A" />
+      </mesh>
+    );
+  }
+  if (l.includes("manger") || l.includes("dîner")) {
+    return (
+      <mesh position={[cx, 0.25, cz]} castShadow>
+        <boxGeometry args={[Math.min(1.4, w * 0.5), 0.5, Math.min(0.9, h * 0.5)]} />
+        <meshStandardMaterial color="#8B5A2B" />
+      </mesh>
+    );
+  }
+  if (l.includes("cuisine")) {
+    const counterLen = Math.min(w * 0.7, w - 0.4);
+    return (
+      <mesh position={[cx, 0.35, cz - h / 2 + 0.3]} castShadow>
+        <boxGeometry args={[counterLen, 0.7, 0.5]} />
+        <meshStandardMaterial color="#B0BEC5" />
+      </mesh>
+    );
+  }
+  if (l.includes("salle") && (l.includes("bain") || l.includes("eau"))) {
+    return (
+      <mesh position={[cx - w / 2 + 0.4, 0.2, cz - h / 2 + 0.4]} castShadow>
+        <boxGeometry args={[0.6, 0.4, 0.6]} />
+        <meshStandardMaterial color="#E1F5FE" />
+      </mesh>
+    );
+  }
+  if (l.includes("bureau")) {
+    return (
+      <mesh position={[cx, 0.35, cz - h / 2 + 0.3]} castShadow>
+        <boxGeometry args={[Math.min(1.2, w * 0.5), 0.7, 0.5]} />
+        <meshStandardMaterial color="#5D4037" />
+      </mesh>
+    );
+  }
+  return null;
+}
+
 function Rooms3D({ rooms }: { rooms: PlanRoom[] }) {
   const WALL_HEIGHT = 2.7;
   const sorted = useMemo(
@@ -275,6 +336,7 @@ function Rooms3D({ rooms }: { rooms: PlanRoom[] }) {
             >
               {room.label}
             </Text>
+            <RoomFurniture room={room} cx={cx} cz={cz} />
           </group>
         );
       })}
