@@ -142,6 +142,30 @@ function Roof({ minX, maxX, minZ, maxZ, wallHeight }: { minX: number; maxX: numb
   );
 }
 
+function Windows({ minX, maxX, maxZ, wallHeight }: { minX: number; maxX: number; maxZ: number; wallHeight: number }) {
+  const width = maxX - minX;
+  const windowCount = Math.max(2, Math.floor(width / 2.2));
+  const spacing = width / (windowCount + 1);
+  const windowY = wallHeight * 0.5;
+  const items = [];
+  for (let i = 1; i <= windowCount; i++) {
+    const wx = minX + spacing * i;
+    items.push(
+      <group key={`window-${i}`} position={[wx, windowY, maxZ]}>
+        <mesh position={[0, 0, 0.03]}>
+          <boxGeometry args={[0.9, 1.1, 0.06]} />
+          <meshStandardMaterial color="#8AC7E8" transparent opacity={0.75} />
+        </mesh>
+        <mesh position={[0, 0, 0.06]}>
+          <boxGeometry args={[1.0, 1.2, 0.02]} />
+          <meshStandardMaterial color="#0D2B6B" wireframe />
+        </mesh>
+      </group>
+    );
+  }
+  return <>{items}</>;
+}
+
 function Rooms3D({ rooms }: { rooms: PlanRoom[] }) {
   const WALL_HEIGHT = 2.7;
   const sorted = useMemo(
@@ -169,6 +193,7 @@ function Rooms3D({ rooms }: { rooms: PlanRoom[] }) {
 
       <ExteriorShell minX={bounds.minX} maxX={bounds.maxX} minZ={bounds.minZ} maxZ={bounds.maxZ} />
       <Roof minX={bounds.minX} maxX={bounds.maxX} minZ={bounds.minZ} maxZ={bounds.maxZ} wallHeight={2.85} />
+      <Windows minX={bounds.minX} maxX={bounds.maxX} maxZ={bounds.maxZ} wallHeight={2.85} />
 
       {sorted.map((room, idx) => {
         const cx = room.x + room.width / 2;
