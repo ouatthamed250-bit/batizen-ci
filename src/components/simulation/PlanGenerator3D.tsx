@@ -108,19 +108,19 @@ function ExteriorShell({ minX, maxX, minZ, maxZ }: { minX: number; maxX: number;
     <group>
       <mesh position={[cx, WALL_HEIGHT / 2, maxZ]} castShadow>
         <boxGeometry args={[width + THICKNESS, WALL_HEIGHT, THICKNESS]} />
-        <meshStandardMaterial color={color} />
+        <meshStandardMaterial color={color} transparent opacity={0.3} />
       </mesh>
       <mesh position={[cx, WALL_HEIGHT / 2, minZ]} castShadow>
         <boxGeometry args={[width + THICKNESS, WALL_HEIGHT, THICKNESS]} />
-        <meshStandardMaterial color={color} />
+        <meshStandardMaterial color={color} transparent opacity={0.3} />
       </mesh>
       <mesh position={[minX, WALL_HEIGHT / 2, cz]} castShadow>
         <boxGeometry args={[THICKNESS, WALL_HEIGHT, depth + THICKNESS]} />
-        <meshStandardMaterial color={color} />
+        <meshStandardMaterial color={color} transparent opacity={0.3} />
       </mesh>
       <mesh position={[maxX, WALL_HEIGHT / 2, cz]} castShadow>
         <boxGeometry args={[THICKNESS, WALL_HEIGHT, depth + THICKNESS]} />
-        <meshStandardMaterial color={color} />
+        <meshStandardMaterial color={color} transparent opacity={0.3} />
       </mesh>
     </group>
   );
@@ -142,7 +142,7 @@ function Roof({ minX, maxX, minZ, maxZ, wallHeight }: { minX: number; maxX: numb
     <group>
       <mesh position={[cx, wallHeight + THICKNESS / 2, cz]} castShadow receiveShadow>
         <boxGeometry args={[width, THICKNESS, depth]} />
-        <meshStandardMaterial color="#D8D3C8" />
+        <meshStandardMaterial color="#D8D3C8" transparent opacity={0.35} />
       </mesh>
       <mesh position={[cx, roofTopY + BORDER_HEIGHT / 2, cz + depth / 2 - BORDER_THICKNESS / 2]} castShadow>
         <boxGeometry args={[width, BORDER_HEIGHT, BORDER_THICKNESS]} />
@@ -311,19 +311,19 @@ function Rooms3D({ rooms }: { rooms: PlanRoom[] }) {
 
             <mesh position={[cx, WALL_HEIGHT / 2, cz + room.height / 2]} castShadow>
               <boxGeometry args={[room.width, WALL_HEIGHT, 0.05]} />
-              <meshStandardMaterial color={stroke} transparent opacity={0.85} />
+              <meshStandardMaterial color={stroke} transparent opacity={0.3} />
             </mesh>
             <mesh position={[cx, WALL_HEIGHT / 2, cz - room.height / 2]} castShadow>
               <boxGeometry args={[room.width, WALL_HEIGHT, 0.05]} />
-              <meshStandardMaterial color={stroke} transparent opacity={0.85} />
+              <meshStandardMaterial color={stroke} transparent opacity={0.3} />
             </mesh>
             <mesh position={[cx - room.width / 2, WALL_HEIGHT / 2, cz]} castShadow>
               <boxGeometry args={[0.05, WALL_HEIGHT, room.height]} />
-              <meshStandardMaterial color={stroke} transparent opacity={0.85} />
+              <meshStandardMaterial color={stroke} transparent opacity={0.3} />
             </mesh>
             <mesh position={[cx + room.width / 2, WALL_HEIGHT / 2, cz]} castShadow>
               <boxGeometry args={[0.05, WALL_HEIGHT, room.height]} />
-              <meshStandardMaterial color={stroke} transparent opacity={0.85} />
+              <meshStandardMaterial color={stroke} transparent opacity={0.3} />
             </mesh>
 
             <Text
