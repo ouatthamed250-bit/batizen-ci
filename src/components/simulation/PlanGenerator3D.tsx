@@ -129,16 +129,38 @@ function ExteriorShell({ minX, maxX, minZ, maxZ }: { minX: number; maxX: number;
 function Roof({ minX, maxX, minZ, maxZ, wallHeight }: { minX: number; maxX: number; minZ: number; maxZ: number; wallHeight: number }) {
   const OVERHANG = 0.4;
   const THICKNESS = 0.25;
+  const BORDER_HEIGHT = 0.18;
+  const BORDER_THICKNESS = 0.08;
   const width = maxX - minX + OVERHANG * 2;
   const depth = maxZ - minZ + OVERHANG * 2;
   const cx = (minX + maxX) / 2;
   const cz = (minZ + maxZ) / 2;
+  const roofTopY = wallHeight + THICKNESS;
+  const borderColor = "#0D2B6B";
 
   return (
-    <mesh position={[cx, wallHeight + THICKNESS / 2, cz]} castShadow receiveShadow>
-      <boxGeometry args={[width, THICKNESS, depth]} />
-      <meshStandardMaterial color="#F8FAFC" />
-    </mesh>
+    <group>
+      <mesh position={[cx, wallHeight + THICKNESS / 2, cz]} castShadow receiveShadow>
+        <boxGeometry args={[width, THICKNESS, depth]} />
+        <meshStandardMaterial color="#D8D3C8" />
+      </mesh>
+      <mesh position={[cx, roofTopY + BORDER_HEIGHT / 2, cz + depth / 2 - BORDER_THICKNESS / 2]} castShadow>
+        <boxGeometry args={[width, BORDER_HEIGHT, BORDER_THICKNESS]} />
+        <meshStandardMaterial color={borderColor} />
+      </mesh>
+      <mesh position={[cx, roofTopY + BORDER_HEIGHT / 2, cz - depth / 2 + BORDER_THICKNESS / 2]} castShadow>
+        <boxGeometry args={[width, BORDER_HEIGHT, BORDER_THICKNESS]} />
+        <meshStandardMaterial color={borderColor} />
+      </mesh>
+      <mesh position={[cx - width / 2 + BORDER_THICKNESS / 2, roofTopY + BORDER_HEIGHT / 2, cz]} castShadow>
+        <boxGeometry args={[BORDER_THICKNESS, BORDER_HEIGHT, depth]} />
+        <meshStandardMaterial color={borderColor} />
+      </mesh>
+      <mesh position={[cx + width / 2 - BORDER_THICKNESS / 2, roofTopY + BORDER_HEIGHT / 2, cz]} castShadow>
+        <boxGeometry args={[BORDER_THICKNESS, BORDER_HEIGHT, depth]} />
+        <meshStandardMaterial color={borderColor} />
+      </mesh>
+    </group>
   );
 }
 
