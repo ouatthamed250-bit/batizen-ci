@@ -126,6 +126,22 @@ function ExteriorShell({ minX, maxX, minZ, maxZ }: { minX: number; maxX: number;
   );
 }
 
+function Roof({ minX, maxX, minZ, maxZ, wallHeight }: { minX: number; maxX: number; minZ: number; maxZ: number; wallHeight: number }) {
+  const OVERHANG = 0.4;
+  const THICKNESS = 0.25;
+  const width = maxX - minX + OVERHANG * 2;
+  const depth = maxZ - minZ + OVERHANG * 2;
+  const cx = (minX + maxX) / 2;
+  const cz = (minZ + maxZ) / 2;
+
+  return (
+    <mesh position={[cx, wallHeight + THICKNESS / 2, cz]} castShadow receiveShadow>
+      <boxGeometry args={[width, THICKNESS, depth]} />
+      <meshStandardMaterial color="#F8FAFC" />
+    </mesh>
+  );
+}
+
 function Rooms3D({ rooms }: { rooms: PlanRoom[] }) {
   const WALL_HEIGHT = 2.7;
   const sorted = useMemo(
@@ -152,6 +168,7 @@ function Rooms3D({ rooms }: { rooms: PlanRoom[] }) {
       </mesh>
 
       <ExteriorShell minX={bounds.minX} maxX={bounds.maxX} minZ={bounds.minZ} maxZ={bounds.maxZ} />
+      <Roof minX={bounds.minX} maxX={bounds.maxX} minZ={bounds.minZ} maxZ={bounds.maxZ} wallHeight={2.85} />
 
       {sorted.map((room, idx) => {
         const cx = room.x + room.width / 2;
