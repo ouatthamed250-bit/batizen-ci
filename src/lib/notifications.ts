@@ -2,6 +2,7 @@ import { ref, set, update, get, onValue, type Unsubscribe } from "firebase/datab
 import { getFirebaseServices } from "./firebase";
 
 export type NotificationType = 
+  | "nouveau_client"
   | "nouveau_chantier"
   | "chantier_active"
   | "chantier_termine"
@@ -198,6 +199,8 @@ export function formatNotificationDate(timestamp: number): string {
 // Obtenir l'icône selon le type
 export function getNotificationIcon(type: NotificationType): string {
   switch (type) {
+    case "nouveau_client":
+      return "👤";
     case "chantier_active":
       return "✅";
     case "chantier_termine":
@@ -224,6 +227,8 @@ export function getNotificationIcon(type: NotificationType): string {
 // Obtenir la couleur selon le type
 export function getNotificationColor(type: NotificationType): string {
   switch (type) {
+    case "nouveau_client":
+      return "#0D2B6B";
     case "chantier_active":
       return "#22C55E";
     case "chantier_termine":

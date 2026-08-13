@@ -73,6 +73,18 @@ export async function POST(request: NextRequest) {
 
     console.log(`✅ Utilisateur créé : ${email} (UID: ${uid}, Rôle: ${role})`);
 
+    try {
+      const { sendAdminNotification } = await import('@/lib/notifications');
+      await sendAdminNotification({
+        type: 'nouveau_client',
+        userId: uid,
+        userName: displayName || email.split('@')[0],
+        message: `Nouveau client inscrit : ${displayName || email.split('@')[0]}`,
+      });
+    } catch (notifError) {
+      console.error('⚠️ Notification admin non envoyee (inscription reussie quand meme):', notifError);
+    }
+
     return NextResponse.json({
       success: true,
       uid,
