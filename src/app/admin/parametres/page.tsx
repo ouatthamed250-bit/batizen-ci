@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Key, Eye, EyeOff, Save, AlertCircle } from "lucide-react";
+import { Key, Eye, EyeOff, Save, AlertCircle, Bell } from "lucide-react";
 import { signOut, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 import { getFirebaseServices } from '../../../lib/firebase';
+import { requestPushPermission, saveFcmToken } from '../../../lib/push-notifications';
 export default function AdminParametresPage() {
   const [ancienMdp, setAncienMdp] = useState("");
   const [nouveauMdp, setNouveauMdp] = useState("");
@@ -13,6 +14,7 @@ export default function AdminParametresPage() {
   const [showNouveau, setShowNouveau] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [pushLoading, setPushLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const handleChangePassword = async () => {
@@ -70,6 +72,34 @@ export default function AdminParametresPage() {
       setMessage({ type: "error", text: errorMsg });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleEnablePush = async () => {
+    setPushLoading(true);
+    setMessage(null);
+
+    try {
+      const { auth } = getFirebaseServices();
+      const user = auth.currentUser;
+
+      if (!user) {
+        throw new Error("Aucun utilisateur connecté");
+      }
+
+      const token = await requestPushPermission();
+      if (!token) {
+        setMessage({ type: "error", text: "Permission refusée ou notifications non supportées sur ce navigateur." });
+        return;
+      }
+
+      await saveFcmToken(user.uid, token);
+      setMessage({ type: "success", text: "🔔 Notifications push activées avec succès !" });
+    } catch (error: any) {
+      console.error("Erreur activation push:", error);
+      setMessage({ type: "error", text: "Erreur lors de l'activation des notifications push." });
+    } finally {
+      setPushLoading(false);
     }
   };
 
@@ -178,6 +208,25 @@ export default function AdminParametresPage() {
               {loading ? "Mise à jour..." : <><Save size={18} /> Mettre à jour le mot de passe</>}
             </motion.button>
           </div>
+        </div>
+
+        {/* Section Notifications push */}
+        <div className="rounded-[16px] border border-white/10 bg-white/5 p-6">
+          <h2 className="mb-4 flex items-center gap-2 font-black text-[#FF7A00]">
+            <Bell size={20} /> Notifications push
+          </h2>
+          <p className="mb-4 text-sm text-white/60">
+            Activez les notifications push pour être alerté même lorsque l'application est fermée.
+          </p>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={handleEnablePush}
+            disabled={pushLoading}
+            className="flex items-center gap-2 rounded-[12px] bg-gradient-to-r from-[#0D2B6B] to-[#1E4BA0] px-6 py-3 font-bold text-white shadow-lg disabled:opacity-50"
+          >
+            {pushLoading ? "Activation..." : <><Bell size={18} /> Activer les notifications push</>}
+          </motion.button>
         </div>
 
         {/* Section Déconnexion */}
