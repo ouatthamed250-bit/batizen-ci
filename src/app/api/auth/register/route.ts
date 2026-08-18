@@ -85,6 +85,17 @@ export async function POST(request: NextRequest) {
       console.error('⚠️ Notification admin non envoyee (inscription reussie quand meme):', notifError);
     }
 
+    try {
+      const { sendPushToAllDevices } = await import('@/lib/push-server');
+      await sendPushToAllDevices(
+        '👤 Nouveau client',
+        `${displayName || email.split('@')[0]} vient de s'inscrire`,
+        '/admin/clients'
+      );
+    } catch (pushError) {
+      console.error('⚠️ Push admin non envoye (inscription reussie quand meme):', pushError);
+    }
+
     return NextResponse.json({
       success: true,
       uid,
