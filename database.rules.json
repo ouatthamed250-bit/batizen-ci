@@ -134,6 +134,17 @@
       ".read": true,
       ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('admins').child(auth.uid).exists())"
     },
+    "parametres": {
+      ".read": true,
+      ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('admins').child(auth.uid).exists())"
+    },
+    "fcmTokens": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid == $uid || root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('admins').child(auth.uid).exists())",
+        ".write": "auth != null && auth.uid == $uid"
+      }
+    },
+
     "notes": {
       ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('admins').child(auth.uid).exists() || (query.orderByChild == 'chantierId' && root.child('chantiers').child(query.equalTo).child('userId').val() == auth.uid) || (query.orderByChild == 'chantierId' && root.child('chantiers').child(query.equalTo).child('client_id').val() == auth.uid))",
       ".indexOn": ["chantierId"],
