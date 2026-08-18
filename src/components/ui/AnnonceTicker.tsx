@@ -15,6 +15,15 @@ export type Annonce = {
   createdAt: number;
 };
 
+type Promotion = {
+  id: string;
+  titre: string;
+  description: string;
+  date_debut: string;
+  date_fin: string;
+  active: boolean;
+};
+
 /**
  * Bande défilante d'annonces — s'affiche en haut des pages connectées.
  * Lit les annonces actives depuis /annonces dans la Realtime Database.
@@ -22,6 +31,7 @@ export type Annonce = {
  */
 export default function AnnonceTicker() {
   const [annonces, setAnnonces] = useState<Annonce[]>([]);
+  const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [loading, setLoading] = useState(true);
   const [vitesse, setVitesse] = useState(16);
 
@@ -46,12 +56,26 @@ export default function AnnonceTicker() {
       const v = snapshot.val();
       if (typeof v === "number" && v > 0) setVitesse(v);
     });
-    return () => { unsub(); unsubVitesse(); };
+    const promotionsRef = ref(db, "promotions");
+    const unsubPromotions = onValue(promotionsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const actives = Object.entries(data)
+          .filter(([_, p]: [string, any]) => p.active === true)
+          .map(([id, p]: [string, any]) => ({ id, ...p } as Promotion));
+        setPromotions(actives);
+      } else {
+        setPromotions([]);
+      }
+    });
+    return () => { unsub(); unsubVitesse(); unsubPromotions(); };
   }, []);
 
-  if (loading || annonces.length === 0) return null;
+  if (loading || (annonces.length === 0 && promotions.length === 0)) return null;
 
-  const messages = annonces.map((a) => `📢 ${a.titre} : ${a.contenu}`);
+  const messagesAnnonces = annonces.map((a) => `📢 ${a.titre} : ${a.contenu}`);
+  const messagesPromotions = promotions.map((p) => `🎁 ${p.titre} : ${p.description}`);
+  const messages = [...messagesAnnonces, ...messagesPromotions];
 
   return (
     <div className="w-full overflow-hidden bg-green-500/10 backdrop-blur-md rounded-[24px] border border-green-500/30 py-3 shadow-lg mb-4">
